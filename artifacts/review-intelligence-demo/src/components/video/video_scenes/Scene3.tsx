@@ -8,21 +8,32 @@ export function Scene3() {
   return (
     <Stage tone="paper">
       <BrowserFrame style={{ left: '6.5vw', width: '87vw', top: '8vh', height: '84vh' }}>
-        <AppShell title="Theme intelligence" subtitle="Feedback becomes easier to read when it has a shape." active="Themes">
+        <AppShell title="Theme intelligence" subtitle="Mumbai Central · fictional demo example" active="Themes">
           <div className="flex h-full flex-col">
             <div className="mb-[1.25vh] flex items-end justify-between">
               <div>
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_OUT }} style={{ fontFamily: "'Sora', sans-serif", fontSize: '1.45vw', letterSpacing: '-.06em', fontWeight: 650 }}>Twelve themes. One pattern.</motion.div>
-                <div className="mt-[.35vh]" style={{ color: '#64748B', fontSize: '.65vw' }}>Tags bring related notes into the same conversation.</div>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_OUT }} style={{ fontFamily: "'Sora', sans-serif", fontSize: '1.45vw', letterSpacing: '-.06em', fontWeight: 650 }}>One fictional review. Two themes.</motion.div>
+                <div className="mt-[.35vh]" style={{ color: '#64748B', fontSize: '.65vw' }}>A sample of how incoming feedback can be organized.</div>
               </div>
-              <div className="rounded-full border px-[.72vw] py-[.48vh]" style={{ borderColor: '#E8E2F2', color: '#6D4EA0', background: '#FBF9FF', fontSize: '.56vw' }}>12 topic tags</div>
+              <div className="rounded-full border px-[.72vw] py-[.48vh]" style={{ borderColor: '#E8E2F2', color: '#6D4EA0', background: '#FBF9FF', fontSize: '.56vw' }}>SYNTHETIC EXAMPLE · NOT A REAL REVIEW</div>
             </div>
+            <motion.div
+              initial={{ opacity: 0, scaleY: 0.8 }}
+              animate={{ opacity: 1, scaleY: 1 }}
+              transition={{ delay: 0.25, duration: 0.45, ease: EASE }}
+              className="mb-[.8vh] flex items-center gap-[.8vw] rounded-[.5vw] border px-[.85vw] py-[.68vh]"
+              style={{ borderColor: '#E5DDF1', background: '#FCFAFF', transformOrigin: 'top' }}
+            >
+              <span className="uppercase tracking-[.12em]" style={{ color: '#735B92', fontSize: '.5vw', fontWeight: 750 }}>FICTIONAL SAMPLE</span>
+              <span style={{ color: '#344155', fontSize: '.69vw' }}>“The spice balance was lovely, but our first check-in took a while.”</span>
+              <span className="ml-auto whitespace-nowrap" style={{ color: '#8A96A5', fontSize: '.5vw' }}>Not from Mumbai Central</span>
+            </motion.div>
             <div className="grid min-h-0 flex-1 grid-cols-2 gap-[.8vw]">
               {[THEMES.slice(0, 6), THEMES.slice(6)].map((column, col) => (
                 <div key={col} className="flex min-h-0 flex-col justify-between gap-[.48vh]">
                   {column.map((theme, row) => {
                     const i = col * 6 + row;
-                    const active = i === 1;
+                    const active = i === 1 || i === 3;
                     return (
                       <motion.div
                         key={theme}
@@ -45,8 +56,8 @@ export function Scene3() {
               ))}
             </div>
             <div className="mt-[.9vh] flex items-center justify-between" style={{ color: '#81758F', fontSize: '.55vw' }}>
-              <span>Illustrative demo · synthetic sample data</span>
-              <motion.span animate={{ color: ['#64748B', violet, violet] }} transition={{ delay: 4, duration: 1.1 }}>Spice mentions are beginning to cluster ↗</motion.span>
+              <span>All 12 product themes · synthetic example only</span>
+              <motion.span animate={{ color: ['#64748B', violet, violet] }} transition={{ delay: 4, duration: 1.1 }}>One sample maps to Spice + Service speed ↗</motion.span>
             </div>
           </div>
         </AppShell>

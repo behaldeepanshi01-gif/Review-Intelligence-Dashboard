@@ -108,9 +108,10 @@ export function AppShell({
             <div style={{ color: muted, fontSize: '.55vw' }}>OWNER WORKSPACE</div>
           </div>
         </div>
-        <div className="mb-[.8vh] uppercase tracking-[.12em]" style={{ color: '#94A3B8', fontSize: '.48vw', fontWeight: 700 }}>Workspace</div>
+        <div className="mb-[.8vh] uppercase tracking-[.12em]" style={{ color: '#94A3B8', fontSize: '.48vw', fontWeight: 700 }}>Demo target</div>
         <div className="mb-[2.4vh] rounded-[.48vw] border px-[.65vw] py-[.68vh]" style={{ borderColor: line, background: '#fff', fontSize: '.65vw', fontWeight: 600 }}>
-          All demo locations <span className="float-right" style={{ color: muted }}>⌄</span>
+          Mumbai Central <span className="float-right" style={{ color: muted }}>⌄</span>
+          <div className="mt-[.35vh]" style={{ color: muted, fontSize: '.52vw', fontWeight: 400 }}>7505 VA-7 · Falls Church, VA 22043</div>
         </div>
         <div className="flex flex-col gap-[.34vh]">
           {NAV.map(([item, glyph]) => (
@@ -126,7 +127,7 @@ export function AppShell({
         </div>
         <div className="mt-auto rounded-[.6vw] border p-[.75vw]" style={{ borderColor: '#E9E4F4', background: '#FAF8FF' }}>
           <div style={{ color: violet, fontSize: '.56vw', fontWeight: 700 }}>DEMO MODE</div>
-          <div className="mt-[.4vh]" style={{ color: '#475569', fontSize: '.58vw', lineHeight: 1.45 }}>Synthetic sample data. No live guest reviews.</div>
+          <div className="mt-[.4vh]" style={{ color: '#475569', fontSize: '.58vw', lineHeight: 1.45 }}>Fictional examples only. No venue reviews connected.</div>
         </div>
       </aside>
       <main className="flex min-w-0 flex-1 flex-col px-[1.65vw] py-[1.55vh]">
@@ -142,8 +143,8 @@ export function AppShell({
           </div>
         </header>
         <div className="mb-[1.25vh] flex items-center justify-between rounded-[.42vw] border px-[.7vw] py-[.58vh]" style={{ borderColor: '#E8E2F2', background: '#FBF9FF', fontSize: '.58vw' }}>
-          <span style={{ color: '#665783' }}>Illustrative demo · synthetic sample values</span>
-          <span style={{ color: muted }}>Last 7 sample days <span style={{ color: '#94A3B8' }}>⌄</span></span>
+          <span style={{ color: '#665783' }}>DEMO TARGET ONLY · Mumbai Central · No live data connected</span>
+          <span style={{ color: muted }}>No CSV or POS export supplied</span>
         </div>
         <div className="min-h-0 flex-1">{children}</div>
       </main>

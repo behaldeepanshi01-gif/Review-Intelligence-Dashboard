@@ -2,9 +2,9 @@ import { motion } from 'framer-motion';
 import { BrowserFrame, EASE, Stage, violet } from '../ShowcaseUI';
 
 const sections = [
-  { label: 'WHAT GUESTS NOTICED', text: 'Service-speed mentions appear more often in the latest sample.', delay: 1.3 },
-  { label: 'WHO GUESTS PRAISED', text: 'Maya Chen · Jonah Reed', delay: 3.0 },
-  { label: 'WHAT TO REVIEW', text: 'Discuss pacing during the next team huddle.', delay: 4.6 },
+  { label: 'EXAMPLE INPUTS', text: 'One fictional Spice + service-speed review; separate fictional staff-praise examples.', delay: 1.3 },
+  { label: 'WHAT THE SYSTEM CAN ORGANIZE', text: 'Themes · rising signals · staff mentions · reply drafts', delay: 3.0 },
+  { label: 'A POSSIBLE NEXT STEP', text: 'If a similar pattern appeared in real data, a manager could decide whether to discuss it with the team.', delay: 4.6 },
 ];
 
 export function Scene8() {
@@ -14,8 +14,8 @@ export function Scene8() {
         <div className="relative flex h-full flex-col overflow-hidden bg-white px-[5.3vw] py-[4.3vh]">
           <div className="absolute bottom-0 left-0 top-0 w-[.48vw]" style={{ background: violet }} />
           <div className="flex items-center justify-between">
-            <div className="uppercase tracking-[.16em]" style={{ color: violet, fontSize: '.65vw', fontWeight: 750 }}>REVIEW INTELLIGENCE · OWNER NOTE</div>
-            <div className="rounded-full border px-[.74vw] py-[.48vh]" style={{ borderColor: '#E8E2F2', background: '#FBF9FF', color: '#705A8E', fontSize: '.54vw' }}>ILLUSTRATIVE WEEKLY SUMMARY</div>
+            <div className="uppercase tracking-[.16em]" style={{ color: violet, fontSize: '.65vw', fontWeight: 750 }}>REVIEW INTELLIGENCE · MUMBAI CENTRAL DEMO</div>
+            <div className="rounded-full border px-[.74vw] py-[.48vh]" style={{ borderColor: '#E8E2F2', background: '#FBF9FF', color: '#705A8E', fontSize: '.54vw' }}>FICTIONAL INPUTS · ILLUSTRATIVE SUMMARY</div>
           </div>
           <motion.h1 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .2, duration: .6, ease: EASE }} className="mb-[1.15vh] mt-[2.3vh]" style={{ color: '#142035', fontFamily: "'Sora', sans-serif", fontSize: '3.35vw', fontWeight: 650, lineHeight: 1.06, letterSpacing: '-.075em' }}>
             A week, made clear.
@@ -30,8 +30,8 @@ export function Scene8() {
             ))}
           </div>
           <div className="mt-[1vh] flex items-center justify-between" style={{ color: '#8B95A4', fontSize: '.56vw' }}>
-            <span>Sample phrasing only · all names and inputs are synthetic</span>
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 6.5 }} style={{ color: violet, fontWeight: 600 }}>A useful next conversation.</motion.span>
+            <span>Not a finding about Mumbai Central · no actual reviews or POS data used</span>
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 6.5 }} style={{ color: violet, fontWeight: 600 }}>An example—not a conclusion.</motion.span>
           </div>
           <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: [0, 1, .04] }} transition={{ delay: 10.9, duration: 2.6, ease: EASE }} className="absolute left-0 top-0 h-full w-[.48vw] origin-left" style={{ background: violet }} />
         </div>

@@ -10,14 +10,14 @@ export function Scene5() {
   return (
     <Stage tone="paper">
       <BrowserFrame style={{ left: '10vw', top: '11vh', width: '80vw', height: '78vh' }}>
-        <AppShell title="Team signals" subtitle="Notice who guests are mentioning" active="Team">
+        <AppShell title="Team signals" subtitle="Mumbai Central · fictional recognition example" active="Team">
           <div className="grid h-full grid-cols-[.7fr_1.3fr] gap-[1vw]">
             <div className="flex flex-col justify-center pr-[1.2vw]">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mb-[1.4vh] uppercase tracking-[.13em]" style={{ color: violet, fontSize: '.61vw', fontWeight: 700 }}>STAFF PRAISE</motion.div>
-              <motion.h2 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.5, ease: EASE }} className="m-0" style={{ color: '#142035', fontFamily: "'Sora', sans-serif", fontSize: '2.2vw', lineHeight: 1.12, letterSpacing: '-.065em' }}>Names worth<br />noticing.</motion.h2>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mb-[1.4vh] uppercase tracking-[.13em]" style={{ color: violet, fontSize: '.61vw', fontWeight: 700 }}>FICTIONAL STAFF PRAISE</motion.div>
+              <motion.h2 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.5, ease: EASE }} className="m-0" style={{ color: '#142035', fontFamily: "'Sora', sans-serif", fontSize: '2.2vw', lineHeight: 1.12, letterSpacing: '-.065em' }}>Recognition,<br />as an example.</motion.h2>
               <motion.div initial={{ opacity: 0, scaleX: 0 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ delay: 0.9, duration: 0.5 }} className="mt-[1.5vh] h-[.32vh] w-[7vw] origin-left rounded-full" style={{ background: violet }} />
-              <p className="mt-[1.6vh] max-w-[19vw]" style={{ color: '#64748B', fontSize: '.78vw', lineHeight: 1.55 }}>A human signal for a team huddle, not just a star rating.</p>
-              <div className="mt-[1.5vh] rounded-full border px-[.7vw] py-[.55vh] self-start" style={{ borderColor: '#E9E1F4', color: '#705A8E', background: '#FCFAFF', fontSize: '.54vw' }}>Fictional names · synthetic feedback</div>
+              <p className="mt-[1.6vh] max-w-[19vw]" style={{ color: '#64748B', fontSize: '.78vw', lineHeight: 1.55 }}>A human signal to notice—only if it appears in real connected data.</p>
+              <div className="mt-[1.5vh] rounded-full border px-[.7vw] py-[.55vh] self-start" style={{ borderColor: '#E9E1F4', color: '#705A8E', background: '#FCFAFF', fontSize: '.54vw' }}>Invented names · not Mumbai Central staff</div>
             </div>
             <div className="flex flex-col justify-center gap-[1.25vh]">
               {PEOPLE.map((person, i) => (

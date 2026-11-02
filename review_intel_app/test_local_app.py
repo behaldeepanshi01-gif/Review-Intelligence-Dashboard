@@ -1,7 +1,7 @@
 """Browser-free Streamlit script checks using synthetic data only."""
 
 from pathlib import Path
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import unittest
 from unittest.mock import patch
 
@@ -16,6 +16,29 @@ APP = Path(__file__).with_name("app.py")
 
 
 class LocalAppTests(unittest.TestCase):
+    def setUp(self):
+        # Existing date-based fixtures and app evaluation share a fixed clock.
+        clock = patch.object(A, "restaurant_today", return_value=date.today())
+        clock.start()
+        self.addCleanup(clock.stop)
+
+    def test_timezone_setting_controls_action_calendar_and_rejects_invalid_names(self):
+        real_today = self._real_today
+        instant = datetime.fromisoformat("2026-01-02T00:00:00+00:00")
+        with patch.object(A, "restaurant_today",
+                          side_effect=lambda zone: real_today(zone, now=instant)):
+            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            self.assertFalse(app.exception)
+            self.assertTrue(any("Action calendar: 2026-01-01" in c.value for c in app.caption))
+            setting = next(t for t in app.text_input if t.label == "Restaurant timezone")
+            setting.set_value("Asia/Kolkata").run()
+            self.assertFalse(app.exception)
+            self.assertTrue(any("Action calendar: 2026-01-02" in c.value for c in app.caption))
+            setting.set_value("Invalid/Zone").run()
+            self.assertTrue(any("valid IANA timezone" in e.value for e in app.error))
+
+    _real_today = staticmethod(A.restaurant_today)
+
     def test_action_status_filter_preserves_scope_and_handles_empty_results(self):
         sample = E.load_reviews(APP.parent / "data" / "sample_reviews.csv")
         location = sample.iloc[0]["location"]

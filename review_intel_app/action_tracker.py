@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import json
 import os
 import uuid
@@ -10,6 +11,23 @@ import uuid
 
 MIN_FOLLOWUP_REVIEWS = 5
 STATUS_OPTIONS = ("Planned", "In progress", "Done")
+DEFAULT_RESTAURANT_TIMEZONE = "America/New_York"
+
+
+def restaurant_today(
+    timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
+    *, now: datetime | None = None,
+) -> date:
+    """Return the restaurant's calendar day; injected instants must be aware."""
+    try:
+        zone = ZoneInfo(timezone_name)
+    except (ZoneInfoNotFoundError, ValueError, TypeError) as exc:
+        raise ValueError("Enter a valid IANA timezone, such as America/New_York.") from exc
+    if now is None:
+        return datetime.now(zone).date()
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("The current instant must include a timezone.")
+    return now.astimezone(zone).date()
 
 # These are practical checks for a manager to consider, not claims about causes.
 ACTION_IDEAS = {
@@ -50,13 +68,16 @@ def parse_date(value, fallback: date | None = None) -> date | None:
     return fallback
 
 
-def is_overdue(action: dict, today: date | None = None) -> bool:
+def is_overdue(
+    action: dict, today: date | None = None,
+    *, timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
+) -> bool:
     """An unfinished plan is overdue only after its valid due date has passed."""
     due_date = parse_date(action.get("due_date"))
     return (
         action.get("status") != "Done"
         and due_date is not None
-        and due_date < (today if today is not None else date.today())
+        and due_date < (today if today is not None else restaurant_today(timezone_name))
     )
 
 
@@ -109,6 +130,8 @@ def create_action(
     start_date: date,
     due_date: date,
     alert_end_date: date,
+    *, today: date | None = None,
+    timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
 ) -> dict:
     """Create one manager-owned action using the warning as its baseline."""
     return {
@@ -122,7 +145,7 @@ def create_action(
         "status": "Planned",
         "start_date": start_date.isoformat(),
         "due_date": due_date.isoformat(),
-        "created_on": date.today().isoformat(),
+        "created_on": (today if today is not None else restaurant_today(timezone_name)).isoformat(),
         "alert_end_date": alert_end_date.isoformat(),
         "baseline_share": float(alert["recent_share"]),
         "baseline_mentions": int(alert["recent_mentions"]),
@@ -221,6 +244,7 @@ def weekly_action_summary(
     reviews: list[dict],
     today: date | None = None,
     *, legacy_tag: str | None = None,
+    timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
 ) -> list[str]:
     """Summarize active plans without including guest names or review text."""
     selected_locations = set(locations)
@@ -235,7 +259,7 @@ def weekly_action_summary(
     if not active_actions:
         return ["Manager actions: no active actions for the selected file and locations."]
 
-    today = today if today is not None else date.today()
+    today = today if today is not None else restaurant_today(timezone_name)
     lines = ["Manager actions:"]
     for action in active_actions:
         location = action.get("location", "Location")

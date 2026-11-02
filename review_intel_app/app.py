@@ -7,7 +7,7 @@ Run:  streamlit run app.py
 import io
 import json
 import os
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pandas as pd
 import plotly.express as px
@@ -49,6 +49,20 @@ CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")
 # ----------------------------------------------------------------------------
 st.sidebar.title("🍛 Review Intelligence")
 st.sidebar.caption("AI review assistant for multi-location restaurants")
+restaurant_timezone = st.sidebar.text_input(
+    "Restaurant timezone", value=A.DEFAULT_RESTAURANT_TIMEZONE,
+    help="IANA timezone used for action deadlines across selected locations. "
+         "For example: America/New_York or Asia/Kolkata. Applies to this session.",
+)
+try:
+    action_today = A.restaurant_today(restaurant_timezone.strip())
+except ValueError as ex:
+    st.sidebar.error(str(ex))
+    st.stop()
+st.sidebar.caption(
+    f"Action calendar: {action_today.isoformat()} · {restaurant_timezone.strip()}. "
+    "Plans become overdue the day after their due date. Refresh to update."
+)
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -449,9 +463,9 @@ with tabs[2]:
                     owner = st.text_input(
                         "Owner (optional)", key=f"action_owner_{key}")
                     start_date = st.date_input(
-                        "Action start date", value=date.today(), key=f"start_date_{key}")
+                        "Action start date", value=action_today, key=f"start_date_{key}")
                     due_date = st.date_input(
-                        "Due date", value=date.today() + timedelta(days=7),
+                        "Due date", value=action_today + timedelta(days=7),
                         key=f"due_date_{key}")
                     submitted = st.form_submit_button("Save action plan")
 
@@ -478,6 +492,7 @@ with tabs[2]:
                                 start_date=start_date,
                                 due_date=due_date,
                                 alert_end_date=view["date"].max().date(),
+                                today=action_today,
                             )
                             A.save_actions(ACTION_LOG, all_actions + [action])
                             st.toast("Action plan saved.")
@@ -598,6 +613,7 @@ with tabs[5]:
         dataset_tag=tag,
         locations=pick,
         reviews=tagged.to_dict("records"),
+        today=action_today,
         legacy_tag=legacy_tag,
     ))
     st.code("\n".join(lines), language=None)
@@ -625,7 +641,7 @@ with tabs[6]:
         key="action_status_filter",
     )
     if status_filter == "Overdue only":
-        visible_actions = [action for action in saved_actions if A.is_overdue(action)]
+        visible_actions = [action for action in saved_actions if A.is_overdue(action, action_today)]
     elif status_filter == "Completed plans":
         visible_actions = [action for action in saved_actions if action.get("status") == "Done"]
     else:
@@ -652,7 +668,7 @@ with tabs[6]:
                 f"Owner: {action.get('owner') or 'Not assigned'} | "
                 f"Due: {action.get('due_date', 'Not set')}"
             )
-            if A.is_overdue(action):
+            if A.is_overdue(action, action_today):
                 st.warning("Overdue — this active action is past its due date.")
 
             location_reviews = tagged[tagged["location"] == action.get("location")]
@@ -694,11 +710,11 @@ with tabs[6]:
                     key=f"update_status_{action_id}")
                 start_date = st.date_input(
                     "Action start date",
-                    value=A.parse_date(action.get("start_date"), date.today()),
+                    value=A.parse_date(action.get("start_date"), action_today),
                     key=f"update_start_{action_id}")
                 due_date = st.date_input(
                     "Due date",
-                    value=A.parse_date(action.get("due_date"), date.today()),
+                    value=A.parse_date(action.get("due_date"), action_today),
                     key=f"update_due_{action_id}")
                 submitted = st.form_submit_button("Save updates")
 

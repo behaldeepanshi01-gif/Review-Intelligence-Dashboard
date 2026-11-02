@@ -27,6 +27,19 @@ python -m streamlit run app.py
 
 It opens in your browser with 930 synthetic reviews across four sample locations.
 
+### Restaurant action calendar
+
+The sidebar's **Restaurant timezone** accepts an IANA timezone (for example,
+`America/New_York` or `Asia/Kolkata`). It defaults to `America/New_York` for the
+Falls Church restaurant and applies to all selected locations in the current
+session; it resets in a new session. Invalid names stop evaluation with an error.
+Action defaults, creation dates, overdue filters, warnings, and weekly summaries
+use that local calendar, independently of the hosting server's timezone.
+An unfinished action becomes overdue only on the day after its due date.
+Daylight-saving changes are handled by timezone rules, not fixed UTC offsets.
+Refresh or interact with the app after midnight to update the displayed day.
+Existing saved dates and baselines are not converted or rewritten.
+
 To regenerate the sample data:
 
 ```bash

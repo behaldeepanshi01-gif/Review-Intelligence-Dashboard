@@ -2,6 +2,8 @@
 data/uploads/
 data/*cache*.json
 data/action_log.json
+data/action_log.json.lock
+data/.actions-*.tmp
 data/manager_corrections.sqlite*
 action_tracker_update.zip
 backups/

@@ -53,3 +53,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local review dataset identities and retained snapshots
+/review_intel_app/data/uploads/

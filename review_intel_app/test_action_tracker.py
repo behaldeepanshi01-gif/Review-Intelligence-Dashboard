@@ -8,6 +8,7 @@ from action_tracker import (
     create_action,
     find_active_action,
     follow_up,
+    is_overdue,
     load_actions,
     save_actions,
     suggested_step,
@@ -17,6 +18,45 @@ from action_tracker import (
 
 
 class ActionTrackerTests(unittest.TestCase):
+    def test_overdue_status_and_date_boundaries(self):
+        today = date(2026, 1, 17)
+        for status in ("Planned", "In progress", "Done"):
+            for due, past in [
+                ("2026-01-16", True), (date(2026, 1, 16), True),
+                ("2026-01-17", False), ("2026-01-18", False),
+                (None, False), ("", False), ("invalid", False),
+            ]:
+                with self.subTest(status=status, due=due):
+                    self.assertEqual(
+                        is_overdue({"status": status, "due_date": due}, today),
+                        past and status != "Done",
+                    )
+
+    def test_summary_marks_only_scoped_overdue_active_actions(self):
+        base = {
+            "dataset_tag": "sample", "location": "A", "status": "Planned",
+            "due_date": "2026-01-16",
+        }
+        actions = [
+            dict(base, action_text="Past planned"),
+            dict(base, action_text="Past started", status="In progress"),
+            dict(base, action_text="Due today", due_date="2026-01-17"),
+            dict(base, action_text="Due later", due_date="2026-01-18"),
+            dict(base, action_text="No due date", due_date=None),
+            dict(base, action_text="Invalid due date", due_date="invalid"),
+            dict(base, action_text="Completed", status="Done"),
+            dict(base, action_text="Other file", dataset_tag="other"),
+            dict(base, action_text="Other location", location="B"),
+        ]
+        lines = weekly_action_summary(actions, "sample", ["A"], [], date(2026, 1, 17))
+        overdue = [line for line in lines if "OVERDUE" in line]
+        self.assertEqual(len(overdue), 2)
+        self.assertIn("Past planned", overdue[0])
+        self.assertIn("Past started", overdue[1])
+        text = "\n".join(lines)
+        for excluded in ("Completed", "Other file", "Other location"):
+            self.assertNotIn(excluded, text)
+
     def test_create_action_keeps_alert_baseline_and_scope(self):
         action = create_action(
             dataset_tag="sample",
@@ -224,13 +264,14 @@ class ActionTrackerTests(unittest.TestCase):
             for _ in range(5)
         ]
 
-        summary = weekly_action_summary(actions, "sample", ["A"], reviews)
+        summary = weekly_action_summary(actions, "sample", ["A"], reviews, date(2026, 1, 18))
         text = "\n".join(summary)
 
         self.assertIn("Review busy-period handoffs.", text)
         self.assertIn("Status: In progress", text)
         self.assertIn("Owner: Manager", text)
         self.assertIn("Due: 2026-01-17", text)
+        self.assertIn("OVERDUE", text)
         self.assertIn("5 newer reviews", text)
         self.assertIn("do not prove", text)
         self.assertNotIn("Guest Name", text)

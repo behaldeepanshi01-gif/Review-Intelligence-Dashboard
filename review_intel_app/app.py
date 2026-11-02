@@ -466,6 +466,8 @@ with tabs[6]:
                 f"Owner: {action.get('owner') or 'Not assigned'} | "
                 f"Due: {action.get('due_date', 'Not set')}"
             )
+            if A.is_overdue(action):
+                st.warning("Overdue — this active action is past its due date.")
 
             location_reviews = tagged[tagged["location"] == action.get("location")]
             result = A.follow_up(action, location_reviews.to_dict("records"))

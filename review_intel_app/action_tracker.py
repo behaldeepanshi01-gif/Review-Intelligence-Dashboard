@@ -50,6 +50,16 @@ def parse_date(value, fallback: date | None = None) -> date | None:
     return fallback
 
 
+def is_overdue(action: dict, today: date | None = None) -> bool:
+    """An unfinished plan is overdue only after its valid due date has passed."""
+    due_date = parse_date(action.get("due_date"))
+    return (
+        action.get("status") != "Done"
+        and due_date is not None
+        and due_date < (today if today is not None else date.today())
+    )
+
+
 def load_actions(path: str, data_tag: str | None = None) -> list[dict]:
     """Load saved actions. A broken action log is reported instead of hidden."""
     if not os.path.exists(path):
@@ -199,6 +209,7 @@ def weekly_action_summary(
     dataset_tag: str,
     locations: list[str],
     reviews: list[dict],
+    today: date | None = None,
 ) -> list[str]:
     """Summarize active plans without including guest names or review text."""
     selected_locations = set(locations)
@@ -213,6 +224,7 @@ def weekly_action_summary(
     if not active_actions:
         return ["Manager actions: no active actions for the selected file and locations."]
 
+    today = today if today is not None else date.today()
     lines = ["Manager actions:"]
     for action in active_actions:
         location = action.get("location", "Location")
@@ -221,8 +233,9 @@ def weekly_action_summary(
         owner = action.get("owner") or "Not assigned"
         status = action.get("status", "Planned")
         due_date = action.get("due_date") or "Not set"
+        overdue_label = "OVERDUE — " if is_overdue(action, today) else ""
         lines.append(
-            f"- {location}, {theme}: {action_text} "
+            f"- {overdue_label}{location}, {theme}: {action_text} "
             f"(Status: {status}; Owner: {owner}; Due: {due_date})"
         )
 

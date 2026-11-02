@@ -1,6 +1,7 @@
 """Synthetic-only checks of persistence, isolation, reports and the manager UI."""
 
 import copy
+from contextlib import closing
 from pathlib import Path
 import tempfile
 import unittest
@@ -123,6 +124,164 @@ class ManagerCorrectionTests(unittest.TestCase):
             pd.testing.assert_frame_equal(calculate(effective), calculate(expected))
         self.assertEqual(effective.iloc[0]["reply_draft"],
                          E.draft_reply_offline(effective.iloc[0].to_dict()))
+
+    def test_renewal_history_is_exact_scoped_and_never_applied_automatically(self):
+        self.assertEqual(C.load_prior_corrections(self.db, "current"), {})
+        C.save_correction(self.db, self.key, ["staff"], ["cleanliness"], "old-a")
+        C.save_correction(self.db, self.key, [], [], "old-b")
+        history = C.load_prior_corrections(self.db, E.LOCAL_ANALYZER_VERSION)
+        self.assertEqual([d["rules_version"] for d in history[self.key]],
+                         ["old-b", "old-a"])
+        self.assertEqual(self.effective().iloc[0]["tag_source"], "local_rules")
+        queue = C.renewal_queue(self.raw, self.file, {}, history)
+        self.assertEqual(set(queue), {self.key})
+        self.assertEqual(C.renewal_queue(self.raw, self.file.with_name("other.csv"),
+                                        {}, history), {})
+        for field, value in dict(review_id="changed", text="Changed text", rating=1,
+                                 reviewer="Other", location="Other",
+                                 date=pd.Timestamp("2026-11-01")).items():
+            with self.subTest(field=field):
+                changed = self.raw.copy()
+                changed.at[0, field] = value
+                self.assertEqual(C.renewal_queue(changed, self.file, {}, history), {})
+                with self.assertRaises(ValueError):
+                    C.approve_prior_correction(
+                        self.db, self.file, changed.iloc[0], history[self.key][0],
+                        E.LOCAL_ANALYZER_VERSION)
+        # A manager may select an older historical decision rather than the latest.
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
+                                   history[self.key][1], E.LOCAL_ANALYZER_VERSION)
+        current = C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)
+        self.assertEqual(C.renewal_queue(self.raw, self.file, current, history), {})
+        self.assertEqual(self.effective().iloc[0]["themes_neg"], ["cleanliness"])
+        self.assertEqual(C.load_prior_corrections(self.db, E.LOCAL_ANALYZER_VERSION),
+                         history)
+        with self.assertRaises(ValueError):
+            C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
+                                       history[self.key][0], E.LOCAL_ANALYZER_VERSION)
+        C.undo_correction(self.db, self.key, E.LOCAL_ANALYZER_VERSION)
+        self.assertEqual(set(C.renewal_queue(self.raw, self.file, {}, history)), {self.key})
+        # Empty historical tags are still an explicit, valid approval.
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
+                                   history[self.key][0], E.LOCAL_ANALYZER_VERSION)
+        self.assertFalse(self.effective().iloc[0]["needs_review"])
+        self.assertEqual(self.effective().iloc[0]["themes_neg"], [])
+
+    def test_stale_history_cannot_be_approved(self):
+        C.save_correction(self.db, self.key, [], ["staff"], "old")
+        earlier = C.load_prior_corrections(self.db, E.LOCAL_ANALYZER_VERSION)[self.key][0]
+        C.save_correction(self.db, self.key, [], ["cleanliness"], "old")
+        with self.assertRaisesRegex(ValueError, "changed"):
+            C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], earlier,
+                                       E.LOCAL_ANALYZER_VERSION)
+        C.undo_correction(self.db, self.key, "old")
+        with self.assertRaisesRegex(ValueError, "changed"):
+            C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], earlier,
+                                       E.LOCAL_ANALYZER_VERSION)
+        self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION), {})
+
+    def test_obsolete_history_is_visible_but_cannot_be_reapproved(self):
+        C.save_correction(self.db, self.key, [], ["staff"], "old")
+        # Simulate a theme that was valid when the old rules were active.
+        with closing(C.sqlite3.connect(self.db)) as db, db:
+            db.execute("UPDATE corrections SET negative=?", ('["retired_theme"]',))
+        prior = C.load_prior_corrections(self.db, E.LOCAL_ANALYZER_VERSION)
+        self.assertEqual(prior[self.key][0]["themes_neg"], ["retired_theme"])
+        self.assertEqual(self.effective().iloc[0]["tag_source"], "local_rules")
+        with self.assertRaisesRegex(ValueError, "unsupported"):
+            C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
+                                       prior[self.key][0], E.LOCAL_ANALYZER_VERSION)
+        self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION), {})
+
+    def test_streamlit_obsolete_history_never_blocks_reports_or_valid_corrections(self):
+        source = APP.read_text().replace(
+            'BASE_DIR = os.path.dirname(os.path.abspath(__file__))',
+            f"BASE_DIR = {str(APP.parent)!r}").replace(
+            'CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")',
+            f"CORRECTIONS_LOG = {self.db!r}").replace(
+            'UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")',
+            f"UPLOAD_DIR = {str(Path(self.temp.name) / 'uploads')!r}")
+        sample = APP.parent / "data" / "sample_reviews.csv"
+        key = C.review_key(sample, self.raw.iloc[1])
+        other_key = C.review_key(self.file.with_name("unrelated.csv"), self.raw.iloc[0])
+        for stored_key in (key, other_key):
+            C.save_correction(self.db, stored_key, [], ["staff"], "old")
+        with closing(C.sqlite3.connect(self.db)) as db, db:
+            db.execute("UPDATE corrections SET negative=?", ('["retired_theme"]',))
+        with patch.object(E, "load_reviews", return_value=self.raw):
+            app = AppTest.from_string(source, default_timeout=30).run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertEqual(len(app.error), 0)
+            self.assertTrue(app.tabs)
+            self.assertTrue(any("Decisions needing renewed approval (1)" == h.value
+                                for h in app.subheader))
+            self.assertTrue(any("retired_theme" in w.value for w in app.warning))
+            self.assertTrue(next(b for b in app.button
+                                 if b.label == "Approve earlier tags for current rules").disabled)
+            next(w for w in app.multiselect
+                 if w.label == "Confirmed complaint themes").set_value(["cleanliness"])
+            next(b for b in app.button if b.label == "Save manager decision").click().run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertEqual(len(app.error), 0)
+            self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)[key][
+                "themes_neg"], ["cleanliness"])
+            # Only unrelated obsolete history remains; reports still load.
+            app = AppTest.from_string(source, default_timeout=30).run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertEqual(len(app.error), 0)
+            self.assertTrue(any("Decisions needing renewed approval (0)" == h.value
+                                for h in app.subheader))
+
+    def test_streamlit_renewal_compare_approve_reload_and_filter(self):
+        source = APP.read_text().replace(
+            'BASE_DIR = os.path.dirname(os.path.abspath(__file__))',
+            f"BASE_DIR = {str(APP.parent)!r}").replace(
+            'CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")',
+            f"CORRECTIONS_LOG = {self.db!r}").replace(
+            'UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")',
+            f"UPLOAD_DIR = {str(Path(self.temp.name) / 'uploads')!r}")
+        # Built-in sample identity, but only synthetic in-memory reviews are loaded.
+        sample = APP.parent / "data" / "sample_reviews.csv"
+        key = C.review_key(sample, self.raw.iloc[1])
+        C.save_correction(self.db, key, ["staff"], ["cleanliness"], "old-rules")
+        changed = self.raw.iloc[0].copy()
+        changed["text"] = "No longer the same review."
+        C.save_correction(self.db, C.review_key(sample, changed), [], ["staff"], "old-rules")
+        with patch.object(E, "load_reviews", return_value=self.raw):
+            app = AppTest.from_string(source, default_timeout=30).run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertTrue(any("1 unchanged reviews need renewed" in w.value
+                                for w in app.warning))
+            self.assertTrue(any("Decisions needing renewed approval (1)" == h.value
+                                for h in app.subheader))
+            # Read-only reruns never create a current-version decision.
+            app.run()
+            self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION), {})
+            displayed = [j.value for j in app.json]
+            self.assertTrue(any('"cleanliness"' in j and '"staff"' in j for j in displayed))
+            self.assertTrue(any('"service_speed"' in j for j in displayed))
+            # Narrow the date range to exclude the pending review.
+            next(w for w in app.slider if w.label == "Date range").set_range(
+                self.raw.iloc[0]["date"].date(), self.raw.iloc[0]["date"].date()).run()
+            self.assertTrue(any("Decisions needing renewed approval (0)" == h.value
+                                for h in app.subheader))
+            self.assertFalse(any(b.label == "Approve earlier tags for current rules"
+                                 for b in app.button))
+            # A new session recovers the queue from disk and can explicitly approve.
+            app = AppTest.from_string(source, default_timeout=30).run()
+            next(b for b in app.button
+                 if b.label == "Approve earlier tags for current rules").click().run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertTrue(any("Decisions needing renewed approval (0)" == h.value
+                                for h in app.subheader))
+            self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)[
+                key]["themes_neg"], ["cleanliness"])
+            self.assertTrue(any("Current source: manager" in c.value for c in app.caption))
+            app = AppTest.from_string(source, default_timeout=30).run()
+            self.assertFalse(any(b.label == "Approve earlier tags for current rules"
+                                 for b in app.button))
+            self.assertEqual(len(C.load_prior_corrections(
+                self.db, E.LOCAL_ANALYZER_VERSION)[key]), 1)
 
     def test_streamlit_save_reload_edit_and_undo(self):
         source = APP.read_text().replace(

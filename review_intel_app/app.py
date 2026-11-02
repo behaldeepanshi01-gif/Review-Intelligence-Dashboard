@@ -194,9 +194,20 @@ if is_local:
     try:
         corrections = C.load_corrections(CORRECTIONS_LOG, E.LOCAL_ANALYZER_VERSION)
         tagged = C.apply_corrections(raw, tagged, dataset["correction_path"], corrections)
+        prior_decisions = C.load_prior_corrections(
+            CORRECTIONS_LOG, E.LOCAL_ANALYZER_VERSION)
+        renewals = C.renewal_queue(raw, dataset["correction_path"],
+                                  corrections, prior_decisions)
     except (OSError, ValueError, C.sqlite3.Error) as ex:
         st.error(f"Couldn't load manager corrections. Reports were stopped: {ex}")
         st.stop()
+
+    if renewals:
+        st.warning(
+            f"{len(renewals)} unchanged reviews need renewed manager approval after "
+            "a rules change. Earlier decisions are not applied to reports. "
+            "Review them in What guests say → Decisions needing renewed approval."
+        )
 
 
 def show_rule_evidence(row):
@@ -376,6 +387,80 @@ with tabs[1]:
                 st.text(item["excerpt"])
 
     if is_local:
+        pending = view[view["correction_key"].isin(renewals)].drop_duplicates(
+            "correction_key").sort_values("date", ascending=False)
+        st.subheader(f"Decisions needing renewed approval ({len(pending)})")
+        st.caption(
+            f"{len(renewals)} unchanged reviews in this dataset; "
+            f"{len(pending)} match the location and date filters. "
+            "Changed reviews are excluded. Earlier tags remain history only until "
+            "you explicitly approve them for the current rules version."
+        )
+        if not pending.empty:
+            renewal_key = st.selectbox(
+                "Review needing renewed approval", pending["correction_key"].tolist(),
+                format_func=lambda key: (
+                    f"{pending.loc[pending['correction_key'] == key, 'review_id'].iloc[0]} | "
+                    f"{pending.loc[pending['correction_key'] == key, 'location'].iloc[0]}"),
+            )
+            renewal = pending.loc[pending["correction_key"] == renewal_key].iloc[0]
+            st.text(renewal["text"])
+            st.caption(f"{renewal['location']} | {renewal['date'].date()} | "
+                       f"{renewal['rating']} stars")
+            history = renewals[renewal_key]
+            history_index = st.selectbox(
+                "Earlier manager decision", list(range(len(history))),
+                key=f"renewal-history-{renewal_key}",
+                format_func=lambda i: (
+                    f"{history[i]['rules_version']} | saved {history[i]['saved_at']}"),
+            )
+            earlier = history[history_index]
+            obsolete = sorted(
+                (set(earlier["themes_pos"]) | set(earlier["themes_neg"])) - set(E.THEMES))
+            old_column, rule_column = st.columns(2)
+            with old_column:
+                st.write("Earlier manager tags — not currently applied")
+                st.caption(f"Rules: {earlier['rules_version']} | "
+                           f"Saved: {earlier['saved_at']}")
+                st.json({k: earlier[k] for k in ("themes_pos", "themes_neg")})
+            with rule_column:
+                st.write("Current rule output")
+                st.caption(f"Rules: {E.LOCAL_ANALYZER_VERSION}")
+                st.json(renewal["rule_output"])
+                st.write("Current rule evidence")
+                st.json(renewal["tag_evidence"])
+            if obsolete:
+                st.warning(
+                    "These earlier tags are no longer supported by the current rules: "
+                    + ", ".join(obsolete)
+                    + ". Direct reapproval is disabled. Select this review under "
+                    "'Approve or correct review tags' below and save supported current "
+                    "tags (or confirm no supported theme)."
+                )
+            st.caption(
+                "Approval applies these earlier tags to current reports and unapproved "
+                "reply drafts. Saved action baselines and approved replies are not "
+                "rewritten; check them separately. To use different tags, use "
+                "'Approve or correct review tags' below."
+            )
+            if st.button("Approve earlier tags for current rules",
+                         key=f"renew-{renewal_key}-{earlier['saved_at']}",
+                         disabled=bool(obsolete)):
+                # Use the source row, not the derived rule/effective fields.
+                source_row = next(
+                    row for row in raw.to_dict("records")
+                    if C.review_key(dataset["correction_path"], row) == renewal_key)
+                try:
+                    C.approve_prior_correction(
+                        CORRECTIONS_LOG, dataset["correction_path"], source_row,
+                        earlier, E.LOCAL_ANALYZER_VERSION)
+                except (OSError, ValueError, C.sqlite3.Error) as ex:
+                    st.error(f"Couldn't renew the manager decision: {ex}")
+                else:
+                    st.rerun()
+        else:
+            st.info("No decisions need renewed approval in the current filters.")
+
         st.subheader("Approve or correct review tags")
         st.caption(
             "Select any review, including an unclear or previously corrected result. "

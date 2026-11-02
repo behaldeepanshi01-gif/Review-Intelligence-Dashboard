@@ -37,9 +37,9 @@ def _connect(path):
     return db
 
 
-def _validate(positive, negative):
+def _validate(positive, negative, *, allow_obsolete=False):
     if (not isinstance(positive, list) or not isinstance(negative, list)
-            or any(not isinstance(t, str) or t not in E.THEMES
+            or any(not isinstance(t, str) or (not allow_obsolete and t not in E.THEMES)
                    for t in positive + negative)):
         raise ValueError("Correction contains unsupported theme tags.")
     return sorted(set(positive)), sorted(set(negative))
@@ -81,6 +81,68 @@ def load_corrections(path, version):
             result[key] = dict(themes_pos=positive, themes_neg=negative,
                                rules_version=version, saved_at=saved_at)
         return result
+    finally:
+        db.close()
+
+
+def load_prior_corrections(path, version):
+    """History only, newest saved first; never use this mapping as effective tags."""
+    if not Path(path).exists():
+        return {}
+    db = _connect(path)
+    try:
+        rows = db.execute(
+            "SELECT review_key, rules_version, positive, negative, saved_at "
+            "FROM corrections WHERE rules_version != ? "
+            "ORDER BY saved_at DESC, rules_version DESC", (version,)).fetchall()
+        result = {}
+        for key, prior_version, positive, negative, saved_at in rows:
+            # Retired themes are valid history, not valid current decisions.
+            positive, negative = _validate(json.loads(positive), json.loads(negative),
+                                           allow_obsolete=True)
+            result.setdefault(key, []).append(dict(
+                themes_pos=positive, themes_neg=negative,
+                rules_version=prior_version, saved_at=saved_at))
+        return result
+    finally:
+        db.close()
+
+
+def renewal_queue(raw, file_path, current, prior):
+    """Only exact source matches without an existing current-version decision."""
+    keys = dict.fromkeys(review_key(file_path, row) for row in raw.to_dict("records"))
+    return {key: prior[key] for key in keys if key in prior and key not in current}
+
+
+def approve_prior_correction(path, file_path, row, decision, version):
+    """Explicitly approve one displayed historical decision for this exact review.
+
+    Re-read history inside the write transaction so a stale screen cannot approve
+    an edited/deleted decision or overwrite a current decision.
+    """
+    if decision["rules_version"] == version:
+        raise ValueError("Choose a decision from an earlier rules version.")
+    key = review_key(file_path, row)
+    positive, negative = _validate(decision["themes_pos"], decision["themes_neg"])
+    db = _connect(path)
+    try:
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            saved = db.execute(
+                "SELECT positive, negative, saved_at FROM corrections "
+                "WHERE review_key=? AND rules_version=?",
+                (key, decision["rules_version"])).fetchone()
+            if (saved is None or json.loads(saved[0]) != positive
+                    or json.loads(saved[1]) != negative
+                    or saved[2] != decision["saved_at"]):
+                raise ValueError("The earlier decision changed. Refresh and review it again.")
+            if db.execute(
+                    "SELECT 1 FROM corrections WHERE review_key=? AND rules_version=?",
+                    (key, version)).fetchone():
+                raise ValueError("This review already has a current decision. Refresh to see it.")
+            db.execute("INSERT INTO corrections VALUES (?, ?, ?, ?, ?)",
+                       (key, version, json.dumps(positive), json.dumps(negative),
+                        datetime.now(timezone.utc).isoformat()))
     finally:
         db.close()
 

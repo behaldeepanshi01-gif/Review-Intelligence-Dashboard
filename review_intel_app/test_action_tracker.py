@@ -11,6 +11,7 @@ from action_tracker import (
     load_actions,
     save_actions,
     suggested_step,
+    weekly_action_summary,
 )
 
 
@@ -116,6 +117,87 @@ class ActionTrackerTests(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 load_actions(path)
+
+    def test_weekly_summary_filters_scope_and_hides_review_content(self):
+        actions = [
+            {
+                "dataset_tag": "sample",
+                "location": "A",
+                "theme": "Service speed",
+                "theme_key": "service_speed",
+                "action_text": "Review busy-period handoffs.",
+                "owner": "Manager",
+                "status": "In progress",
+                "start_date": "2026-01-10",
+                "due_date": "2026-01-17",
+                "created_on": "2026-01-10",
+                "baseline_share": 40,
+            },
+            {
+                "dataset_tag": "other",
+                "location": "A",
+                "theme": "Price",
+                "status": "Planned",
+            },
+            {
+                "dataset_tag": "sample",
+                "location": "B",
+                "theme": "Cleanliness",
+                "status": "Planned",
+            },
+            {
+                "dataset_tag": "sample",
+                "location": "A",
+                "theme": "Food",
+                "status": "Done",
+            },
+        ]
+        reviews = [
+            {
+                "location": "A",
+                "date": date(2026, 1, 11),
+                "themes_neg": ["service_speed"],
+                "reviewer": "Guest Name",
+                "text": "Raw guest review that must not appear.",
+            }
+            for _ in range(5)
+        ]
+
+        summary = weekly_action_summary(actions, "sample", ["A"], reviews)
+        text = "\n".join(summary)
+
+        self.assertIn("Review busy-period handoffs.", text)
+        self.assertIn("Status: In progress", text)
+        self.assertIn("Owner: Manager", text)
+        self.assertIn("Due: 2026-01-17", text)
+        self.assertIn("5 newer reviews", text)
+        self.assertIn("do not prove", text)
+        self.assertNotIn("Guest Name", text)
+        self.assertNotIn("Raw guest review", text)
+        self.assertNotIn("Cleanliness", text)
+        self.assertNotIn("Price", text)
+        self.assertNotIn("Done", text)
+
+    def test_weekly_summary_omits_follow_up_until_five_reviews(self):
+        action = {
+            "dataset_tag": "sample",
+            "location": "A",
+            "theme": "Service speed",
+            "theme_key": "service_speed",
+            "action_text": "Check handoffs.",
+            "status": "In progress",
+            "start_date": "2026-01-10",
+            "baseline_share": 40,
+        }
+        reviews = [
+            {"location": "A", "date": date(2026, 1, 11), "themes_neg": []}
+            for _ in range(4)
+        ]
+
+        summary = weekly_action_summary([action], "sample", ["A"], reviews)
+
+        self.assertTrue(any("Check handoffs." in line for line in summary))
+        self.assertFalse(any("Follow-up:" in line for line in summary))
 
 
 if __name__ == "__main__":

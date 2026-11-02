@@ -3,8 +3,9 @@ Review Intelligence action tracker update
 This update is based on the source ZIP uploaded to Replit.
 
 Files in the update bundle:
-- app.py: updated dashboard, including action planning and the Action tracker tab.
-- action_tracker.py: local action-log and follow-up helpers.
+- app.py: updated dashboard, including action planning, the Action tracker tab,
+  and manager actions in the weekly owner summary.
+- action_tracker.py: local action-log, follow-up, and summary helpers.
 - test_action_tracker.py: quick standard-library tests.
 - app.py.bak: original app.py from the uploaded ZIP for reference.
 - gitignore_additions.txt: one optional privacy rule to append to your existing .gitignore.

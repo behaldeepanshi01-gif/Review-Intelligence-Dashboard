@@ -430,6 +430,12 @@ with tabs[5]:
         lines.append(f"Most praised staff: {top['staff']} at {top['location']} "
                      f"({int(top['mentions'])} mentions).")
     lines.append(f"High-urgency reviews still needing a reply: {len(high_open)}.")
+    lines.extend(A.weekly_action_summary(
+        all_actions,
+        dataset_tag=tag,
+        locations=pick,
+        reviews=tagged.to_dict("records"),
+    ))
     st.code("\n".join(lines), language=None)
 
 # ----------------------------------------------------------------------------

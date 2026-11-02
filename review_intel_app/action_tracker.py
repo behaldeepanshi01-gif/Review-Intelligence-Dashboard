@@ -164,3 +164,49 @@ def follow_up(action: dict, reviews: list[dict]) -> dict:
         "change_points": change,
         "direction": direction,
     }
+
+
+def weekly_action_summary(
+    actions: list[dict],
+    dataset_tag: str,
+    locations: list[str],
+    reviews: list[dict],
+) -> list[str]:
+    """Summarize active plans without including guest names or review text."""
+    selected_locations = set(locations)
+    active_actions = [
+        row for row in actions
+        if row.get("dataset_tag") == dataset_tag
+        and row.get("location") in selected_locations
+        and row.get("status") != "Done"
+    ]
+    active_actions.sort(key=lambda row: row.get("created_on", ""), reverse=True)
+
+    if not active_actions:
+        return ["Manager actions: no active actions for the selected file and locations."]
+
+    lines = ["Manager actions:"]
+    for action in active_actions:
+        location = action.get("location", "Location")
+        theme = action.get("theme", "Theme")
+        action_text = action.get("action_text", "Action not described")
+        owner = action.get("owner") or "Not assigned"
+        status = action.get("status", "Planned")
+        due_date = action.get("due_date") or "Not set"
+        lines.append(
+            f"- {location}, {theme}: {action_text} "
+            f"(Status: {status}; Owner: {owner}; Due: {due_date})"
+        )
+
+        result = follow_up(action, reviews)
+        if result["ready"]:
+            lines.append(
+                f"  Follow-up: {result['mentions']} of {result['review_count']} "
+                f"newer reviews mention this theme ({result['share']}%), compared "
+                f"with {result['baseline_share']}% in the alert period. "
+                f"{abs(result['change_points']):.1f} percentage points "
+                f"{result['direction']}."
+            )
+
+    lines.append("Review trends do not prove an action caused a change.")
+    return lines

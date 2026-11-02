@@ -156,9 +156,24 @@ before linking them. A legacy history can be linked to only one dataset, includi
 the built-in sample. Old basename collisions cannot be disambiguated from the
 old log alone; do not link a mixed history without checking it.
 
+To fix a mistaken link, select its current dataset and open **Correct linked
+action history** in the sidebar. Inspect the full legacy actions and dataset
+identities, choose **Unlink only** or **Reassign to another dataset**, and check
+the confirmation before saving. Cancel makes no changes. Reassignment requires
+a destination without an existing history link; it never replaces another
+history. Unlinked histories remain available under **Recover older action
+history**. Original action records, baselines, evidence, dates, and statuses are
+not rewritten, and actions created with a dataset ID stay with that dataset.
+Concurrent link changes reject stale confirmations instead of overwriting
+another manager's choice. These guarantees require a shared local registry.
+
 Keep `data/uploads/datasets.sqlite`, the upload files and snapshots, and
 `data/action_log.json` together when backing up or moving local state. The registry
 stores the stable identities and explicit legacy-history links.
+
+Synthetic correction checks (including manager controls, cancellation, recovery,
+restart, and concurrent claims) run from the project root with:
+`python -m unittest discover -s review_intel_app -p 'test_dataset_history.py' -v`.
 
 ### Concurrent manager action saves
 

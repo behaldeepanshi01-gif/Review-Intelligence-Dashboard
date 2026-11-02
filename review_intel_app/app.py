@@ -18,6 +18,7 @@ import action_tracker as A
 import engine as E
 import manager_corrections as C
 import dataset_store as D
+from legacy_history_ui import show_history_controls
 
 st.set_page_config(page_title="Review Intelligence", page_icon="🍛", layout="wide")
 
@@ -269,27 +270,7 @@ except (OSError, ValueError) as ex:
     st.error(f"Couldn't read the action log: {ex}")
     st.stop()
 
-unclaimed = datasets.unclaimed_legacy_tags(all_actions)
-if unclaimed and legacy_tag is None:
-    with st.sidebar.expander("Recover older action history"):
-        st.caption("Older actions were saved by filename and may belong to another "
-                   "dataset. Nothing has been deleted. Link only after checking "
-                   "the history; each history can belong to just one dataset.")
-        old_tag = st.selectbox("Older history", unclaimed)
-        older_actions = [
-            row for row in all_actions if row.get("dataset_tag") == old_tag
-        ]
-        st.json(older_actions)
-        confirmed = st.checkbox(
-            "I confirm this older history belongs to the current dataset",
-            key=f"confirm_history_{tag}_{old_tag}",
-        )
-        if st.button("Link older history", disabled=not confirmed):
-            try:
-                datasets.claim_legacy_history(tag, old_tag, all_actions)
-                st.rerun()
-            except (ValueError, D.sqlite3.Error) as ex:
-                st.error(f"Couldn't link that history: {ex}")
+show_history_controls(datasets, dataset, all_actions)
 
 k1, k2, k3, k4 = st.columns(4)
 for col, val, label in [

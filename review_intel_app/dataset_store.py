@@ -26,6 +26,12 @@ class DatasetStore:
                 row["name"] for row in db.execute("PRAGMA table_info(datasets)")
             }:
                 db.execute("ALTER TABLE datasets ADD COLUMN correction_path TEXT")
+            if "history_revision" not in {
+                row["name"] for row in db.execute("PRAGMA table_info(datasets)")
+            }:
+                db.execute(
+                    "ALTER TABLE datasets ADD COLUMN history_revision INTEGER NOT NULL DEFAULT 0"
+                )
             db.execute("UPDATE datasets SET correction_path = path WHERE correction_path IS NULL")
             db.execute("""
                 CREATE TABLE IF NOT EXISTS imported_files (
@@ -33,7 +39,8 @@ class DatasetStore:
                 )
             """)
             db.execute(
-                "INSERT OR IGNORE INTO datasets VALUES (?, ?, ?, NULL, ?)",
+                "INSERT OR IGNORE INTO datasets "
+                "(dataset_id, label, path, legacy_tag, correction_path) VALUES (?, ?, ?, NULL, ?)",
                 (SAMPLE_ID, "Sample data (synthetic)",
                  str(Path(sample).resolve()), str(Path(sample).resolve())),
             )
@@ -46,7 +53,8 @@ class DatasetStore:
                 ).fetchone():
                     continue
                 db.execute(
-                    "INSERT OR IGNORE INTO datasets VALUES (?, ?, ?, NULL, ?)",
+                    "INSERT OR IGNORE INTO datasets "
+                    "(dataset_id, label, path, legacy_tag, correction_path) VALUES (?, ?, ?, NULL, ?)",
                     ("upload:" + uuid.uuid4().hex, path.name,
                      str(path.resolve()), str(path.resolve())),
                 )
@@ -103,7 +111,8 @@ class DatasetStore:
                     )
                 else:
                     db.execute(
-                        "INSERT INTO datasets VALUES (?, ?, ?, NULL, ?)",
+                        "INSERT INTO datasets "
+                        "(dataset_id, label, path, legacy_tag, correction_path) VALUES (?, ?, ?, NULL, ?)",
                         (dataset_id, Path(name).name, str(path), str(path)),
                     )
         except Exception:
@@ -123,16 +132,72 @@ class DatasetStore:
             and row["dataset_tag"] not in claimed
         })
 
-    def claim_legacy_history(self, dataset_id, legacy_tag, actions):
+    def claim_legacy_history(self, dataset_id, legacy_tag, actions, *, expected_revision=None):
         """Link an old filename-scoped history once, without rewriting its log."""
-        if legacy_tag not in self.unclaimed_legacy_tags(actions):
+        if (not isinstance(legacy_tag, str)
+                or legacy_tag.startswith(("upload:", "builtin:"))
+                or not any(row.get("dataset_tag") == legacy_tag for row in actions)):
             raise ValueError("That legacy history is unavailable or already linked.")
         with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            if db.execute(
+                "SELECT 1 FROM datasets WHERE legacy_tag = ?", (legacy_tag,)
+            ).fetchone():
+                raise ValueError("That legacy history is unavailable or already linked.")
+            current = db.execute(
+                "SELECT * FROM datasets WHERE dataset_id = ?", (dataset_id,)
+            ).fetchone()
+            if current is None or (
+                expected_revision is not None
+                and current["history_revision"] != expected_revision
+            ):
+                raise ValueError("The dataset history link changed. Refresh and review it again.")
             result = db.execute(
-                "UPDATE datasets SET legacy_tag = ? "
+                "UPDATE datasets SET legacy_tag = ?, history_revision = history_revision + 1 "
                 "WHERE dataset_id = ? AND legacy_tag IS NULL",
                 (legacy_tag, dataset_id),
             )
             if result.rowcount != 1:
                 raise ValueError("This dataset already has a linked history.")
         return self.get(dataset_id)
+
+    def correct_legacy_history(
+        self, source_id, legacy_tag, *, expected_source_revision,
+        target_id=None, expected_target_revision=None,
+    ):
+        """Atomically detach or transfer only the association, never action records.
+
+        Revisions reject stale confirmations even if a link was removed and then
+        restored to the same dataset while the manager's screen was open.
+        """
+        if target_id == source_id:
+            raise ValueError("Choose a different destination dataset.")
+        with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            source = db.execute(
+                "SELECT * FROM datasets WHERE dataset_id = ?", (source_id,)
+            ).fetchone()
+            if (source is None or legacy_tag is None
+                    or source["legacy_tag"] != legacy_tag
+                    or source["history_revision"] != expected_source_revision):
+                raise ValueError("The source history link changed. Refresh and review it again.")
+            if target_id is not None:
+                target = db.execute(
+                    "SELECT * FROM datasets WHERE dataset_id = ?", (target_id,)
+                ).fetchone()
+                if (target is None or target["legacy_tag"] is not None
+                        or expected_target_revision is None
+                        or target["history_revision"] != expected_target_revision):
+                    raise ValueError(
+                        "The destination history link changed or is already occupied. "
+                        "Refresh and review it again."
+                    )
+            db.execute(
+                "UPDATE datasets SET legacy_tag = NULL, history_revision = history_revision + 1 "
+                "WHERE dataset_id = ?", (source_id,),
+            )
+            if target_id is not None:
+                db.execute(
+                    "UPDATE datasets SET legacy_tag = ?, history_revision = history_revision + 1 "
+                    "WHERE dataset_id = ?", (legacy_tag, target_id),
+                )

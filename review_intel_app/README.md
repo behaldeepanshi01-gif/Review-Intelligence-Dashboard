@@ -160,6 +160,26 @@ Keep `data/uploads/datasets.sqlite`, the upload files and snapshots, and
 `data/action_log.json` together when backing up or moving local state. The registry
 stores the stable identities and explicit legacy-history links.
 
+### Concurrent manager action saves
+
+Action saves lock `data/action_log.json.lock`, read the latest log, and atomically
+replace the JSON only after applying the requested create or edit. Different
+actions and datasets are preserved, including legacy fields and saved baselines.
+Two managers cannot create active plans for the same dataset, location and theme.
+If another manager edits the same action while your form is open, your stale save
+is rejected. **Reload latest action** discards the draft and opens the saved
+version; review it before editing again.
+
+The JSON format is unchanged; no migration is needed. Keep the stable lock file
+in place while the app is running. This protects processes sharing the same local
+filesystem, not separate machines or independent deployment filesystems.
+Bulk replacement through `save_actions` requires an explicit `expected_actions`
+snapshot for an existing log; normal app saves use per-action operations.
+
+Synthetic concurrency checks use temporary logs and separate threads/processes:
+`python -m unittest discover -s review_intel_app -p 'test_action_concurrency.py' -v`
+from the project root.
+
 Common alternatives are renamed automatically (`stars` to rating, `review` to text,
 `name` to reviewer). The Yelp filter script output works too after adding a `location` column.
 

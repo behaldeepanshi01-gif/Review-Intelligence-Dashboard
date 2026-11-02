@@ -68,7 +68,7 @@ class LocalAppTests(unittest.TestCase):
             def shown():
                 self.assertEqual(list(app.exception), [])
                 return {
-                    item.key.removeprefix("update_text_")
+                    item.key.removeprefix("update_text_").rsplit("_", 1)[0]
                     for item in app.text_area if item.key and item.key.startswith("update_text_")
                 }
 

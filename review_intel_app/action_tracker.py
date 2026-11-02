@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from contextlib import contextmanager
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+import fcntl
 import json
 import os
+import tempfile
 import uuid
 
 
@@ -109,16 +112,94 @@ def load_actions(
     return [row for row in actions if matches_dataset(row, data_tag, legacy_tag)]
 
 
-def save_actions(path: str, actions: list[dict]) -> None:
-    """Write actions atomically so an interrupted save does not replace the log."""
-    folder = os.path.dirname(path)
-    if folder:
-        os.makedirs(folder, exist_ok=True)
+class ActionConflictError(ValueError):
+    """Another manager changed the action after this form was opened."""
 
-    temp_path = path + ".tmp"
-    with open(temp_path, "w", encoding="utf-8") as file:
-        json.dump(actions, file, ensure_ascii=False, indent=2)
-    os.replace(temp_path, path)
+
+@contextmanager
+def _action_lock(path: str):
+    # Lock a stable sidecar inode, not the JSON inode replaced by atomic saves.
+    path = os.path.realpath(path)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + ".lock", "a", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield path
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def _write_actions(path: str, actions: list[dict]) -> None:
+    """Caller holds the lock. Leave the old log intact on any write failure."""
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=os.path.dirname(path),
+            prefix=".actions-", suffix=".tmp", delete=False,
+        ) as file:
+            temp_path = file.name
+            json.dump(actions, file, ensure_ascii=False, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temp_path, path)
+    finally:
+        if temp_path is not None and os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
+def save_actions(
+    path: str, actions: list[dict], *, expected_actions: list[dict] | None = None,
+) -> None:
+    """Initialize a log or replace an explicitly checked snapshot, never blindly."""
+    with _action_lock(path) as path:
+        current = load_actions(path)
+        expected = [] if expected_actions is None else expected_actions
+        if current != expected:
+            raise ActionConflictError(
+                "The action log changed. Reload it before saving; nothing was overwritten.")
+        _write_actions(path, actions)
+
+
+def append_action(path: str, action: dict, *, legacy_tag: str | None = None) -> None:
+    """Append against the latest log and check for an active plan under the lock."""
+    with _action_lock(path) as path:
+        actions = load_actions(path)
+        if not action.get("action_id"):
+            raise ValueError("An action ID is required.")
+        if any(row.get("action_id") == action["action_id"] for row in actions):
+            raise ActionConflictError("This action was already saved. Reload the action tracker.")
+        if find_active_action(
+            actions, action["dataset_tag"], action["location"], action["theme"],
+            legacy_tag=legacy_tag,
+        ):
+            raise ActionConflictError(
+                "Another manager already saved an active plan for this warning. "
+                "Reload and open the Action tracker to review it.")
+        _write_actions(path, actions + [action])
+
+
+def edit_saved_action(
+    path: str, expected: dict, action_text: str, owner: str, status: str,
+    start_date: date, due_date: date,
+) -> dict:
+    """Compare the displayed snapshot, then update only manager-editable fields."""
+    with _action_lock(path) as path:
+        actions = load_actions(path)
+        matches = [i for i, row in enumerate(actions)
+                   if row.get("action_id") == expected.get("action_id")]
+        if not expected.get("action_id") or len(matches) != 1:
+            raise ActionConflictError(
+                "This action is missing or its ID is ambiguous. Reload the action tracker.")
+        index = matches[0]
+        if actions[index] != expected:
+            raise ActionConflictError(
+                "Another manager changed this action. Your changes were not saved. "
+                "Reload the latest action before editing again.")
+        updated = update_action(
+            actions[index], action_text, owner, status, start_date, due_date)
+        actions[index] = updated
+        _write_actions(path, actions)
+        return updated
 
 
 def create_action(

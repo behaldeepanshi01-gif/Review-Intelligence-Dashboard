@@ -178,11 +178,11 @@ class ActionProvenanceTests(unittest.TestCase):
     def test_saving_action_from_warning_captures_location_provenance(self):
         actions = []
 
-        def save(_path, updated):
-            actions[:] = updated
+        def save(_path, action, **_kwargs):
+            actions.append(action)
 
         with patch.object(A, "load_actions", side_effect=lambda *_: list(actions)), \
-                patch.object(A, "save_actions", side_effect=save), \
+                patch.object(A, "append_action", side_effect=save), \
                 patch.object(C, "load_corrections", return_value={}), \
                 patch.object(C, "load_prior_corrections", return_value={}):
             app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
@@ -361,7 +361,7 @@ class ReviewActionFlowTests(unittest.TestCase):
             A.save_actions(log, [
                 updated if row["action_id"] == action["action_id"] else row
                 for row in all_actions
-            ])
+            ], expected_actions=all_actions)
             saved = A.load_actions(log, "sample")[0]
             self.assertEqual(saved, updated)
             self.assertEqual(A.load_actions(log, "another-file"), [other_action])

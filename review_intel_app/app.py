@@ -5,6 +5,7 @@ Run:  streamlit run app.py
 """
 
 import io
+import hashlib
 import json
 import os
 from datetime import timedelta
@@ -264,7 +265,7 @@ neg_share = 100 * (view["themes_neg"].str.len() > 0).mean()
 alerts = E.early_warnings(view, recent_days=window, baseline_days=window * 3)
 try:
     all_actions = A.load_actions(ACTION_LOG)
-except ValueError as ex:
+except (OSError, ValueError) as ex:
     st.error(f"Couldn't read the action log: {ex}")
     st.stop()
 
@@ -587,9 +588,13 @@ with tabs[2]:
                                 tagging_provenance=provenance_by_location.get(
                                     alert["location"]),
                             )
-                            A.save_actions(ACTION_LOG, all_actions + [action])
-                            st.toast("Action plan saved.")
-                            st.rerun()
+                            try:
+                                A.append_action(ACTION_LOG, action, legacy_tag=legacy_tag)
+                            except (OSError, ValueError) as ex:
+                                st.error(f"Couldn't save the action plan: {ex}")
+                            else:
+                                st.toast("Action plan saved.")
+                                st.rerun()
 
 # ----------------------------------------------------------------------------
 # Staff
@@ -796,27 +801,42 @@ with tabs[6]:
                     "This is a review trend only. It does not prove the action caused the change."
                 )
 
-            with st.form(f"update_action_{action_id}"):
+            # Streamlit reloads the log on submit. Keep the snapshot the manager
+            # actually saw, rather than treating that fresh load as their version.
+            snapshot_key = f"action_snapshot_{tag}_{action_id}"
+            if snapshot_key not in st.session_state:
+                st.session_state[snapshot_key] = dict(action)
+            snapshot = st.session_state[snapshot_key]
+            if snapshot != action:
+                st.warning("Another manager changed this action. Your draft has not "
+                           "been saved. Reload the latest action before editing again.")
+                if st.button("Reload latest action", key=f"reload_action_{action_id}"):
+                    st.session_state[snapshot_key] = dict(action)
+                    st.rerun()
+            form_version = hashlib.sha256(
+                json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
+            form_key = f"{action_id}_{form_version}"
+            with st.form(f"update_action_{form_key}"):
                 action_text = st.text_area(
-                    "Manager action", value=action.get("action_text", ""),
-                    key=f"update_text_{action_id}")
+                    "Manager action", value=snapshot.get("action_text", ""),
+                    key=f"update_text_{form_key}")
                 cols = st.columns(2)
                 owner = cols[0].text_input(
-                    "Owner (optional)", value=action.get("owner", ""),
-                    key=f"update_owner_{action_id}")
+                    "Owner (optional)", value=snapshot.get("owner", ""),
+                    key=f"update_owner_{form_key}")
                 status = cols[1].selectbox(
                     "Status", A.STATUS_OPTIONS,
-                    index=A.STATUS_OPTIONS.index(action.get("status", "Planned"))
-                    if action.get("status", "Planned") in A.STATUS_OPTIONS else 0,
-                    key=f"update_status_{action_id}")
+                    index=A.STATUS_OPTIONS.index(snapshot.get("status", "Planned"))
+                    if snapshot.get("status", "Planned") in A.STATUS_OPTIONS else 0,
+                    key=f"update_status_{form_key}")
                 start_date = st.date_input(
                     "Action start date",
-                    value=A.parse_date(action.get("start_date"), action_today),
-                    key=f"update_start_{action_id}")
+                    value=A.parse_date(snapshot.get("start_date"), action_today),
+                    key=f"update_start_{form_key}")
                 due_date = st.date_input(
                     "Due date",
-                    value=A.parse_date(action.get("due_date"), action_today),
-                    key=f"update_due_{action_id}")
+                    value=A.parse_date(snapshot.get("due_date"), action_today),
+                    key=f"update_due_{form_key}")
                 submitted = st.form_submit_button("Save updates")
 
             if submitted:
@@ -825,12 +845,13 @@ with tabs[6]:
                 elif due_date < start_date:
                     st.error("The due date must be on or after the start date.")
                 else:
-                    updated = A.update_action(
-                        action, action_text, owner, status, start_date, due_date)
-                    updated_actions = [
-                        updated if row.get("action_id") == action_id else row
-                        for row in all_actions
-                    ]
-                    A.save_actions(ACTION_LOG, updated_actions)
-                    st.toast("Action updated.")
-                    st.rerun()
+                    try:
+                        updated = A.edit_saved_action(
+                            ACTION_LOG, snapshot, action_text, owner, status,
+                            start_date, due_date)
+                    except (OSError, ValueError) as ex:
+                        st.error(f"Couldn't update the action: {ex}")
+                    else:
+                        st.session_state[snapshot_key] = updated
+                        st.toast("Action updated.")
+                        st.rerun()

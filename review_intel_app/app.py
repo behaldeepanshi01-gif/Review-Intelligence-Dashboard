@@ -15,6 +15,7 @@ import streamlit as st
 
 import action_tracker as A
 import engine as E
+import manager_corrections as C
 
 st.set_page_config(page_title="Review Intelligence", page_icon="🍛", layout="wide")
 
@@ -39,6 +40,7 @@ st.markdown(f"""
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLE = os.path.join(BASE_DIR, "data", "sample_reviews.csv")
 ACTION_LOG = os.path.join(BASE_DIR, "data", "action_log.json")
+CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")
 
 
 # ----------------------------------------------------------------------------
@@ -118,11 +120,25 @@ if engine_choice.startswith("Claude"):
         st.sidebar.caption("Showing local rule results until you run Claude.")
 
 
+is_local = tagged["engine"].eq("local_rules").all()
+if is_local:
+    try:
+        corrections = C.load_corrections(CORRECTIONS_LOG, E.LOCAL_ANALYZER_VERSION)
+        tagged = C.apply_corrections(raw, tagged, data_path, corrections)
+    except (OSError, ValueError, C.sqlite3.Error) as ex:
+        st.error(f"Couldn't load manager corrections. Reports were stopped: {ex}")
+        st.stop()
+
+
 def show_rule_evidence(row):
     """Show local explanations only in the private review-inspection UI."""
     if row.needs_review:
         st.warning("Needs manager review: " + " ".join(row.review_reasons))
     with st.expander("Why these tags?"):
+        if getattr(row, "tag_source", "") == "manager":
+            st.info("Manager-confirmed tags are used in reports. Evidence below is "
+                    "the original rule output, not the manager's reasoning.")
+            st.json(row.rule_output)
         if not row.tag_evidence:
             st.caption("No local rule evidence is available for this result.")
         for item in row.tag_evidence:
@@ -268,6 +284,58 @@ with tabs[1]:
                 st.caption("Matched terms: " + ", ".join(item["matched_terms"]))
                 st.text(item["excerpt"])
 
+    if is_local:
+        st.subheader("Approve or correct review tags")
+        st.caption(
+            "Select any review, including an unclear or previously corrected result. "
+            "Save the complete set of praise and complaint tags; a theme can appear in "
+            "both for mixed feedback. Leave both empty to confirm no supported theme. "
+            "Nothing changes in reports until you save. Undo restores the local rules."
+        )
+        inspection = view.sort_values("date", ascending=False)
+        selected = st.selectbox(
+            "Review to approve or correct", inspection["correction_key"].tolist(),
+            format_func=lambda key: (
+                f"{inspection.loc[inspection['correction_key'] == key, 'review_id'].iloc[0]} | "
+                f"{inspection.loc[inspection['correction_key'] == key, 'location'].iloc[0]}"),
+        )
+        r = inspection.loc[inspection["correction_key"] == selected].iloc[0]
+        st.text(r["text"])
+        st.caption(f"{r['date'].date()} | {r['rating']} stars | "
+                   f"Current source: {r['tag_source']} | Rules: {r['rules_version']}")
+        if r["manager_correction"]:
+            st.info("Manager decision saved " + r["manager_correction"]["saved_at"])
+        st.write("Original rule result")
+        st.json(r["rule_output"])
+        st.write("Original rule evidence")
+        st.json(r["tag_evidence"])
+        # A decision revision resets defaults after save/undo, not just review changes.
+        revision = (r["manager_correction"] or {}).get("saved_at", "rules")
+        with st.form(f"correction-{selected}-{revision}"):
+            positive = st.multiselect(
+                "Confirmed praise themes", list(E.THEMES),
+                default=r["themes_pos"], format_func=E.THEME_LABELS.get)
+            negative = st.multiselect(
+                "Confirmed complaint themes", list(E.THEMES),
+                default=r["themes_neg"], format_func=E.THEME_LABELS.get)
+            save = st.form_submit_button("Save manager decision")
+        if save:
+            try:
+                C.save_correction(CORRECTIONS_LOG, selected, positive, negative,
+                                  E.LOCAL_ANALYZER_VERSION)
+            except (OSError, ValueError, C.sqlite3.Error) as ex:
+                st.error(f"Couldn't save the manager decision: {ex}")
+            else:
+                st.rerun()
+        if r["manager_correction"] and st.button(
+                "Undo manager decision", key=f"undo-{selected}"):
+            try:
+                C.undo_correction(CORRECTIONS_LOG, selected, E.LOCAL_ANALYZER_VERSION)
+            except (OSError, ValueError, C.sqlite3.Error) as ex:
+                st.error(f"Couldn't undo the manager decision: {ex}")
+            else:
+                st.rerun()
+
 # ----------------------------------------------------------------------------
 # Early warnings
 # ----------------------------------------------------------------------------
@@ -387,7 +455,22 @@ with tabs[4]:
             tags += "".join(f'<span class="tag pos">{E.THEME_LABELS[t]}</span>' for t in r.themes_pos)
             st.markdown(tags, unsafe_allow_html=True)
             draft = st.session_state["approved"].get(r.review_id, r.reply_draft)
-            text = st.text_area("Reply draft", draft, key=f"d_{r.review_id}", height=150)
+            draft_key = f"d_{r.review_id}"
+            revision_key = f"draft_revision_{r.review_id}"
+            revision = json.dumps([
+                getattr(r, "correction_key", None), r.engine, r.themes_pos,
+                r.themes_neg, r.reply_draft,
+                getattr(r, "manager_correction", None),
+            ], sort_keys=True)
+            # A text-area's existing state wins over its default on rerun. Refresh
+            # unapproved wording when tags change, including an undo, but leave
+            # manager-approved replies and edits under unchanged tags alone.
+            if (draft_key not in st.session_state
+                    or (r.review_id not in st.session_state["approved"]
+                        and st.session_state.get(revision_key) != revision)):
+                st.session_state[draft_key] = draft
+            st.session_state[revision_key] = revision
+            text = st.text_area("Reply draft", key=draft_key, height=150)
             if st.button("Approve reply", key=f"a_{r.review_id}"):
                 st.session_state["approved"][r.review_id] = text
                 st.toast("Approved")
@@ -402,8 +485,9 @@ with tabs[5]:
     out = view.copy()
     for c in ["themes_pos", "themes_neg", "staff"]:
         out[c] = out[c].apply(lambda xs: "; ".join(E.THEME_LABELS.get(x, x) for x in xs))
-    for c in ["tag_evidence", "review_reasons"]:
-        out[c] = out[c].apply(lambda value: json.dumps(value, ensure_ascii=False))
+    for c in ["tag_evidence", "review_reasons", "rule_output", "manager_correction"]:
+        if c in out:
+            out[c] = out[c].apply(lambda value: json.dumps(value, ensure_ascii=False))
     out["approved_reply"] = (
         out["review_id"].map(st.session_state["approved"]).astype("object").fillna("")
     )
@@ -416,7 +500,8 @@ with tabs[5]:
                            file_name="early_warnings.csv", mime="text/csv")
     st.markdown("**Weekly owner summary** (copy into an email or WhatsApp)")
     st.caption("Rule changes can change theme counts. Earlier saved action baselines "
-               "may use different rules, so check them before comparing.")
+               "may use different rules or manager decisions, so check them before comparing. "
+               "Corrections recalculate current reports, not saved action baselines.")
     lines = [f"Reviews this period: {len(view)}, average {view['rating'].mean():.2f} stars."]
     for loc, g in view.groupby("location"):
         lines.append(f"- {loc}: {g['rating'].mean():.2f} stars from {len(g)} reviews")

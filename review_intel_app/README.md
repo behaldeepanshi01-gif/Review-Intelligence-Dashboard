@@ -55,7 +55,35 @@ The Ollama controls have been removed. Existing Ollama cache files are not chang
 analysis never calls it. Local rule explanations are not presented as evidence for
 Claude-produced tags.
 
-### Caching and existing actions
+### Manager decisions
+
+In **What guests say → Approve or correct review tags**, select any review and
+save its complete praise and complaint theme sets. Both can contain the same
+theme for mixed feedback; both can be empty to approve no supported theme.
+Saving unchanged tags approves the rule result. The original rule tags, review
+reasons and evidence remain visible separately from the effective manager tags.
+
+Decisions are saved locally in `data/manager_corrections.sqlite`, not in uploads,
+rule caches or action records. The store contains hashed file/review identities,
+theme keys, the rule version and save time, not review text or guest names.
+Keep this file private; it is excluded from Git. Reopening the same saved file
+restores decisions only for reviews with the same ID and all loaded source
+fields unchanged. A different file path or changed review will not inherit them.
+Reviews without explicit IDs use generated IDs; reordering such a CSV can require
+manager review again. A rules-version change requires renewed manager approval.
+
+Saving or undoing a decision recalculates current theme counts, warnings, staff
+lists, reply templates and exports. It does not rewrite saved action baselines or
+previously approved reply text. Check those manually before using them again.
+**Undo manager decision** restores that review's current rule result without
+deleting any reviews, caches, or actions. Corrections apply only to the local
+analyzer, never to optional Claude results.
+
+```bash
+python -m unittest -v test_manager_corrections
+```
+
+### Rule cache and saved baselines
 
 The local rules version is part of the Streamlit cache key. When editing the rules,
 bump `RULES_VERSION` in `local_analyzer.py`. Existing action records are preserved.

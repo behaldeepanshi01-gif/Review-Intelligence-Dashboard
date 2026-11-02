@@ -141,10 +141,17 @@ def find_staff(text: str) -> list[str]:
 def tag_offline(text: str, rating: int) -> dict:
     """Keep the legacy function name while using the versioned local rules."""
     pos, neg, evidence, reasons = analyze_text(text, THEMES)
-    # Only explicitly praised staff enter the shout-out list.
-    staff = find_staff(text) if "staff" in pos and "staff" not in neg else []
     if (rating >= 4 and neg and not pos) or (rating <= 2 and pos and not neg):
         reasons.append("The star rating and the detected wording differ. Check the result.")
+    return {**effective_tag_fields(text, rating, pos, neg), "tag_evidence": evidence,
+            "needs_review": bool(reasons), "review_reasons": reasons}
+
+
+def effective_tag_fields(text, rating, pos, neg):
+    """Derived fields shared by rule results and manager-confirmed tag sets."""
+    pos, neg = set(pos), set(neg)
+    # Only explicitly praised staff enter the shout-out list.
+    staff = find_staff(text) if "staff" in pos and "staff" not in neg else []
     if rating <= 2 or (neg & HIGH_URGENCY_THEMES and rating <= 3):
         urgency = "High"
     elif neg:
@@ -154,8 +161,7 @@ def tag_offline(text: str, rating: int) -> dict:
     sentiment = "Mixed" if (pos and neg) or not (pos or neg) else (
         "Negative" if neg else "Positive")
     return {"themes_pos": sorted(pos), "themes_neg": sorted(neg), "staff": staff,
-            "urgency": urgency, "sentiment": sentiment, "tag_evidence": evidence,
-            "needs_review": bool(reasons), "review_reasons": reasons}
+            "urgency": urgency, "sentiment": sentiment}
 
 
 def draft_reply_offline(row: dict) -> str:

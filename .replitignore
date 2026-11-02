@@ -6,3 +6,6 @@
 
 # Private review CSVs are local verification inputs, not public app assets.
 attached_assets/*YELP*.csv
+
+# Local manager decisions must never be included in public deployment assets.
+review_intel_app/data/manager_corrections.sqlite*

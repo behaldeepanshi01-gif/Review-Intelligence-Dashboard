@@ -114,6 +114,27 @@ def renewal_queue(raw, file_path, current, prior):
     return {key: prior[key] for key in keys if key in prior and key not in current}
 
 
+def tagging_provenance(raw, file_path, corrections, version):
+    """Fingerprint applicable decisions in a location, excluding save timestamps.
+
+    Pass the full location, not a date-filtered dashboard view, so changing UI
+    filters cannot invalidate a comparison. New uncorrected reviews do not change
+    this fingerprint; corrections on unrelated locations/datasets are excluded.
+    """
+    keys = {review_key(file_path, row) for row in raw.to_dict("records")}
+    decisions = {}
+    for key in sorted(keys):
+        decision = corrections.get(key)
+        if decision is None or decision["rules_version"] != version:
+            continue
+        positive, negative = _validate(decision["themes_pos"], decision["themes_neg"])
+        decisions[key] = {"positive": positive, "negative": negative}
+    fingerprint = hashlib.sha256(
+        json.dumps(decisions, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    return {"rules_version": version, "decisions_fingerprint": fingerprint}
+
+
 def approve_prior_correction(path, file_path, row, decision, version):
     """Explicitly approve one displayed historical decision for this exact review.
 

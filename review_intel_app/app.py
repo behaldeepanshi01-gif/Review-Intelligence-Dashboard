@@ -190,6 +190,7 @@ if engine_choice.startswith("Claude"):
 
 
 is_local = tagged["engine"].eq("local_rules").all()
+provenance_by_location = {}
 if is_local:
     try:
         corrections = C.load_corrections(CORRECTIONS_LOG, E.LOCAL_ANALYZER_VERSION)
@@ -198,6 +199,11 @@ if is_local:
             CORRECTIONS_LOG, E.LOCAL_ANALYZER_VERSION)
         renewals = C.renewal_queue(raw, dataset["correction_path"],
                                   corrections, prior_decisions)
+        provenance_by_location = {
+            location: C.tagging_provenance(
+                rows, dataset["correction_path"], corrections, E.LOCAL_ANALYZER_VERSION)
+            for location, rows in raw.groupby("location")
+        }
     except (OSError, ValueError, C.sqlite3.Error) as ex:
         st.error(f"Couldn't load manager corrections. Reports were stopped: {ex}")
         st.stop()
@@ -578,6 +584,8 @@ with tabs[2]:
                                 due_date=due_date,
                                 alert_end_date=view["date"].max().date(),
                                 today=action_today,
+                                tagging_provenance=provenance_by_location.get(
+                                    alert["location"]),
                             )
                             A.save_actions(ACTION_LOG, all_actions + [action])
                             st.toast("Action plan saved.")
@@ -700,6 +708,7 @@ with tabs[5]:
         reviews=tagged.to_dict("records"),
         today=action_today,
         legacy_tag=legacy_tag,
+        provenance_by_location=provenance_by_location,
     ))
     st.code("\n".join(lines), language=None)
 
@@ -757,7 +766,14 @@ with tabs[6]:
                 st.warning("Overdue — this active action is past its due date.")
 
             location_reviews = tagged[tagged["location"] == action.get("location")]
-            result = A.follow_up(action, location_reviews.to_dict("records"))
+            result = A.follow_up(
+                action, location_reviews.to_dict("records"),
+                current_provenance=provenance_by_location.get(action.get("location")),
+            )
+            if result["provenance_status"] == "unchanged":
+                st.caption(result["provenance_message"])
+            else:
+                st.warning(result["provenance_message"])
             if result.get("reason") == "not_started":
                 st.info("Mark the action In progress when it starts to begin follow-up.")
             elif not result["ready"]:

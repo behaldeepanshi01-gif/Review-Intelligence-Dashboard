@@ -132,6 +132,7 @@ def create_action(
     alert_end_date: date,
     *, today: date | None = None,
     timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
+    tagging_provenance: dict | None = None,
 ) -> dict:
     """Create one manager-owned action using the warning as its baseline."""
     return {
@@ -149,6 +150,7 @@ def create_action(
         "alert_end_date": alert_end_date.isoformat(),
         "baseline_share": float(alert["recent_share"]),
         "baseline_mentions": int(alert["recent_mentions"]),
+        "baseline_provenance": dict(tagging_provenance) if tagging_provenance else None,
     }
 
 
@@ -196,7 +198,52 @@ def find_active_action(
     return max(matching, key=lambda row: row.get("created_on", ""))
 
 
-def follow_up(action: dict, reviews: list[dict]) -> dict:
+def comparison_provenance(action: dict, current: dict | None) -> dict:
+    """Describe comparability without ever changing a saved historical baseline."""
+    baseline = action.get("baseline_provenance")
+    fields = ("rules_version", "decisions_fingerprint")
+    if not isinstance(baseline, dict) or not all(baseline.get(k) for k in fields):
+        return {
+            "provenance_status": "unknown",
+            "provenance_message": "Baseline tagging provenance unknown — this older action "
+            "has no recorded rules version and manager-decision fingerprint. "
+            "Comparability cannot be confirmed; the saved baseline is unchanged.",
+        }
+    if not isinstance(current, dict) or not all(current.get(k) for k in fields):
+        return {
+            "provenance_status": "unknown",
+            "provenance_message": "Current tagging provenance unknown — comparability "
+            "cannot be confirmed for this analysis. The saved baseline is unchanged.",
+        }
+    changes = []
+    if baseline["rules_version"] != current["rules_version"]:
+        changes.append(
+            f"local rules changed ({baseline['rules_version']} → {current['rules_version']})")
+    if baseline["decisions_fingerprint"] != current["decisions_fingerprint"]:
+        changes.append("applicable manager decisions changed")
+    if changes:
+        return {
+            "provenance_status": "changed",
+            "provenance_message": "Tagging changed — " + "; ".join(changes) + ". "
+            "This follow-up may not be comparable with its saved baseline. "
+            "The saved baseline is unchanged; do not interpret this as an operational result.",
+        }
+    return {
+        "provenance_status": "unchanged",
+        "provenance_message": "Tagging provenance unchanged — local rules and applicable "
+        "manager decisions match the saved baseline.",
+    }
+
+
+def follow_up(
+    action: dict, reviews: list[dict], *, current_provenance: dict | None = None,
+) -> dict:
+    """Compare newer mentions, carrying a comparability label even while waiting."""
+    provenance = comparison_provenance(action, current_provenance)
+    return {**_follow_up_counts(action, reviews), **provenance}
+
+
+def _follow_up_counts(action: dict, reviews: list[dict]) -> dict:
     """Compare newer negative mentions with the warning's original share."""
     start_date = parse_date(action.get("start_date"))
     if action.get("status") == "Planned" or start_date is None:
@@ -245,6 +292,7 @@ def weekly_action_summary(
     today: date | None = None,
     *, legacy_tag: str | None = None,
     timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
+    provenance_by_location: dict | None = None,
 ) -> list[str]:
     """Summarize active plans without including guest names or review text."""
     selected_locations = set(locations)
@@ -274,7 +322,11 @@ def weekly_action_summary(
             f"(Status: {status}; Owner: {owner}; Due: {due_date})"
         )
 
-        result = follow_up(action, reviews)
+        result = follow_up(
+            action, reviews,
+            current_provenance=(provenance_by_location or {}).get(location),
+        )
+        lines.append("  " + result["provenance_message"])
         if result["ready"]:
             lines.append(
                 f"  Follow-up: {result['mentions']} of {result['review_count']} "

@@ -6,18 +6,199 @@ import io
 from pathlib import Path
 import tempfile
 import unittest
+import copy
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pandas as pd
 from streamlit.testing.v1 import AppTest
 
 import action_tracker as A
 import dataset_store as D
 import engine as E
+import manager_corrections as C
 from dataset_store import DatasetStore, SAMPLE_ID
 
 
 SAMPLE = Path(__file__).parent / "data" / "sample_reviews.csv"
+
+
+class ActionProvenanceTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.path = self.root / "synthetic.csv"
+        self.db = self.root / "decisions.sqlite"
+        self.raw = pd.DataFrame([
+            {"review_id": str(i), "location": "Demo Cafe",
+             "date": pd.Timestamp("2026-01-01") + pd.Timedelta(days=i),
+             "rating": 1, "text": "Service was slow."}
+            for i in range(8)
+        ])
+        self.version = E.LOCAL_ANALYZER_VERSION
+
+    def provenance(self, raw=None, version=None):
+        version = version or self.version
+        return C.tagging_provenance(
+            self.raw if raw is None else raw, self.path,
+            C.load_corrections(self.db, version), version)
+
+    def action(self, provenance):
+        action = A.create_action(
+            "synthetic", {"location": "Demo Cafe", "theme": "Service speed",
+                          "recent_share": 60, "recent_mentions": 3},
+            "service_speed", "Check handoffs.", "Manager",
+            date(2026, 1, 2), date(2026, 1, 20), date(2026, 1, 2),
+            tagging_provenance=provenance,
+        )
+        action["status"] = "In progress"
+        return action
+
+    def compare(self, action, provenance):
+        tagged = C.apply_corrections(
+            self.raw, E.analyze_offline(self.raw), self.path,
+            C.load_corrections(self.db, self.version))
+        return A.follow_up(
+            action, tagged.to_dict("records"), current_provenance=provenance)
+
+    def test_correction_changes_undo_and_rules_upgrade_preserve_saved_baseline(self):
+        action = self.action(self.provenance())
+        log = str(self.root / "actions.json")
+        A.save_actions(log, [action])
+        original = Path(log).read_bytes()
+        action = A.load_actions(log)[0]
+        self.assertEqual(self.compare(action, self.provenance())["provenance_status"],
+                         "unchanged")
+        key = C.review_key(self.path, self.raw.iloc[3])
+        C.save_correction(self.db, key, [], [], self.version)
+        corrected = self.compare(action, self.provenance())
+        self.assertTrue(corrected["ready"])
+        self.assertEqual(corrected["mentions"], 5)
+        self.assertEqual(corrected["provenance_status"], "changed")
+        self.assertIn("manager decisions changed", corrected["provenance_message"])
+        C.undo_correction(self.db, key, self.version)
+        self.assertEqual(self.compare(action, self.provenance())["provenance_status"],
+                         "unchanged")
+
+        C.save_correction(self.db, key, [], [], self.version)
+        corrected_action = self.action(self.provenance())
+        C.save_correction(self.db, key, [], ["service_speed"], self.version)
+        self.assertEqual(self.compare(corrected_action, self.provenance())[
+            "provenance_status"], "changed")
+        C.save_correction(self.db, key, [], [], self.version)
+        self.assertEqual(self.compare(corrected_action, self.provenance())[
+            "provenance_status"], "unchanged")
+        C.undo_correction(self.db, key, self.version)
+        self.assertEqual(self.compare(corrected_action, self.provenance())[
+            "provenance_status"], "changed")
+        with patch.object(E, "LOCAL_ANALYZER_VERSION", "synthetic-upgrade"):
+            upgraded = self.compare(action, self.provenance(version="synthetic-upgrade"))
+        self.assertEqual(upgraded["provenance_status"], "changed")
+        self.assertIn("local rules changed", upgraded["provenance_message"])
+        self.assertEqual(action["baseline_share"], 60)
+        self.assertEqual(Path(log).read_bytes(), original)
+
+    def test_fingerprint_ignores_timestamps_order_and_unrelated_decisions(self):
+        key = C.review_key(self.path, self.raw.iloc[0])
+        C.save_correction(self.db, key, ["service_speed", "price"], [], self.version)
+        first = self.provenance()
+        C.save_correction(self.db, key, ["price", "service_speed", "price"], [], self.version)
+        self.assertEqual(self.provenance(), first)
+        self.assertEqual(self.provenance(raw=self.raw.iloc[::-1]), first)
+        unrelated = self.raw.iloc[0].copy()
+        unrelated["location"] = "Other Cafe"
+        C.save_correction(self.db, C.review_key(self.path, unrelated), [], [], self.version)
+        C.save_correction(self.db, C.review_key(self.root / "other.csv", self.raw.iloc[0]),
+                          [], [], self.version)
+        C.save_correction(self.db, key, [], [], "older-version")
+        self.assertEqual(self.provenance(), first)
+        appended = pd.concat([self.raw, self.raw.iloc[[0]].assign(review_id="new")])
+        self.assertEqual(self.provenance(raw=appended), first)
+
+    def test_unknown_provenance_and_editing_do_not_backfill_history(self):
+        action = self.action(self.provenance())
+        del action["baseline_provenance"]
+        original = copy.deepcopy(action)
+        for current in (self.provenance(), None):
+            result = self.compare(action, current)
+            self.assertEqual(result["provenance_status"], "unknown")
+            self.assertIn("Baseline tagging provenance unknown", result["provenance_message"])
+        updated = A.update_action(
+            action, "Check preparation.", "Manager", "Done",
+            date(2026, 1, 2), date(2026, 1, 20))
+        self.assertNotIn("baseline_provenance", updated)
+        self.assertEqual(action, original)
+        known = self.action(self.provenance())
+        self.assertEqual(self.compare(known, None)["provenance_status"], "unknown")
+        waiting = A.follow_up(known, [], current_provenance=self.provenance(
+            version="synthetic-upgrade"))
+        self.assertFalse(waiting["ready"])
+        self.assertEqual(waiting["provenance_status"], "changed")
+
+    def test_weekly_summary_labels_each_comparison(self):
+        known = self.action(self.provenance())
+        changed = copy.deepcopy(known)
+        changed["baseline_provenance"]["rules_version"] = "earlier-rules"
+        older = copy.deepcopy(known)
+        del older["baseline_provenance"]
+        reviews = E.analyze_offline(self.raw).to_dict("records")
+        text = "\n".join(A.weekly_action_summary(
+            [known, changed, older], "synthetic", ["Demo Cafe"], reviews,
+            provenance_by_location={"Demo Cafe": self.provenance()}))
+        self.assertIn("Tagging provenance unchanged", text)
+        self.assertIn("Tagging changed", text)
+        self.assertIn("Baseline tagging provenance unknown", text)
+        self.assertEqual(text.count("Follow-up:"), 3)
+
+    def test_action_tracker_renders_known_changed_and_legacy_provenance(self):
+        raw = E.load_reviews(SAMPLE)
+        location = raw.iloc[0]["location"]
+        provenance = C.tagging_provenance(
+            raw[raw["location"] == location], SAMPLE, {}, self.version)
+        base = self.action(provenance)
+        base.update(dataset_tag=SAMPLE_ID, location=location)
+        changed = copy.deepcopy(base)
+        changed["action_id"] = "changed"
+        changed["baseline_provenance"]["rules_version"] = "earlier-rules"
+        legacy = dict(base, action_id="legacy")
+        del legacy["baseline_provenance"]
+        with patch.object(A, "load_actions", return_value=[base, changed, legacy]), \
+                patch.object(C, "load_corrections", return_value={}), \
+                patch.object(C, "load_prior_corrections", return_value={}):
+            app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
+                                   default_timeout=30).run()
+        self.assertEqual(list(app.exception), [])
+        self.assertTrue(any("Tagging provenance unchanged" in item.value
+                            for item in app.caption))
+        self.assertTrue(any("Tagging changed" in item.value for item in app.warning))
+        self.assertTrue(any("Baseline tagging provenance unknown" in item.value
+                            for item in app.warning))
+
+    def test_saving_action_from_warning_captures_location_provenance(self):
+        actions = []
+
+        def save(_path, updated):
+            actions[:] = updated
+
+        with patch.object(A, "load_actions", side_effect=lambda *_: list(actions)), \
+                patch.object(A, "save_actions", side_effect=save), \
+                patch.object(C, "load_corrections", return_value={}), \
+                patch.object(C, "load_prior_corrections", return_value={}):
+            app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
+                                   default_timeout=30).run()
+            self.assertEqual(list(app.exception), [])
+            next(button for button in app.button
+                 if button.label == "Save action plan").click().run()
+            self.assertEqual(list(app.exception), [])
+        self.assertEqual(len(actions), 1)
+        action = actions[0]
+        raw = E.load_reviews(SAMPLE)
+        expected = C.tagging_provenance(
+            raw[raw["location"] == action["location"]], SAMPLE, {}, self.version)
+        self.assertEqual(action["baseline_provenance"], expected)
+        self.assertTrue(any("Tagging provenance unchanged" in item.value
+                            for item in app.caption))
 
 
 class ReviewActionFlowTests(unittest.TestCase):

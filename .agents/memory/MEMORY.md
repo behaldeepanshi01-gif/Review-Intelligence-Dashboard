@@ -1,0 +1,1 @@
+- [Mumbai Central demo constraints](mumbai-central-demo.md) — target the Falls Church restaurant; public demos use synthetic reviews and omit guest names and Yelp data.

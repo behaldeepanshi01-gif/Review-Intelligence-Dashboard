@@ -618,10 +618,32 @@ with tabs[6]:
     ]
     saved_actions.sort(key=lambda action: action.get("created_on", ""), reverse=True)
 
+    status_filter = st.radio(
+        "Show action plans",
+        ("All active actions", "Overdue only", "Completed plans"),
+        horizontal=True,
+        key="action_status_filter",
+    )
+    if status_filter == "Overdue only":
+        visible_actions = [action for action in saved_actions if A.is_overdue(action)]
+    elif status_filter == "Completed plans":
+        visible_actions = [action for action in saved_actions if action.get("status") == "Done"]
+    else:
+        visible_actions = [action for action in saved_actions if action.get("status") != "Done"]
+
+    st.caption(f"Showing {len(visible_actions)} of {len(saved_actions)} action plans "
+               "for the current dataset and selected locations.")
     if not saved_actions:
         st.info("No action plans saved for this file and location yet.")
+    elif not visible_actions:
+        empty_messages = {
+            "All active actions": "No active action plans for this dataset and selected locations.",
+            "Overdue only": "No overdue action plans for this dataset and selected locations.",
+            "Completed plans": "No completed action plans for this dataset and selected locations.",
+        }
+        st.info(empty_messages[status_filter] + " Choose another status filter to see other plans.")
 
-    for action in saved_actions:
+    for action in visible_actions:
         action_id = action.get("action_id", "")
         with st.container(border=True):
             st.markdown(f"**{action.get('location', 'Location')}: {action.get('theme', 'Theme')}**")

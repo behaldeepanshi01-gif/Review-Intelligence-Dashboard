@@ -16,6 +16,62 @@ APP = Path(__file__).with_name("app.py")
 
 
 class LocalAppTests(unittest.TestCase):
+    def test_action_status_filter_preserves_scope_and_handles_empty_results(self):
+        sample = E.load_reviews(APP.parent / "data" / "sample_reviews.csv")
+        location = sample.iloc[0]["location"]
+        base = {
+            "dataset_tag": SAMPLE_ID, "location": location,
+            "theme": "Service speed", "status": "Planned",
+            "start_date": (date.today() - timedelta(days=10)).isoformat(),
+            "due_date": (date.today() - timedelta(days=1)).isoformat(),
+            "action_text": "Check handoffs.",
+        }
+        actions = [
+            dict(base, action_id="late"),
+            dict(base, action_id="progress", status="In progress"),
+            dict(base, action_id="done", status="Done"),
+            dict(base, action_id="today", due_date=date.today().isoformat()),
+            dict(base, action_id="future", due_date=(date.today() + timedelta(days=1)).isoformat()),
+            dict(base, action_id="missing", due_date=None),
+            dict(base, action_id="invalid", due_date="invalid"),
+            dict(base, action_id="other_dataset", dataset_tag="unrelated"),
+            dict(base, action_id="other_location", location="Unselected restaurant"),
+        ]
+        with patch.object(E, "load_reviews", return_value=sample), patch.object(
+            A, "load_actions", return_value=actions
+        ), patch("os.listdir", return_value=[]):
+            app = AppTest.from_file(str(APP), default_timeout=30).run()
+
+            def shown():
+                self.assertEqual(list(app.exception), [])
+                return {
+                    item.key.removeprefix("update_text_")
+                    for item in app.text_area if item.key and item.key.startswith("update_text_")
+                }
+
+            self.assertEqual(shown(), {"late", "progress", "today", "future", "missing", "invalid"})
+            app.radio(key="action_status_filter").set_value("Overdue only").run()
+            self.assertEqual(shown(), {"late", "progress"})
+            app.radio(key="action_status_filter").set_value("Completed plans").run()
+            self.assertEqual(shown(), {"done"})
+            actions[:] = [row for row in actions if row["action_id"] != "done"]
+            app.run()
+            self.assertEqual(shown(), set())
+            self.assertTrue(any("No completed action plans" in item.value for item in app.info))
+            for row in actions:
+                row["due_date"] = date.today().isoformat()
+            app.radio(key="action_status_filter").set_value("Overdue only").run()
+            self.assertEqual(shown(), set())
+            self.assertTrue(any("No overdue action plans" in item.value for item in app.info))
+            for row in actions:
+                row["status"] = "Done"
+            app.radio(key="action_status_filter").set_value("All active actions").run()
+            self.assertEqual(shown(), set())
+            self.assertTrue(any("No active action plans" in item.value for item in app.info))
+            actions.clear()
+            app.run()
+            self.assertTrue(any("No action plans saved" in item.value for item in app.info))
+
     def test_overdue_warning_and_summary_exclude_completed_actions(self):
         sample = E.load_reviews(APP.parent / "data" / "sample_reviews.csv")
         base = {

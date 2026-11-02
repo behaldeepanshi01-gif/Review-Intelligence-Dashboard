@@ -108,6 +108,44 @@ Common alternatives are renamed automatically (`stars` to rating, `review` to te
 - Keep real guest names and private sales data out of anything public, including GitHub.
 - Replies are drafts. A person approves every reply before it is posted.
 
+## Action-tracking verification
+
+From this directory, after installing the requirements, run:
+
+```bash
+python -m unittest discover -p 'test_*.py' -v
+```
+
+The checks load the included synthetic CSV through the existing review loader and
+confirm its columns and source file remain unchanged. They create an action from a
+generated alert, update and reload it in an isolated temporary log, and confirm that
+another dataset's action is unchanged. Follow-up waits at four newer reviews and
+becomes available at five, using additional synthetic rows loaded through the same
+CSV loader. No test writes to the application's real upload folder or action log.
+
+### Supplied Yelp CSV verification
+
+The source ZIP contained only synthetic data. A subsequently supplied local Yelp
+CSV was verified separately without checking its contents into Git or changing it:
+
+- All 385 rows loaded through `engine.load_reviews`, with the original six columns
+  unchanged: `location`, `date`, `rating`, `text`, `reviewer`, `review_id`.
+- The normal 30- and 60-day windows produced no alerts. The supported 90-day window
+  produced one Food & flavor alert, which was used for the action lifecycle check.
+- An action was created, saved, updated to In progress, reloaded, and marked Done
+  in a temporary log. Its original dataset tag and alert baseline remained intact.
+  Another dataset's action was unchanged throughout.
+- The original file had no reviews newer than the action's start date. Five
+  explicitly synthetic rows were added only in memory and loaded through the same
+  CSV loader. Four newer rows kept follow-up waiting; five enabled it, with one
+  negative theme mention out of five reviews (20%).
+- The original upload remained byte-for-byte unchanged. No real app action log or
+  upload folder was modified, and only aggregate results were printed.
+
+The automated checks above continue using synthetic fixtures so the private Yelp
+CSV need not be distributed with the code. No Google or Yelp scraping is needed.
+Do not include guest names or real review text in public results or demo materials.
+
 ## Files
 
 ```

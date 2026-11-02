@@ -520,14 +520,8 @@ with tabs[6]:
                 elif due_date < start_date:
                     st.error("The due date must be on or after the start date.")
                 else:
-                    updated = dict(action)
-                    updated.update({
-                        "action_text": action_text.strip(),
-                        "owner": owner.strip(),
-                        "status": status,
-                        "start_date": start_date.isoformat(),
-                        "due_date": due_date.isoformat(),
-                    })
+                    updated = A.update_action(
+                        action, action_text, owner, status, start_date, due_date)
                     updated_actions = [
                         updated if row.get("action_id") == action_id else row
                         for row in all_actions

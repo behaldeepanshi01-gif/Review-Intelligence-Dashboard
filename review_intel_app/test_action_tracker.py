@@ -11,6 +11,7 @@ from action_tracker import (
     load_actions,
     save_actions,
     suggested_step,
+    update_action,
     weekly_action_summary,
 )
 
@@ -43,12 +44,72 @@ class ActionTrackerTests(unittest.TestCase):
     def test_action_log_round_trip_and_dataset_filter(self):
         with tempfile.TemporaryDirectory() as folder:
             path = f"{folder}/action_log.json"
-            actions = [{"action_id": "one", "dataset_tag": "sample"}]
+            actions = [
+                {"action_id": "one", "dataset_tag": "sample"},
+                {"action_id": "two", "dataset_tag": "other"},
+            ]
             save_actions(path, actions)
 
             self.assertEqual(load_actions(path), actions)
-            self.assertEqual(load_actions(path, "sample"), actions)
-            self.assertEqual(load_actions(path, "other"), [])
+            self.assertEqual(load_actions(path, "sample"), actions[:1])
+            self.assertEqual(load_actions(path, "other"), actions[1:])
+
+    def test_update_action_preserves_dataset_scope_and_persists(self):
+        action = create_action(
+            dataset_tag="sample",
+            alert={
+                "location": "Demo Cafe",
+                "theme": "Service speed",
+                "recent_share": 25.0,
+                "recent_mentions": 5,
+            },
+            theme_key="service_speed",
+            action_text="Review handoffs.",
+            owner="Manager",
+            start_date=date(2026, 1, 10),
+            due_date=date(2026, 1, 17),
+            alert_end_date=date(2026, 1, 9),
+        )
+        updated = update_action(
+            action,
+            "Check the busy-period handoff.",
+            "Shift lead",
+            "In progress",
+            date(2026, 1, 11),
+            date(2026, 1, 20),
+        )
+
+        with tempfile.TemporaryDirectory() as folder:
+            path = f"{folder}/action_log.json"
+            other_dataset_action = {
+                "action_id": "other",
+                "dataset_tag": "another-file",
+            }
+            save_actions(path, [updated, other_dataset_action])
+
+            loaded = load_actions(path, "sample")
+            self.assertEqual(loaded, [updated])
+            self.assertEqual(loaded[0]["dataset_tag"], "sample")
+            self.assertEqual(loaded[0]["status"], "In progress")
+            self.assertEqual(loaded[0]["owner"], "Shift lead")
+            self.assertEqual(
+                find_active_action(loaded, "sample", "Demo Cafe", "Service speed"),
+                updated,
+            )
+            self.assertIsNone(
+                find_active_action(loaded, "another-file", "Demo Cafe", "Service speed")
+            )
+
+    def test_update_action_rejects_invalid_status(self):
+        with self.assertRaises(ValueError):
+            update_action(
+                {"dataset_tag": "sample"},
+                "Check service.",
+                "",
+                "Started",
+                date(2026, 1, 10),
+                date(2026, 1, 11),
+            )
 
     def test_suggestion_is_available_for_alert_theme(self):
         self.assertIn("handoffs", suggested_step("Service speed"))

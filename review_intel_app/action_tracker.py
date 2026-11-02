@@ -9,6 +9,7 @@ import uuid
 
 
 MIN_FOLLOWUP_REVIEWS = 5
+STATUS_OPTIONS = ("Planned", "In progress", "Done")
 
 # These are practical checks for a manager to consider, not claims about causes.
 ACTION_IDEAS = {
@@ -107,6 +108,33 @@ def create_action(
         "baseline_share": float(alert["recent_share"]),
         "baseline_mentions": int(alert["recent_mentions"]),
     }
+
+
+def update_action(
+    action: dict,
+    action_text: str,
+    owner: str,
+    status: str,
+    start_date: date,
+    due_date: date,
+) -> dict:
+    """Update editable manager fields without changing the action's alert scope."""
+    if not action_text.strip():
+        raise ValueError("Enter an action before saving.")
+    if status not in STATUS_OPTIONS:
+        raise ValueError(f"Status must be one of: {', '.join(STATUS_OPTIONS)}.")
+    if due_date < start_date:
+        raise ValueError("The due date must be on or after the start date.")
+
+    updated = dict(action)
+    updated.update({
+        "action_text": action_text.strip(),
+        "owner": owner.strip(),
+        "status": status,
+        "start_date": start_date.isoformat(),
+        "due_date": due_date.isoformat(),
+    })
+    return updated
 
 
 def find_active_action(

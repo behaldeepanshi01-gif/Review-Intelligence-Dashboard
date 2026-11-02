@@ -11,6 +11,29 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Review Intelligence App"
+
+[[workflows.workflow]]
+name = "Review Intelligence App"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = """
+cd /home/runner/workspace/review_intel_app && printf '
+' | uv run --project /home/runner/workspace python -m streamlit run app.py --server.port 8000 --server.address 0.0.0.0"""
+waitForPort = 8000
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true

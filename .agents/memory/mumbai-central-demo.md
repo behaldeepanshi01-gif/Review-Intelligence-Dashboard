@@ -14,3 +14,9 @@ The product's main value should be turning rising review themes into manager-own
 **Why:** The user chose “AI that turns guest feedback into action” as the next feature and wants an accurate, credible restaurant demo.
 
 **How to apply:** Keep manager review in the loop, record the action and status, and wait for enough newer reviews before showing a follow-up comparison.
+
+Do not use Ollama for this app. Use the free Offline engine for verification.
+
+**Why:** The user said, “Dont use Ollama its very slow.”
+
+**How to apply:** Do not start Ollama or run review batches through it unless the user explicitly changes this instruction.

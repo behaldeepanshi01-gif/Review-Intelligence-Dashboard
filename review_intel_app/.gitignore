@@ -5,3 +5,5 @@ data/action_log.json
 action_tracker_update.zip
 backups/
 __pycache__/
+# Private blind-labeling sheets, human answers, and frozen evaluation snapshots.
+data/private_evaluation/

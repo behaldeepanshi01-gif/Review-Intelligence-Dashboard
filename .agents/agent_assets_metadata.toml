@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Fez0ye6yeCyTrIvyuWAIr"
+uri = "file://review_intel_app/data/private_evaluation/owner_review_01/labeling_sheet.csv"
+type = "table"
+title = "Private review labeling sheet"
+description = "48 reviews with blank human-label columns. Contains real guest feedback. Keep private and do not publish."
+logical_id = "7c186a58-6d82-445a-9b32-a020ff2de688"
+content_hash = "sha256:56d528fb575ae80e2c808c3cfa058b9226d632393eb44510cd247a39ab680dfc"
+size = 36654
+mtime_ms = 1793653747535
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/7c186a58-6d82-445a-9b32-a020ff2de688/5504ed4b-5705-44c2-a764-2c22825b4d89"
+storage_version_token = "1793653785935890"
+content_type = "text/csv"

@@ -1,0 +1,5 @@
+# Do not publish private review uploads or local manager action notes.
+data/uploads/
+data/*cache*.json
+data/action_log.json
+action_tracker_update.zip

@@ -1,2 +1,3 @@
 - [Mumbai Central demo constraints](mumbai-central-demo.md) — target the Falls Church restaurant; public demos use synthetic reviews and omit guest names and Yelp data.
 - [Manager decision scope](manager-decisions.md) — renewed approval after rule changes; preserve evidence and historical action baselines.
+- [Dataset history ownership](dataset-history-ownership.md) — filenames cannot establish continuity; legacy action histories need explicit, exclusive recovery.

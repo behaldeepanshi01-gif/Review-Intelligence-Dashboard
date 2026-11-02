@@ -3,6 +3,10 @@
 from datetime import date
 import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from dataset_store import DatasetStore, SAMPLE_ID
 
 from action_tracker import (
     create_action,
@@ -15,6 +19,102 @@ from action_tracker import (
     update_action,
     weekly_action_summary,
 )
+
+
+class DatasetIdentityTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.sample = self.root / "sample.csv"
+        self.sample.write_bytes(b"built-in synthetic sample")
+        self.store = DatasetStore(self.root / "uploads", self.sample)
+
+    def test_same_name_and_same_bytes_do_not_imply_same_identity(self):
+        first = self.store.save_snapshot("reviews.csv", b"snapshot")
+        other = self.store.save_snapshot("reviews.csv", b"snapshot")
+        self.assertNotEqual(first["dataset_id"], other["dataset_id"])
+        self.assertNotEqual(first["path"], other["path"])
+        self.assertEqual(Path(first["path"]).read_bytes(), b"snapshot")
+        log = str(self.root / "actions.json")
+        actions = [{"action_id": "first", "dataset_tag": first["dataset_id"]}]
+        save_actions(log, actions)
+        self.assertEqual(load_actions(log, other["dataset_id"]), [])
+        restarted = DatasetStore(self.root / "uploads", self.sample)
+        self.assertEqual(restarted.get(first["dataset_id"]), first)
+        self.assertEqual(len(restarted.list_datasets()), 2)
+
+    def test_update_renamed_snapshot_keeps_identity_and_old_bytes(self):
+        first = self.store.save_snapshot("reviews.csv", b"original")
+        updated = self.store.save_snapshot(
+            "newer-name.csv", b"updated and appended", first["dataset_id"]
+        )
+        self.assertEqual(updated["dataset_id"], first["dataset_id"])
+        self.assertEqual(updated["correction_path"], first["correction_path"])
+        self.assertEqual(Path(first["path"]).read_bytes(), b"original")
+        self.assertEqual(Path(updated["path"]).read_bytes(), b"updated and appended")
+        self.assertEqual(len(self.store.list_datasets()), 1)
+
+    def test_failed_snapshot_write_keeps_previous_snapshot(self):
+        first = self.store.save_snapshot("reviews.csv", b"original")
+        with patch.object(Path, "open", side_effect=OSError("disk unavailable")):
+            with self.assertRaises(OSError):
+                self.store.save_snapshot("reviews.csv", b"new", first["dataset_id"])
+        self.assertEqual(self.store.get(first["dataset_id"]), first)
+
+    def test_uploaded_sample_cannot_inherit_or_replace_builtin(self):
+        uploaded = self.store.save_snapshot("sample.csv", self.sample.read_bytes())
+        self.assertNotEqual(uploaded["dataset_id"], SAMPLE_ID)
+        self.assertNotEqual(uploaded["path"], str(self.sample))
+        with self.assertRaises(ValueError):
+            self.store.save_snapshot("sample.csv", b"replacement", SAMPLE_ID)
+        self.assertEqual(self.sample.read_bytes(), b"built-in synthetic sample")
+        self.assertEqual(load_actions(str(self.root / "absent"), SAMPLE_ID), [])
+
+    def test_legacy_file_imported_only_once_even_after_update(self):
+        old = self.root / "uploads" / "reviews.CSV"
+        old.write_bytes(b"original legacy file")
+        restarted = DatasetStore(self.root / "uploads", self.sample)
+        first = restarted.list_datasets()[0]
+        restarted.save_snapshot("reviews.CSV", b"new", first["dataset_id"])
+        again = DatasetStore(self.root / "uploads", self.sample)
+        self.assertEqual(len(again.list_datasets()), 1)
+        self.assertEqual(old.read_bytes(), b"original legacy file")
+        self.assertIsNone(again.get(first["dataset_id"])["legacy_tag"])
+        self.assertEqual(again.get(first["dataset_id"])["correction_path"], str(old.resolve()))
+
+    def test_legacy_history_requires_explicit_exclusive_link_and_stays_unchanged(self):
+        first = self.store.save_snapshot("sample.csv", b"uploaded")
+        other = self.store.save_snapshot("sample.csv", b"unrelated")
+        log = str(self.root / "actions.json")
+        actions = [{
+            "dataset_tag": "sample", "location": "Demo", "theme": "Price",
+            "action_id": "old", "status": "Planned", "baseline_share": 25,
+            "alert_end_date": "2026-01-01",
+        }]
+        save_actions(log, actions)
+        original = Path(log).read_bytes()
+        for dataset_id in (SAMPLE_ID, first["dataset_id"], other["dataset_id"]):
+            self.assertEqual(load_actions(log, dataset_id), [])
+        claimed = self.store.claim_legacy_history(first["dataset_id"], "sample", actions)
+        self.assertEqual(
+            load_actions(log, first["dataset_id"], legacy_tag=claimed["legacy_tag"]),
+            actions,
+        )
+        self.assertEqual(
+            find_active_action(actions, first["dataset_id"], "Demo", "Price",
+                               legacy_tag=claimed["legacy_tag"]), actions[0],
+        )
+        self.assertIn("Demo", "\n".join(weekly_action_summary(
+            actions, first["dataset_id"], ["Demo"], [], legacy_tag="sample"
+        )))
+        self.assertEqual(Path(log).read_bytes(), original)
+        for dataset_id in (SAMPLE_ID, other["dataset_id"]):
+            with self.assertRaises(ValueError):
+                self.store.claim_legacy_history(dataset_id, "sample", actions)
+            self.assertEqual(load_actions(log, dataset_id), [])
+        restarted = DatasetStore(self.root / "uploads", self.sample)
+        self.assertEqual(restarted.get(first["dataset_id"])["legacy_tag"], "sample")
 
 
 class ActionTrackerTests(unittest.TestCase):

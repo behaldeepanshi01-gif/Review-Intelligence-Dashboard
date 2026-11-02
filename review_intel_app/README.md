@@ -122,6 +122,31 @@ Upload a CSV from the sidebar with these columns:
 Uploaded files are saved in `data/uploads/`, so after a refresh or restart you can pick them
 under "Saved file" instead of uploading again.
 
+### Dataset identity and action history
+
+Every saved dataset has a persistent identity, shown in the sidebar. Filenames
+are labels, not identities. After choosing a CSV, choose **Create a separate
+dataset** (the default) or **Update an existing dataset**, select its target, and
+press **Save CSV**. A newer snapshot can have a different filename and still keep
+the selected dataset's actions and original alert baselines. Updates replace the
+current review view; include all reviews needed for follow-up in the snapshot.
+Earlier CSV snapshots remain on disk, and an unreadable CSV is not saved.
+
+Two separate uploads named `reviews.csv` have separate identities, even if their
+contents match. An uploaded `sample.csv` is also separate from the built-in sample,
+which cannot be replaced by an upload.
+
+Existing filename-based action records are not deleted, rewritten, or
+automatically assigned. Open **Recover older action history**, inspect the saved
+actions, and explicitly confirm they belong to the currently selected dataset
+before linking them. A legacy history can be linked to only one dataset, including
+the built-in sample. Old basename collisions cannot be disambiguated from the
+old log alone; do not link a mixed history without checking it.
+
+Keep `data/uploads/datasets.sqlite`, the upload files and snapshots, and
+`data/action_log.json` together when backing up or moving local state. The registry
+stores the stable identities and explicit legacy-history links.
+
 Common alternatives are renamed automatically (`stars` to rating, `review` to text,
 `name` to reviewer). The Yelp filter script output works too after adding a `location` column.
 

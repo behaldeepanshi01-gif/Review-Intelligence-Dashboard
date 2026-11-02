@@ -60,7 +60,16 @@ def is_overdue(action: dict, today: date | None = None) -> bool:
     )
 
 
-def load_actions(path: str, data_tag: str | None = None) -> list[dict]:
+def matches_dataset(action: dict, dataset_tag: str, legacy_tag: str | None = None) -> bool:
+    """Include an old history only when it was explicitly linked to this dataset."""
+    return action.get("dataset_tag") == dataset_tag or (
+        legacy_tag is not None and action.get("dataset_tag") == legacy_tag
+    )
+
+
+def load_actions(
+    path: str, data_tag: str | None = None, *, legacy_tag: str | None = None
+) -> list[dict]:
     """Load saved actions. A broken action log is reported instead of hidden."""
     if not os.path.exists(path):
         return []
@@ -76,7 +85,7 @@ def load_actions(path: str, data_tag: str | None = None) -> list[dict]:
 
     if data_tag is None:
         return actions
-    return [row for row in actions if row.get("dataset_tag") == data_tag]
+    return [row for row in actions if matches_dataset(row, data_tag, legacy_tag)]
 
 
 def save_actions(path: str, actions: list[dict]) -> None:
@@ -148,12 +157,13 @@ def update_action(
 
 
 def find_active_action(
-    actions: list[dict], dataset_tag: str, location: str, theme: str
+    actions: list[dict], dataset_tag: str, location: str, theme: str,
+    *, legacy_tag: str | None = None,
 ) -> dict | None:
     """Return the newest plan that is not marked done."""
     matching = [
         row for row in actions
-        if row.get("dataset_tag") == dataset_tag
+        if matches_dataset(row, dataset_tag, legacy_tag)
         and row.get("location") == location
         and row.get("theme") == theme
         and row.get("status") != "Done"
@@ -210,12 +220,13 @@ def weekly_action_summary(
     locations: list[str],
     reviews: list[dict],
     today: date | None = None,
+    *, legacy_tag: str | None = None,
 ) -> list[str]:
     """Summarize active plans without including guest names or review text."""
     selected_locations = set(locations)
     active_actions = [
         row for row in actions
-        if row.get("dataset_tag") == dataset_tag
+        if matches_dataset(row, dataset_tag, legacy_tag)
         and row.get("location") in selected_locations
         and row.get("status") != "Done"
     ]

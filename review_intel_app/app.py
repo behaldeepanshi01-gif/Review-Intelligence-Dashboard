@@ -16,6 +16,7 @@ import streamlit as st
 import action_tracker as A
 import engine as E
 import manager_corrections as C
+import dataset_store as D
 
 st.set_page_config(page_title="Review Intelligence", page_icon="🍛", layout="wide")
 
@@ -51,19 +52,37 @@ st.sidebar.caption("AI review assistant for multi-location restaurants")
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-saved_files = sorted(f for f in os.listdir(UPLOAD_DIR) if f.lower().endswith(".csv"))
+try:
+    datasets = D.DatasetStore(UPLOAD_DIR, SAMPLE)
+    saved_datasets = datasets.list_datasets()
+except (OSError, D.sqlite3.Error) as ex:
+    st.error(f"Couldn't open saved dataset identities: {ex}")
+    st.stop()
 
+
+def dataset_label(dataset_id):
+    item = datasets.get(dataset_id)
+    return f"{item['label']} · {dataset_id[-8:]}"
+
+
+if "data_source" not in st.session_state:
+    st.session_state["data_source"] = (
+        "Saved file" if saved_datasets else "Sample data (synthetic)"
+    )
 source = st.sidebar.radio(
     "Data", ["Sample data (synthetic)", "Saved file", "Upload my reviews (CSV)"],
-    index=1 if saved_files else 0,
+    key="data_source",
     help="Uploaded files are saved, so they're still here after a refresh or restart.")
-data_path, tag = SAMPLE, "sample"
+dataset = datasets.get(D.SAMPLE_ID)
 if source == "Saved file":
-    if not saved_files:
+    if not saved_datasets:
         st.info("No saved files yet. Upload a CSV once and it will appear here.")
         st.stop()
-    pick_file = st.sidebar.selectbox("File", saved_files)
-    data_path, tag = os.path.join(UPLOAD_DIR, pick_file), os.path.splitext(pick_file)[0]
+    selected_id = st.sidebar.selectbox(
+        "Dataset", [item["dataset_id"] for item in saved_datasets],
+        format_func=dataset_label,
+    )
+    dataset = datasets.get(selected_id)
 elif source.startswith("Upload"):
     upload = st.sidebar.file_uploader(
         "CSV with columns: location, date, rating, text (reviewer, review_id optional)",
@@ -71,11 +90,44 @@ elif source.startswith("Upload"):
     if upload is None:
         st.info("Upload a CSV to begin, or switch back to the sample data.")
         st.stop()
-    data_path = os.path.join(UPLOAD_DIR, os.path.basename(upload.name))
-    with open(data_path, "wb") as fh:
-        fh.write(upload.getbuffer())
-    tag = os.path.splitext(os.path.basename(upload.name))[0]
+    mode = st.sidebar.radio(
+        "Upload purpose", ["Create a separate dataset", "Update an existing dataset"],
+        help="Matching filenames never share actions automatically. Update only "
+             "when this CSV is a newer snapshot of the same restaurant dataset.",
+    )
+    target_id = None
+    if mode == "Update an existing dataset":
+        if not saved_datasets:
+            st.info("Save a separate dataset first before updating it.")
+            st.stop()
+        target_id = st.sidebar.selectbox(
+            "Dataset to update", [item["dataset_id"] for item in saved_datasets],
+            format_func=dataset_label,
+        )
+        st.sidebar.warning("This replaces the selected dataset's current reviews. "
+                           "Its actions and original baselines will be kept.")
+    if st.sidebar.button("Save CSV", type="primary"):
+        try:
+            E.load_reviews(io.BytesIO(upload.getvalue()))
+            dataset = datasets.save_snapshot(upload.name, upload.getvalue(), target_id)
+            st.session_state["saved_upload"] = {
+                "file_id": upload.file_id, "target_id": target_id,
+                "dataset_id": dataset["dataset_id"],
+            }
+        except (OSError, ValueError, D.sqlite3.Error) as ex:
+            st.error(f"Couldn't save that CSV: {ex}")
+            st.stop()
+    saved_upload = st.session_state.get("saved_upload", {})
+    if (saved_upload.get("file_id") != upload.file_id
+            or saved_upload.get("target_id") != target_id):
+        st.info("Choose whether this is a separate dataset or an update, then save the CSV.")
+        st.stop()
+    dataset = datasets.get(saved_upload["dataset_id"])
     st.sidebar.success("Saved. Next time pick it under 'Saved file'.")
+
+data_path, tag = dataset["path"], dataset["dataset_id"]
+legacy_tag = dataset["legacy_tag"]
+st.sidebar.caption(f"Dataset identity: {tag}")
 
 try:
     raw = E.load_reviews(data_path)
@@ -103,17 +155,20 @@ def run_offline(df: pd.DataFrame, rules_version: str) -> pd.DataFrame:
 tagged = run_offline(raw, E.LOCAL_ANALYZER_VERSION)
 
 if engine_choice.startswith("Claude"):
+    snapshot_tag = f"{tag}-{os.path.basename(data_path)}"
     key = st.sidebar.text_input("Anthropic API key", type="password",
                                 value=os.environ.get("ANTHROPIC_API_KEY", ""))
     if st.sidebar.button("Run Claude analysis", type="primary", disabled=not key):
         bar = st.sidebar.progress(0.0, text="Reading reviews...")
         try:
             st.session_state["claude_result"] = E.analyze_with_claude(
-                raw, key, data_tag=tag, progress=lambda p: bar.progress(p, text="Reading reviews..."))
-            st.session_state["claude_tag"] = tag
+                raw, key, data_tag=snapshot_tag,
+                progress=lambda p: bar.progress(p, text="Reading reviews..."))
+            st.session_state["claude_tag"] = snapshot_tag
         except Exception as ex:
             st.sidebar.error(f"Claude call failed: {ex}")
-    if st.session_state.get("claude_tag") == tag and "claude_result" in st.session_state:
+    if (st.session_state.get("claude_tag") == snapshot_tag
+            and "claude_result" in st.session_state):
         tagged = st.session_state["claude_result"]
         st.sidebar.success("Showing Claude analysis")
     else:
@@ -124,7 +179,7 @@ is_local = tagged["engine"].eq("local_rules").all()
 if is_local:
     try:
         corrections = C.load_corrections(CORRECTIONS_LOG, E.LOCAL_ANALYZER_VERSION)
-        tagged = C.apply_corrections(raw, tagged, data_path, corrections)
+        tagged = C.apply_corrections(raw, tagged, dataset["correction_path"], corrections)
     except (OSError, ValueError, C.sqlite3.Error) as ex:
         st.error(f"Couldn't load manager corrections. Reports were stopped: {ex}")
         st.stop()
@@ -181,6 +236,28 @@ try:
 except ValueError as ex:
     st.error(f"Couldn't read the action log: {ex}")
     st.stop()
+
+unclaimed = datasets.unclaimed_legacy_tags(all_actions)
+if unclaimed and legacy_tag is None:
+    with st.sidebar.expander("Recover older action history"):
+        st.caption("Older actions were saved by filename and may belong to another "
+                   "dataset. Nothing has been deleted. Link only after checking "
+                   "the history; each history can belong to just one dataset.")
+        old_tag = st.selectbox("Older history", unclaimed)
+        older_actions = [
+            row for row in all_actions if row.get("dataset_tag") == old_tag
+        ]
+        st.json(older_actions)
+        confirmed = st.checkbox(
+            "I confirm this older history belongs to the current dataset",
+            key=f"confirm_history_{tag}_{old_tag}",
+        )
+        if st.button("Link older history", disabled=not confirmed):
+            try:
+                datasets.claim_legacy_history(tag, old_tag, all_actions)
+                st.rerun()
+            except (ValueError, D.sqlite3.Error) as ex:
+                st.error(f"Couldn't link that history: {ex}")
 
 k1, k2, k3, k4 = st.columns(4)
 for col, val, label in [
@@ -358,7 +435,8 @@ with tabs[2]:
             st.caption("This is a general prompt, not a confirmed cause.")
 
             active = A.find_active_action(
-                all_actions, tag, alert["location"], alert["theme"])
+                all_actions, tag, alert["location"], alert["theme"],
+                legacy_tag=legacy_tag)
             if active:
                 st.info(
                     f"Action already tracked as {active['status']}. "
@@ -520,6 +598,7 @@ with tabs[5]:
         dataset_tag=tag,
         locations=pick,
         reviews=tagged.to_dict("records"),
+        legacy_tag=legacy_tag,
     ))
     st.code("\n".join(lines), language=None)
 
@@ -535,7 +614,7 @@ with tabs[6]:
                "analyzer is not evidence of an operational improvement.")
     saved_actions = [
         action for action in all_actions
-        if action.get("dataset_tag") == tag and action.get("location") in pick
+        if A.matches_dataset(action, tag, legacy_tag) and action.get("location") in pick
     ]
     saved_actions.sort(key=lambda action: action.get("created_on", ""), reverse=True)
 

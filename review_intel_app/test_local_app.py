@@ -9,6 +9,7 @@ import pandas as pd
 from streamlit.testing.v1 import AppTest
 import engine as E
 import action_tracker as A
+from dataset_store import SAMPLE_ID
 
 
 APP = Path(__file__).with_name("app.py")
@@ -18,7 +19,7 @@ class LocalAppTests(unittest.TestCase):
     def test_overdue_warning_and_summary_exclude_completed_actions(self):
         sample = E.load_reviews(APP.parent / "data" / "sample_reviews.csv")
         base = {
-            "dataset_tag": "sample", "location": sample.iloc[0]["location"],
+            "dataset_tag": SAMPLE_ID, "location": sample.iloc[0]["location"],
             "theme": "Service speed", "status": "Planned",
             "start_date": (date.today() - timedelta(days=10)).isoformat(),
             "due_date": (date.today() - timedelta(days=1)).isoformat(),

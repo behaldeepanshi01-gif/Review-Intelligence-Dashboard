@@ -4,13 +4,14 @@ description: Scope of the restaurant timezone and why it defaults to Eastern tim
 ---
 
 Use America/New_York as the initial restaurant timezone because the demo targets
-Falls Church, Virginia. The current setting is session-wide, not a per-location
-or persisted business setting.
+Falls Church, Virginia. Calendar ownership is the stable dataset identity plus
+exact location name; unrelated datasets must not share settings merely because
+restaurant names match. Managers with access to the local app share edit authority.
 
-**Why:** Deadline evaluation needed a restaurant-local day without introducing
-a new settings store or changing existing action records. Multi-location
-timezone ownership was not specified.
+**Why:** There is no global restaurant identity or authenticated administrator
+role. Dataset-scoped ownership avoids silently connecting unrelated uploads,
+while keeping manager sessions consistent.
 
-**How to apply:** Keep existing due dates as calendar dates. If adding persistent
-settings or cross-timezone locations, define the owning restaurant explicitly
-rather than inferring it from the server or a manager's browser timezone.
+**How to apply:** Keep existing due dates as calendar dates when settings change.
+Do not infer a restaurant timezone from a server or browser timezone. A future
+cross-dataset restaurant directory needs explicit linking rather than name matching.

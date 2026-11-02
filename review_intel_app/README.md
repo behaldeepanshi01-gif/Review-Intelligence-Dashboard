@@ -29,12 +29,20 @@ It opens in your browser with 930 synthetic reviews across four sample locations
 
 ### Restaurant action calendar
 
-The sidebar's **Restaurant timezone** accepts an IANA timezone (for example,
-`America/New_York` or `Asia/Kolkata`). It defaults to `America/New_York` for the
-Falls Church restaurant and applies to all selected locations in the current
-session; it resets in a new session. Invalid names stop evaluation with an error.
+The sidebar's **Location calendars** lets managers select a location and explicitly
+save an IANA **Restaurant timezone** (for example, `America/New_York` or
+`Asia/Kolkata`). Unconfigured locations default to `America/New_York` for the
+Falls Church demo. Settings belong to the stable dataset identity and exact
+location name, not to a browser session or filename. Updating the same dataset
+retains them; separate datasets and renamed locations have independent settings.
+All managers with access to this local app can edit them (there are no user roles).
+Settings persist in `data/location_settings.sqlite` on the shared local filesystem;
+independent deployment hosts do not share this file. Back it up with the action log.
+Stale manager edits are rejected; use **Reload saved timezone** before retrying.
+Invalid names are rejected without changing the saved calendar.
 Action defaults, creation dates, overdue filters, warnings, and weekly summaries
-use that local calendar, independently of the hosting server's timezone.
+use each action's location calendar, including mixed-location summaries, independently
+of the hosting server's timezone. Each interaction or refresh reloads saved settings.
 An unfinished action becomes overdue only on the day after its due date.
 Daylight-saving changes are handled by timezone rules, not fixed UTC offsets.
 Refresh or interact with the app after midnight to update the displayed day.

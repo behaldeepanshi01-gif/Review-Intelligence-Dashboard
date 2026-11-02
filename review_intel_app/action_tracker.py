@@ -74,14 +74,23 @@ def parse_date(value, fallback: date | None = None) -> date | None:
 def is_overdue(
     action: dict, today: date | None = None,
     *, timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
+    timezones_by_location: dict | None = None,
+    now: datetime | None = None,
 ) -> bool:
     """An unfinished plan is overdue only after its valid due date has passed."""
     due_date = parse_date(action.get("due_date"))
     return (
         action.get("status") != "Done"
         and due_date is not None
-        and due_date < (today if today is not None else restaurant_today(timezone_name))
+        and due_date < (today if today is not None else location_today(
+            action.get("location"), timezones_by_location, timezone_name=timezone_name, now=now))
     )
+
+
+def location_today(location, timezones_by_location=None, *,
+                   timezone_name=DEFAULT_RESTAURANT_TIMEZONE, now=None):
+    zone = (timezones_by_location or {}).get(location, timezone_name)
+    return restaurant_today(zone) if now is None else restaurant_today(zone, now=now)
 
 
 def matches_dataset(action: dict, dataset_tag: str, legacy_tag: str | None = None) -> bool:
@@ -214,6 +223,8 @@ def create_action(
     *, today: date | None = None,
     timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
     tagging_provenance: dict | None = None,
+    timezones_by_location: dict | None = None,
+    now: datetime | None = None,
 ) -> dict:
     """Create one manager-owned action using the warning as its baseline."""
     return {
@@ -227,7 +238,9 @@ def create_action(
         "status": "Planned",
         "start_date": start_date.isoformat(),
         "due_date": due_date.isoformat(),
-        "created_on": (today if today is not None else restaurant_today(timezone_name)).isoformat(),
+        "created_on": (today if today is not None else location_today(
+            alert["location"], timezones_by_location,
+            timezone_name=timezone_name, now=now)).isoformat(),
         "alert_end_date": alert_end_date.isoformat(),
         "baseline_share": float(alert["recent_share"]),
         "baseline_mentions": int(alert["recent_mentions"]),
@@ -374,6 +387,8 @@ def weekly_action_summary(
     *, legacy_tag: str | None = None,
     timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
     provenance_by_location: dict | None = None,
+    timezones_by_location: dict | None = None,
+    now: datetime | None = None,
 ) -> list[str]:
     """Summarize active plans without including guest names or review text."""
     selected_locations = set(locations)
@@ -388,7 +403,6 @@ def weekly_action_summary(
     if not active_actions:
         return ["Manager actions: no active actions for the selected file and locations."]
 
-    today = today if today is not None else restaurant_today(timezone_name)
     lines = ["Manager actions:"]
     for action in active_actions:
         location = action.get("location", "Location")
@@ -397,7 +411,9 @@ def weekly_action_summary(
         owner = action.get("owner") or "Not assigned"
         status = action.get("status", "Planned")
         due_date = action.get("due_date") or "Not set"
-        overdue_label = "OVERDUE — " if is_overdue(action, today) else ""
+        overdue_label = "OVERDUE — " if is_overdue(
+            action, today, timezone_name=timezone_name,
+            timezones_by_location=timezones_by_location, now=now) else ""
         lines.append(
             f"- {overdue_label}{location}, {theme}: {action_text} "
             f"(Status: {status}; Owner: {owner}; Due: {due_date})"

@@ -3,6 +3,7 @@
 from pathlib import Path
 from datetime import date, datetime, timedelta
 import unittest
+import tempfile
 from unittest.mock import patch
 
 import pandas as pd
@@ -10,6 +11,7 @@ from streamlit.testing.v1 import AppTest
 import engine as E
 import action_tracker as A
 from dataset_store import SAMPLE_ID
+from location_settings import LocationSettings
 
 
 APP = Path(__file__).with_name("app.py")
@@ -17,6 +19,13 @@ APP = Path(__file__).with_name("app.py")
 
 class LocalAppTests(unittest.TestCase):
     def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        settings = LocationSettings(Path(directory.name) / "calendars.sqlite")
+        store = patch("location_settings.LocationSettings", return_value=settings)
+        mocked_store = store.start()
+        mocked_store.default.side_effect = LocationSettings.default
+        self.addCleanup(store.stop)
         # Existing date-based fixtures and app evaluation share a fixed clock.
         clock = patch.object(A, "restaurant_today", return_value=date.today())
         clock.start()
@@ -28,13 +37,28 @@ class LocalAppTests(unittest.TestCase):
         with patch.object(A, "restaurant_today",
                           side_effect=lambda zone: real_today(zone, now=instant)):
             app = AppTest.from_file(str(APP), default_timeout=30).run()
+            second_manager = AppTest.from_file(str(APP), default_timeout=30).run()
             self.assertFalse(app.exception)
             self.assertTrue(any("Action calendar: 2026-01-01" in c.value for c in app.caption))
             setting = next(t for t in app.text_input if t.label == "Restaurant timezone")
-            setting.set_value("Asia/Kolkata").run()
+            setting.set_value("Asia/Kolkata")
+            next(b for b in app.button if b.label == "Save location timezone").click().run()
             self.assertFalse(app.exception)
             self.assertTrue(any("Action calendar: 2026-01-02" in c.value for c in app.caption))
-            setting.set_value("Invalid/Zone").run()
+            next(t for t in second_manager.text_input
+                 if t.label == "Restaurant timezone").set_value("UTC")
+            next(b for b in second_manager.button
+                 if b.label == "Save location timezone").click().run()
+            self.assertTrue(any("Another manager changed" in e.value
+                                for e in second_manager.error))
+            next(b for b in second_manager.button
+                 if b.label == "Reload saved timezone").click().run()
+            self.assertEqual(next(t for t in second_manager.text_input
+                                  if t.label == "Restaurant timezone").value, "Asia/Kolkata")
+            self.assertTrue(any("2026-01-02 · Asia/Kolkata" in c.value
+                                for c in second_manager.caption))
+            next(t for t in app.text_input if t.label == "Restaurant timezone").set_value("Invalid/Zone")
+            next(b for b in app.button if b.label == "Save location timezone").click().run()
             self.assertTrue(any("valid IANA timezone" in e.value for e in app.error))
 
     _real_today = staticmethod(A.restaurant_today)

@@ -18,6 +18,7 @@ import action_tracker as A
 import engine as E
 import manager_corrections as C
 import dataset_store as D
+from location_settings import LocationSettings
 from legacy_history_ui import show_history_controls
 
 st.set_page_config(page_title="Review Intelligence", page_icon="🍛", layout="wide")
@@ -44,6 +45,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLE = os.path.join(BASE_DIR, "data", "sample_reviews.csv")
 ACTION_LOG = os.path.join(BASE_DIR, "data", "action_log.json")
 CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")
+LOCATION_SETTINGS = os.path.join(BASE_DIR, "data", "location_settings.sqlite")
 
 
 # ----------------------------------------------------------------------------
@@ -51,20 +53,6 @@ CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")
 # ----------------------------------------------------------------------------
 st.sidebar.title("🍛 Review Intelligence")
 st.sidebar.caption("AI review assistant for multi-location restaurants")
-restaurant_timezone = st.sidebar.text_input(
-    "Restaurant timezone", value=A.DEFAULT_RESTAURANT_TIMEZONE,
-    help="IANA timezone used for action deadlines across selected locations. "
-         "For example: America/New_York or Asia/Kolkata. Applies to this session.",
-)
-try:
-    action_today = A.restaurant_today(restaurant_timezone.strip())
-except ValueError as ex:
-    st.sidebar.error(str(ex))
-    st.stop()
-st.sidebar.caption(
-    f"Action calendar: {action_today.isoformat()} · {restaurant_timezone.strip()}. "
-    "Plans become overdue the day after their due date. Refresh to update."
-)
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -236,6 +224,53 @@ def show_rule_evidence(row):
             st.caption(item["reason"])
 
 locations = sorted(tagged["location"].unique())
+try:
+    calendars = LocationSettings(LOCATION_SETTINGS)
+    calendar_settings = calendars.load(tag)
+except (OSError, D.sqlite3.Error) as ex:
+    st.error(f"Couldn't read location calendars: {ex}")
+    st.stop()
+timezones_by_location = {
+    loc: calendar_settings.get(loc, LocationSettings.default())["timezone"]
+    for loc in locations
+}
+with st.sidebar.expander("Location calendars"):
+    st.caption(
+        "Shared by all managers of this saved dataset. Separate datasets own "
+        "separate settings, even when location names match. Anyone with access "
+        "to this local app can edit them. Existing due dates never change.")
+    calendar_location = st.selectbox("Calendar location", locations)
+    current_calendar = calendar_settings.get(calendar_location, LocationSettings.default())
+    calendar_key = f"calendar_{tag}_{calendar_location}"
+    if calendar_key not in st.session_state:
+        st.session_state[calendar_key] = current_calendar
+    calendar_snapshot = st.session_state[calendar_key]
+    if calendar_snapshot != current_calendar:
+        st.warning("Another manager changed this calendar. Reload before saving.")
+    if st.button("Reload saved timezone"):
+        st.session_state[calendar_key] = current_calendar
+        st.rerun()
+    with st.form(f"{calendar_key}_{calendar_snapshot['revision']}"):
+        zone = st.text_input("Restaurant timezone", value=calendar_snapshot["timezone"],
+                             key=f"{calendar_key}_{calendar_snapshot['revision']}_zone",
+                             help="IANA name, for example America/New_York or Asia/Kolkata.")
+        save_calendar = st.form_submit_button("Save location timezone")
+    if save_calendar:
+        try:
+            calendars.save(tag, calendar_location, zone,
+                           expected_revision=calendar_snapshot["revision"])
+        except (ValueError, OSError, D.sqlite3.Error) as ex:
+            st.error(f"Couldn't save timezone: {ex}")
+        else:
+            del st.session_state[calendar_key]
+            st.rerun()
+    st.caption("Saved calendars reload on each interaction or page refresh. "
+               "Plans become overdue the day after their local due date.")
+    for loc in locations:
+        st.caption(f"{loc} — Action calendar: "
+                   f"{A.location_today(loc, timezones_by_location).isoformat()} · "
+                   f"{timezones_by_location[loc]}")
+
 pick = st.sidebar.multiselect("Locations", locations, default=locations)
 dmin, dmax = tagged["date"].min().date(), tagged["date"].max().date()
 dr = st.sidebar.slider("Date range", min_value=dmin, max_value=dmax, value=(dmin, dmax))
@@ -509,6 +544,7 @@ with tabs[2]:
     if alerts.empty:
         st.success("No rising issues right now.")
     for index, alert in enumerate(alerts.to_dict("records")):
+        action_today = A.location_today(alert["location"], timezones_by_location)
         key = f"{tag}_{index}"
         with st.container(border=True):
             st.markdown(f"**{alert['location']}: {alert['theme']}**")
@@ -692,7 +728,7 @@ with tabs[5]:
         dataset_tag=tag,
         locations=pick,
         reviews=tagged.to_dict("records"),
-        today=action_today,
+        timezones_by_location=timezones_by_location,
         legacy_tag=legacy_tag,
         provenance_by_location=provenance_by_location,
     ))
@@ -721,7 +757,8 @@ with tabs[6]:
         key="action_status_filter",
     )
     if status_filter == "Overdue only":
-        visible_actions = [action for action in saved_actions if A.is_overdue(action, action_today)]
+        visible_actions = [action for action in saved_actions if A.is_overdue(
+            action, timezones_by_location=timezones_by_location)]
     elif status_filter == "Completed plans":
         visible_actions = [action for action in saved_actions if action.get("status") == "Done"]
     else:
@@ -740,6 +777,7 @@ with tabs[6]:
         st.info(empty_messages[status_filter] + " Choose another status filter to see other plans.")
 
     for action in visible_actions:
+        action_today = A.location_today(action.get("location"), timezones_by_location)
         action_id = action.get("action_id", "")
         with st.container(border=True):
             st.markdown(f"**{action.get('location', 'Location')}: {action.get('theme', 'Theme')}**")

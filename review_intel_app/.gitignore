@@ -2,6 +2,7 @@
 data/uploads/
 data/*cache*.json
 data/action_log.json
+data/manager_corrections.sqlite*
 action_tracker_update.zip
 backups/
 __pycache__/

@@ -15,14 +15,14 @@ Built by Deepanshi Behal.
 | What guests say | Heatmap of 12 themes (food, spice, consistency, service speed, portions, staff, ambiance, catering and more), top complaints, and the actual reviews behind each theme |
 | Early warnings | Themes whose complaints jumped in the last 30 days vs the 90 days before |
 | Staff shout-outs | Staff praised by name, per location |
-| Reply inbox | AI-drafted replies sorted by urgency. Edit, approve, copy. Nothing posts automatically |
+| Reply inbox | Editable local reply templates, or optional API drafts. Edit, approve, copy. Nothing posts automatically |
 | Export | Analyzed reviews CSV, alerts CSV, and a weekly owner summary ready to paste into email or WhatsApp |
 
 ## Quick start
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
 It opens in your browser with 930 synthetic reviews across four sample locations.
@@ -33,19 +33,50 @@ To regenerate the sample data:
 python generate_data.py
 ```
 
-## Three AI engines
+## Local Review Analyzer
 
-- **Offline (default):** keyword and rule based tagging. Free, instant, no account needed.
-- **Ollama (free, local):** runs an open-source AI model on your own computer. Install Ollama
-  from ollama.com, run `ollama pull llama3.2:3b` once, then pick "Ollama" in the sidebar and
-  analyze reviews in rounds (50 at a time by default). Progress is saved after every few reviews,
-  so you can stop and continue later. Reviews not yet analyzed fall back to offline results.
-  On a laptop with less than 8 GB of RAM, use `llama3.2:1b` instead.
-- **Claude API:** pick "Claude API" in the sidebar, paste an Anthropic API key, click
-  "Run Claude analysis." Claude reads each review like a person would, which matters for
-  real, messy reviews (sarcasm, mixed feelings, typos). Results are cached in `data/`, so
-  each review is only sent once. You can also set the key as an environment variable:
-  `export ANTHROPIC_API_KEY=...`
+The default analyzer uses restaurant phrases, bounded word matching, and nearby
+sentiment cues. It is a rule-based tool, not a newly trained language model.
+It uses no API, network requests, model downloads, or additional packages.
+The Ollama controls have been removed. Existing Ollama cache files are not changed.
+
+- Explicit praise and complaints can both be retained, including for the same theme.
+  Star ratings do not erase clear criticism.
+- Open **What guests say**, then **Why these tags?**, to see matched terms and the
+  original passage that supports a tag.
+- The **Reviews needing manager review** section lets you select unclear results.
+  Neutral mentions and tentative statements are not forced into praise or complaints.
+- Local reply drafts are templates. Check them before approval. Nothing posts automatically.
+- The analyzer can miss sarcasm, unusual phrasing, implicit complaints, and context.
+  A large review-needed count means manual checking is needed, not that accuracy is high.
+- No confidence percentages or accuracy claims are shown without a labeled evaluation.
+
+**Claude API** remains an optional paid mode and runs only when requested. Local
+analysis never calls it. Local rule explanations are not presented as evidence for
+Claude-produced tags.
+
+### Caching and existing actions
+
+The local rules version is part of the Streamlit cache key. When editing the rules,
+bump `RULES_VERSION` in `local_analyzer.py`. Existing action records are preserved.
+Old saved baselines may use earlier rules: do not interpret changes in tagging as
+proof of restaurant improvements.
+
+### Checks and undo
+
+```bash
+python -m unittest -v test_local_analyzer test_action_tracker test_local_app
+python benchmark_local.py data/sample_reviews.csv
+```
+
+The app checks use Streamlit's in-process test utility, not a browser. Benchmark
+output contains only counts and timing, never guest text or names. Timing on a
+Replit machine does not guarantee the same speed on a Windows laptop.
+
+Backups made before the local-analyzer update are in `backups/before_local_analyzer/`.
+Restore that folder's `app.py`, `engine.py`, and `README.md` to undo this change.
+The new helper can remain unused. The backup app exposes the old Ollama option, so
+leave it on Offline if you restore. Do not delete your uploads, caches, or action log.
 
 ## Using real reviews
 
@@ -81,7 +112,9 @@ Common alternatives are renamed automatically (`stars` to rating, `review` to te
 
 ```
 app.py             Streamlit dashboard
-engine.py          Tagging (offline + Claude), alerts, staff leaderboard, reply drafts
+engine.py          Local/API analysis, alerts, staff leaderboard, reply templates
+local_analyzer.py  Explainable local phrase rules and evidence
+benchmark_local.py Counts and timing only, no private review output
 generate_data.py   Builds the synthetic dataset
 data/              Sample data and Claude cache
 ```

@@ -3,3 +3,5 @@ data/uploads/
 data/*cache*.json
 data/action_log.json
 action_tracker_update.zip
+backups/
+__pycache__/

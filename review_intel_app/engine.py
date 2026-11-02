@@ -1,11 +1,8 @@
 """
 Review Intelligence engine.
 
-Two ways to analyze reviews:
-  1. Offline mode (default): fast keyword and rule based tagging. Free, no API key.
-     Good for demos and for the synthetic dataset.
-  2. Claude mode: sends reviews to the Claude API in batches for much better
-     theme tagging, staff detection and reply drafts on real, messy reviews.
+Local Review Analyzer (default): explainable rules, no network or model downloads.
+Optional Claude API support is retained, but is never called by local analysis.
 
 Both return the same columns, so the dashboard works with either.
 """
@@ -18,6 +15,7 @@ import re
 from datetime import timedelta
 
 import pandas as pd
+from local_analyzer import RULES_VERSION as LOCAL_ANALYZER_VERSION, analyze_text
 
 # ----------------------------------------------------------------------------
 # Theme dictionary
@@ -75,7 +73,6 @@ STAFF_PATTERNS = [
     r"(?:server|waiter|waitress|bartender|host|manager|chef)\s+([A-Z][a-z]{2,})",
     r"[Ss]hout out to\s+([A-Z][a-z]{2,})",
     r"[Tt]hanks to\s+([A-Z][a-z]{2,})",
-    r"\b([A-Z][a-z]{2,}) was (?:so|very|super|amazing|wonderful|great|incredibly)",
 ]
 NOT_NAMES = {"The", "Our", "Food", "Service", "Everything", "This", "That", "It", "Staff",
              "Takeout", "Catering", "Every", "Even", "Very", "Great", "Loved"}
@@ -142,49 +139,36 @@ def find_staff(text: str) -> list[str]:
 
 
 def tag_offline(text: str, rating: int) -> dict:
-    pos, neg = set(), set()
-    for s in _sentences(text):
-        low = s.lower()
-        hits = [t for t, cfg in THEMES.items() if any(k in low for k in cfg["kw"])]
-        # Prefer the more specific theme over the generic one in the same sentence
-        if {"seasoning", "consistency", "portion_value"} & set(hits) and "food_flavor" in hits:
-            hits.remove("food_flavor")
-        if "portion_value" in hits and "price" in hits:
-            hits.remove("price")
-        if not hits:
-            continue
-        polarity = _clause_polarity(s, rating)
-        for t in hits:
-            (neg if polarity == "neg" else pos).add(t)
-    # A theme both praised and criticized: let the overall rating decide
-    both = pos & neg
-    if rating >= 4:
-        neg -= both
-    else:
-        pos -= both
-    staff = find_staff(text)
-    if staff and "staff" not in neg:
-        pos.add("staff")
+    """Keep the legacy function name while using the versioned local rules."""
+    pos, neg, evidence, reasons = analyze_text(text, THEMES)
+    # Only explicitly praised staff enter the shout-out list.
+    staff = find_staff(text) if "staff" in pos and "staff" not in neg else []
+    if (rating >= 4 and neg and not pos) or (rating <= 2 and pos and not neg):
+        reasons.append("The star rating and the detected wording differ. Check the result.")
     if rating <= 2 or (neg & HIGH_URGENCY_THEMES and rating <= 3):
         urgency = "High"
     elif neg:
         urgency = "Medium"
     else:
         urgency = "Low"
-    sentiment = "Positive" if rating >= 4 and not neg else (
-        "Negative" if rating <= 2 or (neg and not pos) else "Mixed")
+    sentiment = "Mixed" if (pos and neg) or not (pos or neg) else (
+        "Negative" if neg else "Positive")
     return {"themes_pos": sorted(pos), "themes_neg": sorted(neg), "staff": staff,
-            "urgency": urgency, "sentiment": sentiment}
+            "urgency": urgency, "sentiment": sentiment, "tag_evidence": evidence,
+            "needs_review": bool(reasons), "review_reasons": reasons}
 
 
 def draft_reply_offline(row: dict) -> str:
     loc = row["location"]
     first = str(row.get("reviewer", "")).split(" ")[0] or "there"
-    pos = row["themes_pos"]
     neg = row["themes_neg"]
+    pos = [theme for theme in row["themes_pos"] if theme not in neg]
     staff = row["staff"]
     lines = [f"Hi {first},"]
-    if not neg:
+    if not neg and not pos:
+        lines.append(f"Thank you for visiting {loc} and sharing your feedback.")
+        lines.append("Please contact us directly if you would like to tell us more.")
+    elif not neg:
         lines.append(f"Thank you so much for the kind words about {loc}.")
         if staff:
             lines.append(f"We'll make sure {', '.join(staff)} hears this, it means a lot to the team.")
@@ -216,7 +200,7 @@ def draft_reply_offline(row: dict) -> str:
                          f"We're glad you enjoyed {PRAISE_PHRASE[pos[0]]}.")
         else:
             lines.append(f"Thank you for visiting {loc}, and we're sorry about your experience.")
-        lines.append(f"We're sorry about {issue}. I've shared this with our team so we can fix it.")
+        lines.append(f"We're sorry about {issue}. We'll review this feedback with our team.")
         lines.append("If you're open to it, please reach out to us directly. We'd love the chance "
                      "to make your next visit better.")
     lines.append(f"The {loc} team")
@@ -226,10 +210,11 @@ def draft_reply_offline(row: dict) -> str:
 def analyze_offline(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     tags = [tag_offline(t, r) for t, r in zip(out["text"], out["rating"])]
-    for key in ["themes_pos", "themes_neg", "staff", "urgency", "sentiment"]:
+    for key in ["themes_pos", "themes_neg", "staff", "urgency", "sentiment",
+                "tag_evidence", "needs_review", "review_reasons"]:
         out[key] = [t[key] for t in tags]
     out["reply_draft"] = [draft_reply_offline(r) for r in out.to_dict("records")]
-    out["engine"] = "offline"
+    out["engine"] = "local_rules"
     return out
 
 
@@ -300,7 +285,8 @@ def _merge_results(df: pd.DataFrame, cache: dict, engine_name: str) -> pd.DataFr
         c = cache.get(str(r.review_id))
         if c is None:
             rows.append({k: f[k] for k in ["themes_pos", "themes_neg", "staff", "urgency",
-                                           "sentiment", "reply_draft"]})
+                                           "sentiment", "reply_draft", "tag_evidence",
+                                           "needs_review", "review_reasons"]})
             continue
         urgency = c.get("urgency", "Low")
         sentiment = c.get("sentiment", "Mixed")
@@ -311,8 +297,13 @@ def _merge_results(df: pd.DataFrame, cache: dict, engine_name: str) -> pd.DataFr
             "urgency": urgency if urgency in {"High", "Medium", "Low"} else f["urgency"],
             "sentiment": sentiment if sentiment in {"Positive", "Mixed", "Negative"} else f["sentiment"],
             "reply_draft": c.get("reply_draft") or f["reply_draft"],
+            # External results do not come with local rule evidence.
+            "tag_evidence": [],
+            "needs_review": False,
+            "review_reasons": [],
         })
-    for key in ["themes_pos", "themes_neg", "staff", "urgency", "sentiment", "reply_draft"]:
+    for key in ["themes_pos", "themes_neg", "staff", "urgency", "sentiment", "reply_draft",
+                "tag_evidence", "needs_review", "review_reasons"]:
         out[key] = [x[key] for x in rows]
     out["engine"] = engine_name
     return out
@@ -348,7 +339,8 @@ def analyze_with_claude(df: pd.DataFrame, api_key: str, data_tag: str = "default
 
 
 # ----------------------------------------------------------------------------
-# Ollama mode (free, runs on your own computer)
+# Legacy Ollama helpers retained for compatibility, not exposed by the dashboard.
+# Do not call these during local analysis. Existing cache files remain untouched.
 # ----------------------------------------------------------------------------
 OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
 OLLAMA_DEFAULT_MODEL = "llama3.2:3b"
@@ -484,7 +476,10 @@ def theme_table(tagged: pd.DataFrame) -> pd.DataFrame:
                             "pct_negative": round(100 * q / n, 1),
                             "pct_positive": round(100 * p / n, 1),
                             "net": round(100 * (p - q) / n, 1)})
-    return pd.DataFrame(records)
+    return pd.DataFrame(records, columns=[
+        "location", "theme", "theme_key", "positive", "negative",
+        "pct_negative", "pct_positive", "net",
+    ])
 
 
 def early_warnings(tagged: pd.DataFrame, recent_days: int = 30, baseline_days: int = 90,

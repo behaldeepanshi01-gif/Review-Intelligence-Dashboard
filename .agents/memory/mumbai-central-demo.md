@@ -20,3 +20,9 @@ Do not use Ollama for this app. Use the free Offline engine for verification.
 **Why:** The user said, “Dont use Ollama its very slow.”
 
 **How to apply:** Do not start Ollama or run review batches through it unless the user explicitly changes this instruction.
+
+The user approved a lightweight custom, local rule-based analyzer as the replacement for Ollama. Describe it as rules, not a self-trained language model, and do not claim accuracy from unlabeled review data.
+
+**Why:** The user asked to self-build a replacement because Ollama is too slow; the approved scope keeps analysis free and suitable for their laptop.
+
+**How to apply:** Keep explanations and manager review visible. Speed measurements are not an accuracy evaluation, and Replit speed is not a laptop performance guarantee.

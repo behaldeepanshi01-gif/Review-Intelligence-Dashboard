@@ -5,6 +5,7 @@ Run:  streamlit run app.py
 """
 
 import io
+import json
 import os
 from datetime import date, timedelta
 
@@ -81,78 +82,25 @@ except Exception as ex:  # show a friendly error instead of a stack trace
     st.stop()
 
 engine_choice = st.sidebar.radio(
-    "AI engine", ["Offline (free, instant)", "Ollama (free, runs on this computer)",
-                  "Claude API (best accuracy)"],
-    help="Offline uses keyword rules. Ollama runs a free AI model on your laptop. "
-         "Claude reads reviews best and writes the best replies, but costs a little. "
-         "AI results are saved, so each review is only analyzed once.")
+    "Analysis engine", ["Local Review Analyzer (free, offline)",
+                        "Claude API (optional, paid)"],
+    help="The local analyzer uses explainable rules, not a trained language model. "
+         "It needs no model download or API. Claude is optional and only runs on request.")
+st.sidebar.caption(
+    "Local analysis stays on this computer. Rules can miss context, sarcasm, "
+    "and unfamiliar wording. A manager should check the results."
+)
 
 
 @st.cache_data(show_spinner=False)
-def run_offline(df: pd.DataFrame) -> pd.DataFrame:
+def run_offline(df: pd.DataFrame, rules_version: str) -> pd.DataFrame:
+    # The version is part of the cache key; bump it when imported rules change.
     return E.analyze_offline(df)
 
 
-tagged = run_offline(raw)
+tagged = run_offline(raw, E.LOCAL_ANALYZER_VERSION)
 
-if engine_choice.startswith("Ollama"):
-    running, models = E.ollama_status()
-    if not running:
-        st.sidebar.error("Ollama isn't running.")
-        st.sidebar.markdown("1. Install it from **ollama.com**\n"
-                            "2. Open a terminal and run:  \n`ollama pull llama3.2:3b`\n"
-                            "3. Refresh this page")
-        st.sidebar.caption("Showing offline results for now.")
-    elif not models:
-        st.sidebar.warning("Ollama is running but has no models yet.")
-        st.sidebar.markdown("In a terminal, run:  \n`ollama pull llama3.2:3b`  \nthen refresh.")
-    else:
-        default = E.OLLAMA_DEFAULT_MODEL if E.OLLAMA_DEFAULT_MODEL in models else models[0]
-        model = st.sidebar.selectbox("Model", models, index=models.index(default))
-        done = E.ollama_cached(raw, model, tag)
-        st.sidebar.caption(f"{done} of {len(raw)} reviews analyzed with {model}.")
-        write_replies = st.sidebar.checkbox(
-            "Also write reply drafts (about 3x slower)", value=False,
-            help="Off: the AI tags themes, and replies come from the offline templates.")
-        left = len(raw) - done
-        if "last_run" in st.session_state:
-            n_ok, secs = st.session_state.pop("last_run")
-            st.sidebar.success(f"Done: {n_ok} reviews in {secs / 60:.1f} min "
-                               f"(about {secs / max(n_ok, 1):.0f} sec each). Saved.")
-        if left:
-            # Remember the last batch size instead of resetting to 50 after each run
-            preferred = st.session_state.get("chunk_pref", 50)
-            chunk = st.sidebar.number_input("Analyze next", min_value=1, max_value=left,
-                                            value=min(preferred, left), step=10,
-                                            help="Newest reviews go first, since early warnings "
-                                                 "use the most recent months. Progress is saved, "
-                                                 "so you can do this in rounds.")
-            st.session_state["chunk_pref"] = int(chunk)
-            if st.sidebar.button(f"Run Ollama on {int(chunk)} reviews", type="primary"):
-                remaining = raw[~raw["review_id"].astype(str).isin(
-                    set(E._load_cache(E._cache_path(f"{tag}_{model}", "ollama")).keys()))]
-                batch = remaining.sort_values("date", ascending=False).head(int(chunk))
-                started = __import__("time").time()
-                bar = st.sidebar.progress(0.0, text="Starting... the first review loads the model")
-                def _p(frac, n, total, errors):
-                    bar.progress(frac, text=f"{n} of {total} done"
-                                            + (f", {errors} skipped" if errors else ""))
-                try:
-                    E.analyze_with_ollama(batch, model=model, data_tag=tag,
-                                          write_replies=write_replies, progress=_p)
-                except Exception as ex:
-                    st.sidebar.error(f"Ollama call failed: {ex}")
-                    st.stop()
-                st.session_state["last_run"] = (len(batch), __import__("time").time() - started)
-                st.rerun()
-        else:
-            st.sidebar.success("All reviews analyzed.")
-        if done:
-            tagged = E.load_ollama_results(raw, model, tag)
-            if left:
-                st.sidebar.caption("Reviews not yet analyzed use offline results.")
-
-elif engine_choice.startswith("Claude"):
+if engine_choice.startswith("Claude"):
     key = st.sidebar.text_input("Anthropic API key", type="password",
                                 value=os.environ.get("ANTHROPIC_API_KEY", ""))
     if st.sidebar.button("Run Claude analysis", type="primary", disabled=not key):
@@ -167,7 +115,21 @@ elif engine_choice.startswith("Claude"):
         tagged = st.session_state["claude_result"]
         st.sidebar.success("Showing Claude analysis")
     else:
-        st.sidebar.caption("Showing offline results until you run Claude.")
+        st.sidebar.caption("Showing local rule results until you run Claude.")
+
+
+def show_rule_evidence(row):
+    """Show local explanations only in the private review-inspection UI."""
+    if row.needs_review:
+        st.warning("Needs manager review: " + " ".join(row.review_reasons))
+    with st.expander("Why these tags?"):
+        if not row.tag_evidence:
+            st.caption("No local rule evidence is available for this result.")
+        for item in row.tag_evidence:
+            st.write(f"{E.THEME_LABELS[item['theme']]}: {item['polarity']}")
+            st.caption("Matched terms: " + ", ".join(item["matched_terms"]))
+            st.text(item["excerpt"])
+            st.caption(item["reason"])
 
 locations = sorted(tagged["location"].unique())
 pick = st.sidebar.multiselect("Locations", locations, default=locations)
@@ -254,11 +216,15 @@ with tabs[1]:
     tt = E.theme_table(view)
     st.markdown("**Net sentiment by theme** (green = guests praise it, red = guests complain). "
                 "Number = % of that location's reviews, praise minus complaints.")
-    heat = tt.pivot(index="theme", columns="location", values="net").fillna(0)
-    fig3 = px.imshow(heat, text_auto=True, aspect="auto", color_continuous_scale="RdYlGn",
-                     color_continuous_midpoint=0, labels=dict(color="Net %"))
-    fig3.update_layout(height=480, margin=dict(l=0, r=0, t=10, b=0))
-    st.plotly_chart(fig3, width="stretch")
+    if tt.empty:
+        st.info("No clear praise or complaints matched the supported themes. "
+                "Check the reviews needing manager review below.")
+    else:
+        heat = tt.pivot(index="theme", columns="location", values="net").fillna(0)
+        fig3 = px.imshow(heat, text_auto=True, aspect="auto", color_continuous_scale="RdYlGn",
+                         color_continuous_midpoint=0, labels=dict(color="Net %"))
+        fig3.update_layout(height=480, margin=dict(l=0, r=0, t=10, b=0))
+        st.plotly_chart(fig3, width="stretch")
 
     st.subheader("Top complaints")
     top_c = (tt[tt["negative"] > 0].sort_values("pct_negative", ascending=False)
@@ -277,6 +243,30 @@ with tabs[1]:
     st.caption(f"{len(sub)} reviews")
     for r in sub.head(8).itertuples():
         st.markdown(f"**{r.location}** · {'★' * r.rating} · {r.date.date()}  \n{r.text}")
+        show_rule_evidence(r)
+
+    # Unknown themes must be reachable even when no theme filter matches them.
+    needs_review = view[view["needs_review"]].sort_values("date", ascending=False)
+    with st.expander(f"Reviews needing manager review ({len(needs_review)})"):
+        st.caption("Unclear wording is not automatically counted as praise or a complaint.")
+        if not needs_review.empty:
+            position = st.selectbox(
+                "Review needing a check", list(range(len(needs_review))),
+                format_func=lambda index: (
+                    f"{needs_review.iloc[index]['review_id']} | "
+                    f"{needs_review.iloc[index]['location']} | "
+                    f"{needs_review.iloc[index]['date'].date()}"
+                ),
+            )
+            r = next(needs_review.iloc[[position]].itertuples())
+            st.write(f"{r.location} | {r.date.date()} | {r.rating} stars")
+            st.text(r.text)
+            # Avoid nesting expanders on older Streamlit versions.
+            st.warning(" ".join(r.review_reasons))
+            for item in r.tag_evidence:
+                st.write(f"{E.THEME_LABELS[item['theme']]}: {item['polarity']}")
+                st.caption("Matched terms: " + ", ".join(item["matched_terms"]))
+                st.text(item["excerpt"])
 
 # ----------------------------------------------------------------------------
 # Early warnings
@@ -370,8 +360,9 @@ with tabs[3]:
 # Reply inbox
 # ----------------------------------------------------------------------------
 with tabs[4]:
-    st.markdown("AI drafts a reply for every review. **Nothing is posted automatically.** "
-                "Edit, approve, then copy into Google or Yelp.")
+    st.markdown("Local replies use editable templates; optional Claude replies use that API. "
+                "**Nothing is posted automatically.** Check the wording before approving "
+                "and copying into Google or Yelp.")
     f1, f2, f3 = st.columns(3)
     urg = f1.multiselect("Urgency", ["High", "Medium", "Low"], default=["High", "Medium"])
     show_done = f2.toggle("Show approved", value=False)
@@ -391,6 +382,7 @@ with tabs[4]:
                             f"{r.reviewer} · {r.date.date()}")
             top[1].markdown(f"Urgency: **{r.urgency}**")
             st.write(r.text)
+            show_rule_evidence(r)
             tags = "".join(f'<span class="tag neg">{E.THEME_LABELS[t]}</span>' for t in r.themes_neg)
             tags += "".join(f'<span class="tag pos">{E.THEME_LABELS[t]}</span>' for t in r.themes_pos)
             st.markdown(tags, unsafe_allow_html=True)
@@ -405,10 +397,16 @@ with tabs[4]:
 # Export
 # ----------------------------------------------------------------------------
 with tabs[5]:
+    st.caption("The review export includes guest text and reviewer names. Keep it private. "
+               "Use synthetic sample data for public demos.")
     out = view.copy()
     for c in ["themes_pos", "themes_neg", "staff"]:
         out[c] = out[c].apply(lambda xs: "; ".join(E.THEME_LABELS.get(x, x) for x in xs))
-    out["approved_reply"] = out["review_id"].map(st.session_state["approved"]).fillna("")
+    for c in ["tag_evidence", "review_reasons"]:
+        out[c] = out[c].apply(lambda value: json.dumps(value, ensure_ascii=False))
+    out["approved_reply"] = (
+        out["review_id"].map(st.session_state["approved"]).astype("object").fillna("")
+    )
     buf = io.StringIO()
     out.to_csv(buf, index=False)
     st.download_button("Download analyzed reviews (CSV)", buf.getvalue(),
@@ -417,6 +415,8 @@ with tabs[5]:
         st.download_button("Download early warnings (CSV)", alerts.to_csv(index=False),
                            file_name="early_warnings.csv", mime="text/csv")
     st.markdown("**Weekly owner summary** (copy into an email or WhatsApp)")
+    st.caption("Rule changes can change theme counts. Earlier saved action baselines "
+               "may use different rules, so check them before comparing.")
     lines = [f"Reviews this period: {len(view)}, average {view['rating'].mean():.2f} stars."]
     for loc, g in view.groupby("location"):
         lines.append(f"- {loc}: {g['rating'].mean():.2f} stars from {len(g)} reviews")
@@ -446,6 +446,8 @@ with tabs[6]:
         "Keep a manager's action with the alert, then check later reviews for the same theme. "
         "A change in review mentions is a signal, not proof that an action caused it."
     )
+    st.caption("An older saved baseline may use earlier tagging rules. A change in the "
+               "analyzer is not evidence of an operational improvement.")
     saved_actions = [
         action for action in all_actions
         if action.get("dataset_tag") == tag and action.get("location") in pick

@@ -26,3 +26,9 @@ The user approved a lightweight custom, local rule-based analyzer as the replace
 **Why:** The user asked to self-build a replacement because Ollama is too slow; the approved scope keeps analysis free and suitable for their laptop.
 
 **How to apply:** Keep explanations and manager review visible. Speed measurements are not an accuracy evaluation, and Replit speed is not a laptop performance guarantee.
+
+The user described their supplied Mumbai Central review CSV as an “Official review export.” This is user-reported provenance, not independent authentication or proof of a complete Google review history.
+
+**Why:** The user confirmed the source when asked; the Mumbai Central export must not be confused with the earlier Philadelphia Yelp test data or the website's selected testimonials.
+
+**How to apply:** Preserve source provenance and privacy. Do not claim the reviews were independently verified, publicly republish them, or treat the export as human-approved theme labels.

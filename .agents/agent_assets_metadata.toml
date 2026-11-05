@@ -154,3 +154,31 @@ mtime_ms = 1793918798421
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/2f09044d-1e45-4379-9200-70757211a849/3f7cf246-8767-406f-9f7a-7e65a0bbcd53"
 storage_version_token = "1793918822097518"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "n9j49VPxXb9V6xmZx04OR"
+uri = "file://review_intel_app/data/private_evaluation/remaining_verification_20261105/verification_report.html"
+type = "html"
+title = "Private verification report"
+description = "Full-suite results, exact commands, synthetic phrase failures, isolation safeguards and the smallest proposed fix. No analyzer changes."
+logical_id = "ab74f042-39a4-49a6-9374-2d323d8541f6"
+content_hash = "sha256:56c60585f520c2ff4f08482d72b42fcecac1b8f0e9ded89decf0c563b006c3e8"
+size = 7490
+mtime_ms = 1793921535819
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/ab74f042-39a4-49a6-9374-2d323d8541f6/156e8ef4-fe16-4643-b36b-85df0f02e668"
+storage_version_token = "1793921548710699"
+content_type = "text/html"
+
+[[outputs]]
+id = "eubu0lKk9r_XyQ1vYLZwg"
+uri = "file://review_intel_app/data/private_evaluation/remaining_verification_20261105/synthetic_results.json"
+type = "unspecified"
+title = "Synthetic money-phrase results"
+description = "All 36 checks, expected versus actual tags, evidence status and non-price comparisons. Invented examples only."
+logical_id = "7e894878-4ebe-412d-baa7-77e218fa6283"
+content_hash = "sha256:aa8f2a13fd3118e83647e0fb7cd8c36e35ac955d7705483d40761bd6239ea433"
+size = 15975
+mtime_ms = 1793921319304
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/7e894878-4ebe-412d-baa7-77e218fa6283/943ab147-686a-40ae-bd82-478102a22d00"
+storage_version_token = "1793921549146239"
+content_type = "application/octet-stream"

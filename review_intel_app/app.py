@@ -15,6 +15,7 @@ import plotly.express as px
 import streamlit as st
 
 import action_tracker as A
+from manager_report_ui import show_manager_report
 import engine as E
 import manager_corrections as C
 import dataset_store as D
@@ -283,6 +284,13 @@ view = tagged[tagged["location"].isin(pick)
               & (tagged["date"].dt.date >= dr[0]) & (tagged["date"].dt.date <= dr[1])]
 if view.empty:
     st.warning("No reviews match these filters.")
+    try:
+        report_actions = A.load_actions(ACTION_LOG)
+    except (OSError, ValueError) as ex:
+        st.error(f"Couldn't read the action log: {ex}")
+        st.stop()
+    show_manager_report(report_actions, tag, pick, tagged, legacy_tag,
+                        provenance_by_location, timezones_by_location)
     st.stop()
 
 # ----------------------------------------------------------------------------
@@ -688,6 +696,9 @@ with tabs[4]:
 # Export
 # ----------------------------------------------------------------------------
 with tabs[5]:
+    show_manager_report(all_actions, tag, pick, tagged, legacy_tag,
+                        provenance_by_location, timezones_by_location)
+    st.divider()
     st.caption("The review export includes guest text and reviewer names. Keep it private. "
                "Use synthetic sample data for public demos.")
     out = view.copy()

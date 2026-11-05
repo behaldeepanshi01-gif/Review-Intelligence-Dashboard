@@ -4,3 +4,4 @@
 - [Restaurant action calendar](action-calendar.md) — Eastern-time default targets Falls Church; distinguish session-wide configuration from per-location ownership.
 - [Action comparison provenance](action-provenance.md) — location-wide, filter-independent comparisons are conservative warnings, not evidence that action outcomes changed.
 - [Local action concurrency](action-concurrency.md) — preserve existing JSON histories; shared-file locking is not a multi-host persistence guarantee.
+- [Agent mode controls](agent-mode-controls.md) — the workspace Build tab and the composer Plan toggle are separate; check the latter for read-only errors.

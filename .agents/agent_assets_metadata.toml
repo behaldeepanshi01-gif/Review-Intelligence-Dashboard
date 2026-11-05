@@ -14,3 +14,45 @@ mtime_ms = 1793653747535
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/7c186a58-6d82-445a-9b32-a020ff2de688/5504ed4b-5705-44c2-a764-2c22825b4d89"
 storage_version_token = "1793653785935890"
 content_type = "text/csv"
+
+[[outputs]]
+id = "mZXcR48lrPSfUqjUGqos-"
+uri = "file://review_intel_app/data/private_evaluation/current_app_20261105T214758629734Z/report.html"
+type = "html"
+title = "Task 6: current-app evaluation report"
+description = "Private report covering all 61 approved reviews, per-theme results, limitations, and every error. No guest names or review text."
+logical_id = "9d09191e-e7d4-4c2f-b022-cef100063d24"
+content_hash = "sha256:b39c143e91243e6b7d947a6ac1b0007dee004409629de2e4228f9b52256e370a"
+size = 13881
+mtime_ms = 1793915278633
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/9d09191e-e7d4-4c2f-b022-cef100063d24/91430402-157d-4221-beba-447795086731"
+storage_version_token = "1793915322063095"
+content_type = "text/html"
+
+[[outputs]]
+id = "FEvBhCNww67vxc-VHKG_T"
+uri = "file://review_intel_app/data/private_evaluation/current_app_20261105T214758629734Z/predictions.csv"
+type = "table"
+title = "Current-app predictions"
+description = "61 rows of sample IDs, review IDs, praise tags, and complaint tags."
+logical_id = "82972287-fdad-4cc3-8f81-646707a2fab3"
+content_hash = "sha256:3e6866ace8e1b76d39da6474f0a87044a7c972eac785a7f2a704f6e5409f23e0"
+size = 2027
+mtime_ms = 1793915278630
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/82972287-fdad-4cc3-8f81-646707a2fab3/30ba5fcc-b8ae-44e2-af27-8a15c01afc76"
+storage_version_token = "1793915322560587"
+content_type = "text/csv"
+
+[[outputs]]
+id = "0UYvv6d5C51lhrdm_M3UQ"
+uri = "file://review_intel_app/data/private_evaluation/current_app_20261105T214758629734Z/errors.csv"
+type = "table"
+title = "All 126 tagging errors"
+description = "Each missed or unsupported tag, identified by sample ID, theme, and polarity."
+logical_id = "ab2e13d1-0154-422f-8376-58c250558a28"
+content_hash = "sha256:b985d2e5eab894049ad74354cfeee1045dc00a944aa486ae48d63ccb06af61b9"
+size = 4206
+mtime_ms = 1793915278631
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/ab2e13d1-0154-422f-8376-58c250558a28/b3148d95-ecc6-4134-8a69-505475d0cb7f"
+storage_version_token = "1793915323001266"
+content_type = "text/csv"

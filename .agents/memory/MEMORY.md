@@ -5,3 +5,4 @@
 - [Action comparison provenance](action-provenance.md) — location-wide, filter-independent comparisons are conservative warnings, not evidence that action outcomes changed.
 - [Local action concurrency](action-concurrency.md) — preserve existing JSON histories; shared-file locking is not a multi-host persistence guarantee.
 - [Agent mode controls](agent-mode-controls.md) — the workspace Build tab and the composer Plan toggle are separate; check the latter for read-only errors.
+- [Theme tuning safeguards](theme-tuning-safety.md) — compare non-target tags per review, not just totals; nearby cue assignment can hide cross-theme changes.

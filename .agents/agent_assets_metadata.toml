@@ -98,3 +98,59 @@ mtime_ms = 1793918229186
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/f88957ec-c7fb-440e-a2b8-165486eb2260/36c0cb8c-dc2e-4a29-b1d7-c5225d0688b1"
 storage_version_token = "1793918249726757"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "aLwBq83SISKYNngHkcENs"
+uri = "file://review_intel_app/data/private_evaluation/current_app_20261105T224443846493Z/price_report.html"
+type = "html"
+title = "Private price-tagging comparison report"
+description = "Before/after counts, every improvement and remaining error, scope limits and safe undo instructions. Tuning-set evidence only."
+logical_id = "ebe9c006-04b5-4b86-923d-aa53ced335ae"
+content_hash = "sha256:1a3a34f779d66f31e5496a6de8f4de141a0cc0a89ef228091a9433e647039f7f"
+size = 10083
+mtime_ms = 1793918690102
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/ebe9c006-04b5-4b86-923d-aa53ced335ae/222d2bf8-7289-47ae-9f84-5bba4d604c8e"
+storage_version_token = "1793918820663539"
+content_type = "text/html"
+
+[[outputs]]
+id = "tgdEvMSbKXvFUwF6IEwFj"
+uri = "file://review_intel_app/data/private_evaluation/current_app_20261105T223828256705Z/predictions.csv"
+type = "table"
+title = "Before: frozen app predictions"
+description = "61 reviews under local-rules-1. IDs and tags only; no guest names or review text."
+logical_id = "27d74450-d0d2-4cd4-9db0-303a3bf2e114"
+content_hash = "sha256:3e6866ace8e1b76d39da6474f0a87044a7c972eac785a7f2a704f6e5409f23e0"
+size = 2027
+mtime_ms = 1793918308257
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/27d74450-d0d2-4cd4-9db0-303a3bf2e114/0adf6188-ae46-46b5-a4bc-ac8796d85539"
+storage_version_token = "1793918821207326"
+content_type = "text/csv"
+
+[[outputs]]
+id = "ErRL9wM6XZ5u5DERCh0SB"
+uri = "file://review_intel_app/data/private_evaluation/current_app_20261105T224443846493Z/predictions.csv"
+type = "table"
+title = "After: updated app predictions"
+description = "61 identical reviews under local-rules-2-price. IDs and tags only."
+logical_id = "e929f4e3-2f59-4fd5-af2c-a40e8e1a2aee"
+content_hash = "sha256:1e6ed70fc4e16582ae7b66a2cd70078f7175759f45d3336cadb23f821c0d326a"
+size = 2061
+mtime_ms = 1793918683847
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/e929f4e3-2f59-4fd5-af2c-a40e8e1a2aee/653e4fa5-c75d-4424-88cf-2775ad3a2c7f"
+storage_version_token = "1793918821634276"
+content_type = "text/csv"
+
+[[outputs]]
+id = "MzbJFU3zI9WB1EjQOB-Ll"
+uri = "file://review_intel_app/data/private_evaluation/current_app_20261105T224443846493Z/verification.json"
+type = "unspecified"
+title = "Price-update verification record"
+description = "Backup/source fingerprints, exact test commands and outcomes, and unchanged-data checks."
+logical_id = "2f09044d-1e45-4379-9200-70757211a849"
+content_hash = "sha256:c15a4c40125d8aad6c0655d40a518c6c34f1feb259f93b906dc9557c6317ae8b"
+size = 2014
+mtime_ms = 1793918798421
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/2f09044d-1e45-4379-9200-70757211a849/3f7cf246-8767-406f-9f7a-7e65a0bbcd53"
+storage_version_token = "1793918822097518"
+content_type = "application/octet-stream"

@@ -38,6 +38,9 @@ def evaluate(sheet, source):
     app = Path(__file__).resolve().parent
     inputs = [sheet, source, app / "engine.py", app / "app.py",
               app / "local_analyzer.py", Path(__file__).resolve()]
+    # Price rules are part of the actual analyzer, not an external proposal.
+    if (app / "price_rules.py").exists():
+        inputs.append(app / "price_rules.py")
     hashes = {str(p): digest(p) for p in inputs}
     rows = read_csv(sheet)
     original_rows = read_csv(source)

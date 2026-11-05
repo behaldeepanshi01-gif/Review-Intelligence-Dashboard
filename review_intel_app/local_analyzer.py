@@ -2,9 +2,10 @@
 
 from functools import lru_cache
 import re
+from price_rules import analyze_price
 
 # Bump this whenever rules change so Streamlit does not reuse old analysis.
-RULES_VERSION = "local-rules-1"
+RULES_VERSION = "local-rules-2-price"
 
 EXTRA_TERMS = {
     "food_flavor": ["food", "meal", "chicken", "dishes", "tasty", "undercooked", "overcooked"],
@@ -163,6 +164,18 @@ def analyze_text(text, themes):
                     "matched_terms": terms, "excerpt": clause[:600],
                     "reason": "Matched theme terms and a nearby sentiment phrase.",
                 })
+    # Keep the old matching pass intact for every non-price theme. New price
+    # vocabulary and cues must not steal sentiment from food, staff or portions.
+    positive.discard("price")
+    negative.discard("price")
+    evidence = [item for item in evidence if item["theme"] != "price"]
+    price_pos, price_neg, price_evidence, price_reasons = analyze_price(text, themes, HEDGING)
+    if price_pos:
+        positive.add("price")
+    if price_neg:
+        negative.add("price")
+    evidence.extend(price_evidence)
+    reasons.update(price_reasons)
     if not evidence:
         reasons.add("No supported restaurant theme was found. Check this review manually.")
     return positive, negative, evidence, sorted(reasons)

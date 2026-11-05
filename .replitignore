@@ -9,3 +9,5 @@ attached_assets/*YELP*.csv
 
 # Local manager decisions must never be included in public deployment assets.
 review_intel_app/data/manager_corrections.sqlite*
+# Selected real website testimonials are private, not deployment or demo assets.
+review_intel_app/data/private_website_reviews/

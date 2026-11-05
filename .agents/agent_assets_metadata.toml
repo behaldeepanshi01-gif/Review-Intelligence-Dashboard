@@ -56,3 +56,45 @@ mtime_ms = 1793915278631
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/ab2e13d1-0154-422f-8376-58c250558a28/b3148d95-ecc6-4134-8a69-505475d0cb7f"
 storage_version_token = "1793915323001266"
 content_type = "text/csv"
+
+[[outputs]]
+id = "zBYoqzbfFx9aBKFSFIzVo"
+uri = "file://review_intel_app/data/private_website_reviews/20261105T223618131112Z/website_testimonials_PRIVATE.csv"
+type = "table"
+title = "Private Mumbai Central website testimonials"
+description = "Three selected five-star testimonials. No publication dates or reviewer identity columns. Contains real review wording; do not publish or import as dated dashboard data."
+logical_id = "eda4dae0-dee9-427e-a7be-2bf74bc37f5b"
+content_hash = "sha256:2ed3b3368e47eed8137d97b51e259ace41e61313687bdd55095c7e2029d13a4f"
+size = 1271
+mtime_ms = 1793918191093
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/eda4dae0-dee9-427e-a7be-2bf74bc37f5b/5a4cdbe9-0edd-45fd-a295-62e9f670af89"
+storage_version_token = "1793918248798393"
+content_type = "text/csv"
+
+[[outputs]]
+id = "aNqrP2y0UgHFFGz2sYENi"
+uri = "file://review_intel_app/data/private_website_reviews/20261105T223618131112Z/collection_report_PRIVATE.md"
+type = "text"
+title = "Private website collection report"
+description = "Pages checked, completeness limits, positive selection bias and safe handling instructions."
+logical_id = "88e8d8c4-3057-46b9-abe5-75b4f8145d41"
+content_hash = "sha256:60cce96adb08679025c36592abc79c2f3e70dee2d5b88c78aacaf7c52da02012"
+size = 3371
+mtime_ms = 1793918218197
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/88e8d8c4-3057-46b9-abe5-75b4f8145d41/6cd8e4c9-d586-4d7d-acf7-3b2c020a1240"
+storage_version_token = "1793918249312392"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "SKdV98cuJY9D6PUTcbe60"
+uri = "file://review_intel_app/data/private_website_reviews/20261105T223618131112Z/verification.json"
+type = "unspecified"
+title = "Website collection verification"
+description = "15 aggregate checks plus SHA-256 fingerprints. No guest text or identities."
+logical_id = "f88957ec-c7fb-440e-a2b8-165486eb2260"
+content_hash = "sha256:ff1f0e4d769fe32666c6a76962b01d56e3bbc70d620d5271dcc78fef6b421933"
+size = 874
+mtime_ms = 1793918229186
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/f88957ec-c7fb-440e-a2b8-165486eb2260/36c0cb8c-dc2e-4a29-b1d7-c5225d0688b1"
+storage_version_token = "1793918249726757"
+content_type = "application/octet-stream"

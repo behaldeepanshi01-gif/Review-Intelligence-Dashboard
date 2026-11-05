@@ -51,8 +51,9 @@ and mocked actions; it does not drive a browser or change real action logs.
 The pre-update entry point and its SHA-256 manifest are in
 `backups/manager_report_20261105T215814174424Z/`.
 If no later changes have been made to `app.py`, restore that backed-up `app.py`
-and restart Streamlit. Otherwise reverse only the `action_report` import and the
-manager report block at the beginning of the Export tab.
+and restart Streamlit. Otherwise reverse only the `manager_report_ui` import,
+the manager report block at the beginning of the Export tab, and the manager
+report call and action-loading block in the empty-date-filter branch.
 The added report helper and tests may remain unused.
 Do not restore or delete datasets, corrections, action logs, or history registries.
 This workspace change does not update a separate laptop copy or published app.

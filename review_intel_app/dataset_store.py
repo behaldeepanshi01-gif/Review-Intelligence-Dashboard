@@ -184,6 +184,24 @@ class DatasetStore:
             raise
         return self.get(dataset_id)
 
+    def rename_location_calendar(self, calendars, dataset_id, old_location, new_location,
+                                 *, expected_path, expected_revision, confirmed=False):
+        """Keep a confirmed calendar move within an unchanged dataset snapshot."""
+        import engine
+
+        with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute("SELECT path FROM datasets WHERE dataset_id=?",
+                                 (dataset_id,)).fetchone()
+            if current is None or current["path"] != expected_path:
+                raise ValueError("The dataset snapshot changed. Reload and review the rename again.")
+            locations = set(engine.load_reviews(current["path"])["location"])
+            if old_location in locations or new_location not in locations:
+                raise ValueError(
+                    "The old name must be absent and the new name present in the current reviews.")
+            calendars.rename(dataset_id, old_location, new_location,
+                             expected_revision=expected_revision, confirmed=confirmed)
+
     def unclaimed_legacy_tags(self, actions):
         claimed = {
             row["legacy_tag"] for row in self.list_datasets(include_sample=True)

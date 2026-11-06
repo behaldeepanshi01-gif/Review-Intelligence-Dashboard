@@ -21,6 +21,7 @@ import engine as E
 import manager_corrections as C
 import dataset_store as D
 from location_settings import LocationSettings
+from calendar_rename_ui import show_calendar_rename
 from legacy_history_ui import (
     show_history_controls, show_live_history_notice, history_changed, action_editors,
 )
@@ -253,6 +254,9 @@ timezones_by_location = {
     for loc in locations
 }
 with st.sidebar.expander("Location calendars"):
+    if notice := st.session_state.pop("calendar_rename_notice", None):
+        st.success(notice)
+    show_calendar_rename(datasets, dataset, calendars, calendar_settings, locations)
     st.caption(
         "Shared by all managers of this saved dataset. Separate datasets own "
         "separate settings, even when location names match. Anyone with access "

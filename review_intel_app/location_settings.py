@@ -18,6 +18,10 @@ class LocationSettings:
                 dataset_id TEXT NOT NULL, location TEXT NOT NULL,
                 timezone TEXT NOT NULL, revision INTEGER NOT NULL,
                 PRIMARY KEY (dataset_id, location))""")
+            db.execute("""CREATE TABLE IF NOT EXISTS calendar_renames (
+                dataset_id TEXT NOT NULL, old_location TEXT NOT NULL,
+                new_location TEXT NOT NULL,
+                PRIMARY KEY (dataset_id, old_location))""")
 
     @contextmanager
     def connect(self):
@@ -49,6 +53,12 @@ class LocationSettings:
             raise ValueError("A dataset and location are required.")
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
+            if db.execute(
+                "SELECT 1 FROM calendar_renames WHERE dataset_id=? AND old_location=?",
+                (dataset_id, location),
+            ).fetchone():
+                raise SettingsConflictError(
+                    "This calendar was renamed. Reload and use its current location.")
             row = db.execute(
                 "SELECT revision FROM location_calendars WHERE dataset_id=? AND location=?",
                 (dataset_id, location)).fetchone()
@@ -61,3 +71,34 @@ class LocationSettings:
                 "ON CONFLICT(dataset_id, location) DO UPDATE SET "
                 "timezone=excluded.timezone, revision=excluded.revision",
                 (dataset_id, location, timezone, expected_revision + 1))
+
+    def rename(self, dataset_id, old_location, new_location, *, expected_revision,
+               confirmed=False):
+        """Move one calendar, never merge calendars or infer dataset continuity."""
+        if not confirmed:
+            raise ValueError("Confirm that both names refer to the same restaurant.")
+        if not dataset_id or not old_location or not new_location or old_location == new_location:
+            raise ValueError("Choose two different location names in one dataset.")
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if db.execute(
+                "SELECT 1 FROM location_calendars WHERE dataset_id=? AND location=? "
+                "UNION ALL SELECT 1 FROM calendar_renames "
+                "WHERE dataset_id=? AND old_location=?",
+                (dataset_id, new_location, dataset_id, new_location),
+            ).fetchone():
+                raise SettingsConflictError(
+                    "The destination already owns a calendar or was previously renamed. "
+                    "Calendars cannot be overwritten or merged.")
+            row = db.execute(
+                "SELECT timezone, revision FROM location_calendars "
+                "WHERE dataset_id=? AND location=?", (dataset_id, old_location),
+            ).fetchone()
+            if row is None or row[1] != expected_revision:
+                raise SettingsConflictError("The source calendar changed. Reload and review again.")
+            db.execute("DELETE FROM location_calendars WHERE dataset_id=? AND location=?",
+                       (dataset_id, old_location))
+            db.execute("INSERT INTO location_calendars VALUES (?, ?, ?, ?)",
+                       (dataset_id, new_location, row[0], row[1] + 1))
+            db.execute("INSERT INTO calendar_renames VALUES (?, ?, ?)",
+                       (dataset_id, old_location, new_location))

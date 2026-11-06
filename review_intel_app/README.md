@@ -266,6 +266,22 @@ generate_data.py   Builds the synthetic dataset
 data/              Sample data and Claude cache
 ```
 
+## Keeping a calendar after a restaurant rename
+
+Upload the new reviews using **Update an existing dataset**, selecting the same
+dataset identity. In **Location calendars → Restaurant renamed?**, select the
+previous saved calendar and its new name, review the timezone, confirm that both
+names refer to the same restaurant, and click **Link renamed restaurant calendar**.
+The previous name must be absent from the current reviews and the new name present.
+Separate datasets are never linked, even if their filenames or restaurant names match.
+
+The move preserves the saved timezone across refreshes and restarts. It does not
+rename reviews, action plans, baselines, or due dates. An existing destination
+calendar cannot be overwritten, and a previously renamed name remains reserved
+to prevent stale editors from recreating its calendar. If another manager changes
+the source calendar or replaces the dataset snapshot, reload and confirm again.
+Calendar editing uses the dashboard's existing local-manager access model.
+
 ## Roadmap
 
 1. Connect directly to Google Business Profile so new reviews flow in automatically

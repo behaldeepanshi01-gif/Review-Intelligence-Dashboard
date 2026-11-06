@@ -9,6 +9,7 @@ import os
 from unittest.mock import patch
 
 import action_report as R
+import manager_identity as MI
 
 
 PROVENANCE = {"rules_version": "rules", "decisions_fingerprint": "decisions"}
@@ -97,19 +98,23 @@ class ActionReportAppTests(unittest.TestCase):
                     writer.writerow([f"synthetic-{i}", "Cafe", f"2026-01-{i*2+2:02}",
                                      4, "Great food and slow service.", "Guestperson Private"])
             plan = action(dataset_tag=SAMPLE_ID)
-            with patch.object(R.A, "load_actions", return_value=[plan]), patch.dict(
-                    os.environ, {"MANAGER_REPORT_PASSWORD": "synthetic-test-passphrase-only"}):
+            with patch.object(MI, "DB_PATH", root / "accounts.sqlite"):
+                MI.set_account("test-manager", "synthetic-test-passphrase-only", {SAMPLE_ID: ["Cafe"]})
+            with patch.object(R.A, "load_actions", return_value=[plan]), patch.object(
+                    MI, "DB_PATH", root / "accounts.sqlite"):
                 app_test = AppTest.from_file(str(root / "app.py"), default_timeout=30).run()
                 self.assertFalse(app_test.exception)
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))
                 self.assertFalse(any(x.proto.label == "Download manager action report (TXT)"
                                      for x in app_test.get("download_button")))
                 password = next(x for x in app_test.text_input if x.label == "Manager report password")
+                next(x for x in app_test.text_input if x.label == "Manager ID").set_value("test-manager")
                 password.set_value("wrong")
                 next(x for x in app_test.button if x.label == "Unlock manager report").click().run()
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))
                 next(x for x in app_test.text_input if x.label == "Manager report password").set_value(
                     "synthetic-test-passphrase-only")
+                next(x for x in app_test.text_input if x.label == "Manager ID").set_value("test-manager")
                 next(x for x in app_test.button if x.label == "Unlock manager report").click().run()
                 self.assertFalse(app_test.exception)
                 preview = next(x for x in app_test.text_area if x.label == "Manager report preview")
@@ -131,8 +136,8 @@ class ActionReportAppTests(unittest.TestCase):
                 self.assertFalse(app_test.exception)
                 self.assertTrue(any("No reviews match" in x.value for x in app_test.warning))
                 self.assertTrue(any(x.label == "Manager report preview" for x in app_test.text_area))
-            with patch.object(R.A, "load_actions", return_value=[]), patch.dict(
-                    os.environ, {"MANAGER_REPORT_PASSWORD": "synthetic-test-passphrase-only"}):
+            with patch.object(R.A, "load_actions", return_value=[]), patch.object(
+                    MI, "DB_PATH", root / "accounts.sqlite"):
                 app_test.run()
                 self.assertFalse(app_test.exception)
                 button = next(x for x in app_test.get("download_button")
@@ -141,7 +146,7 @@ class ActionReportAppTests(unittest.TestCase):
                 self.assertTrue(any("No action plans for this file" in i.value for i in app_test.info))
                 next(x for x in app_test.button if x.label == "Lock manager report").click().run()
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))
-            with patch.dict(os.environ, {"MANAGER_REPORT_PASSWORD": ""}):
+            with patch.object(MI, "DB_PATH", root / "missing.sqlite"):
                 app_test.run()
                 self.assertFalse(app_test.exception)
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))

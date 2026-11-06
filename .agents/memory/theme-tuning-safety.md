@@ -20,6 +20,8 @@ intentional conservative tradeoff, not a reason to silently retune other themes.
 
 Only the narrow monetary-waste wording gap was authorized before the blind
 evaluation freeze; broader indirect-price expansion remains deferred.
+The user explicitly chose “Keep the evaluation freeze” when asked whether
+to authorize a separate price-question/quotation rule cycle.
 
 **Why:** The user wants a stable actual-app analyzer before independent human
 labeling, not continued tuning on the evaluation batch.
@@ -27,6 +29,8 @@ labeling, not continued tuning on the evaluation batch.
 **How to apply:** Freeze implementation hashes and hidden predictions without
 showing unused-review predictions to the labeler. Only the user or restaurant
 manager supplies and approves blind labels; never substitute AI ground truth.
+Keep synthetic diagnostics separate from shipped fixes; unresolved cases do
+not authorize changing the frozen analyzer.
 
 Approval of a file with AI-draft provenance does not establish independent
 human-only reference labels, even if the user confirms personal labeling blind

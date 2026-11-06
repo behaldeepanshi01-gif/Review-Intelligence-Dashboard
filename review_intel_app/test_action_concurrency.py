@@ -170,9 +170,7 @@ class ConcurrentActionTests(unittest.TestCase):
                 A.edit_saved_action(self.path, original, "Edit", "", "Done", DAY, DAY)
             self.assertEqual(A.load_actions(self.path), actions)
 
-    def test_open_form_rejects_other_manager_edit_and_can_reload(self):
-        # A real Streamlit form reruns the script before handling its submit.
-        # It must compare against the open-time snapshot, not that fresh load.
+    def open_app(self):
         sample = E.load_reviews(Path(__file__).parent / "data" / "sample_reviews.csv")
         original = plan()
         original["location"] = sample.iloc[0]["location"]
@@ -187,15 +185,43 @@ class ConcurrentActionTests(unittest.TestCase):
             f"BASE_DIR = {str(Path(__file__).parent.resolve())!r}")
         app = AppTest.from_string(source, default_timeout=30).run()
         self.assertEqual(list(app.exception), [])
+        return original, app
+
+    def comparison(self, app):
+        return next(table.value for table in app.dataframe
+                    if "Your unsaved draft" in table.value.columns)
+
+    def test_open_form_rejects_other_manager_edit_and_can_reload(self):
+        # A real Streamlit form reruns the script before handling its submit.
+        # It must compare against the open-time snapshot, not that fresh load.
+        original, app = self.open_app()
         text = next(item for item in app.text_area
                     if item.key.startswith("update_text_"))
         text.set_value("Stale manager draft")
+        next(item for item in app.text_input
+             if item.key and item.key.startswith("update_owner_")).set_value("")
+        next(item for item in app.selectbox
+             if item.key and item.key.startswith("update_status_")).set_value("Done")
+        next(item for item in app.date_input
+             if item.key and item.key.startswith("update_start_")).set_value(date(2026, 1, 2))
+        next(item for item in app.date_input
+             if item.key and item.key.startswith("update_due_")).set_value(date(2026, 1, 3))
         other = A.edit_saved_action(
             self.path, original, "Other manager saved", "Other", "In progress", DAY, DAY)
         next(b for b in app.button if b.label == "Save updates").click().run()
         self.assertEqual(list(app.exception), [])
         self.assertTrue(any("Your changes were not saved" in e.value for e in app.error))
         self.assertEqual(A.load_actions(self.path), [other])
+        comparison = self.comparison(app)
+        self.assertEqual(list(comparison["Field"]), [
+            "Manager action", "Owner", "Status", "Action start date", "Due date"])
+        self.assertEqual(list(comparison["Your unsaved draft"]), [
+            "Stale manager draft", "", "Done", "2026-01-02", "2026-01-03"])
+        self.assertEqual(list(comparison["Latest saved"]), [
+            "Other manager saved", "Other", "In progress", "2026-01-01", "2026-01-01"])
+        self.assertTrue(comparison["Different"].all())
+        self.assertTrue(next(b for b in app.button if b.label == "Save updates").disabled)
+        self.assertTrue(text.key in [t.key for t in app.text_area])
         next(b for b in app.button if b.label == "Reload latest action").click().run()
         text = next(item for item in app.text_area
                     if item.key.startswith("update_text_"))
@@ -206,6 +232,9 @@ class ConcurrentActionTests(unittest.TestCase):
         saved = A.load_actions(self.path)[0]
         self.assertEqual(saved["action_text"], "Reviewed latest and saved")
         self.assertEqual(saved["baseline_provenance"], original["baseline_provenance"])
+        for field in original.keys() - set(A.EDITABLE_FIELDS):
+            self.assertEqual(saved[field], original[field])
+        self.assertFalse(any("Kept draft" in table.value.columns for table in app.dataframe))
         self.assertEqual(len(saved["edit_history"]), 2)
         history = next(table for table in app.dataframe
                        if "Saved at (UTC)" in table.value.columns).value
@@ -214,6 +243,73 @@ class ConcurrentActionTests(unittest.TestCase):
                          ["Other manager saved", "Check handoffs."])
         self.assertEqual(list(text_changes["After"]),
                          ["Reviewed latest and saved", "Other manager saved"])
+
+    def test_kept_reference_survives_reload_and_never_overwrites_newer_saves(self):
+        original, app = self.open_app()
+        next(t for t in app.text_area if t.key.startswith("update_text_")).set_value(
+            "Keep this draft\nFor manual comparison")
+        other = A.edit_saved_action(
+            self.path, original, "Other saved", "Other", "In progress", DAY, DAY)
+        next(b for b in app.button if b.label == "Save updates").click().run()
+        before = Path(self.path).read_bytes()
+        # Keep must submit the form too, including changes made after the
+        # initial conflict, not just the draft from the rejected save.
+        next(t for t in app.text_area if t.key.startswith("update_text_")).set_value(
+            "Keep this revised draft\nFor manual comparison")
+        next(b for b in app.button if b.label == "Keep draft for reference").click().run()
+        self.assertFalse(app.exception)
+        kept = next(t.value for t in app.dataframe if "Kept draft" in t.value.columns)
+        self.assertEqual(kept.iloc[0]["Kept draft"],
+                         "Keep this revised draft\nFor manual comparison")
+        self.assertEqual(Path(self.path).read_bytes(), before)
+        self.assertEqual(self.comparison(app).iloc[0]["Your unsaved draft"],
+                         "Keep this revised draft\nFor manual comparison")
+        self.assertFalse(self.comparison(app).iloc[-1]["Different"])
+        # A further intervening edit must be shown, never overwritten by Keep.
+        latest = A.edit_saved_action(
+            self.path, other, "Third saved", "", "Done", DAY, DAY)
+        app.run()
+        self.assertEqual(self.comparison(app).iloc[0]["Latest saved"], "Third saved")
+        self.assertEqual(A.load_actions(self.path), [latest])
+        next(b for b in app.button if b.label == "Reload latest action").click().run()
+        self.assertFalse(app.exception)
+        text = next(t for t in app.text_area if t.key.startswith("update_text_"))
+        self.assertEqual(text.value, "Third saved")
+        self.assertFalse(text.disabled)
+        self.assertFalse(any("Your unsaved draft" in t.value.columns for t in app.dataframe))
+        self.assertTrue(kept.equals(
+            next(t.value for t in app.dataframe if "Kept draft" in t.value.columns)))
+        text.set_value("Manually reconciled")
+        next(b for b in app.button if b.label == "Save updates").click().run()
+        self.assertFalse(app.exception)
+        saved = A.load_actions(self.path)[0]
+        self.assertEqual(saved["action_text"], "Manually reconciled")
+        self.assertEqual(saved["status"], "Done")
+        self.assertEqual(saved["owner"], "")
+        self.assertEqual(len(saved["edit_history"]), 3)
+        self.assertEqual(saved["edit_history"][-1]["changes"], {
+            "action_text": {"before": "Third saved", "after": "Manually reconciled"}})
+        for field in original.keys() - set(A.EDITABLE_FIELDS):
+            self.assertEqual(saved[field], original[field])
+
+    def test_save_time_race_shows_comparison_without_losing_draft(self):
+        original, app = self.open_app()
+        next(t for t in app.text_area if t.key.startswith("update_text_")).set_value(
+            "Race draft")
+        real_edit = A.edit_saved_action
+
+        def concurrent_edit(*args, **kwargs):
+            real_edit(self.path, original, "Race winner", "", "Planned", DAY, DAY)
+            return real_edit(*args, **kwargs)
+
+        with patch.object(A, "edit_saved_action", side_effect=concurrent_edit):
+            next(b for b in app.button if b.label == "Save updates").click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(self.comparison(app).iloc[0]["Your unsaved draft"], "Race draft")
+        self.assertEqual(self.comparison(app).iloc[0]["Latest saved"], "Race winner")
+        saved = A.load_actions(self.path)[0]
+        self.assertEqual(saved["action_text"], "Race winner")
+        self.assertEqual(len(saved["edit_history"]), 1)
 
 
 if __name__ == "__main__":

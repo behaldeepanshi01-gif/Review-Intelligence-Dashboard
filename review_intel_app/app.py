@@ -960,12 +960,18 @@ with tabs[6]:
             if snapshot_key not in st.session_state:
                 st.session_state[snapshot_key] = dict(action)
             snapshot = st.session_state[snapshot_key]
-            if snapshot != action:
+            conflicted = snapshot != action
+            reference_key = f"action_draft_reference_{tag}_{action_id}"
+            field_labels = {
+                "action_text": "Manager action", "owner": "Owner",
+                "status": "Status", "start_date": "Action start date",
+                "due_date": "Due date",
+            }
+            if conflicted:
                 st.warning("Another manager changed this action. Your draft has not "
-                           "been saved. Reload the latest action before editing again.")
-                if st.button("Reload latest action", key=f"reload_action_{action_id}"):
-                    st.session_state[snapshot_key] = dict(action)
-                    st.rerun()
+                           "been saved. Compare the versions below before reloading.")
+                st.error("Your changes were not saved. Reload the latest action "
+                         "before editing again; there is no force-overwrite option.")
             form_version = hashlib.sha256(
                 json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
             form_key = f"{action_id}_{form_version}"
@@ -990,9 +996,49 @@ with tabs[6]:
                     "Due date",
                     value=A.parse_date(snapshot.get("due_date"), action_today),
                     key=f"update_due_{form_key}")
-                submitted = st.form_submit_button("Save updates")
+                submitted = st.form_submit_button("Save updates", disabled=conflicted)
+                keep_draft = reload_latest = False
+                if conflicted:
+                    # Submit these choices with the form so even newer,
+                    # browser-buffered draft changes are available to Keep.
+                    keep_draft = st.form_submit_button("Keep draft for reference")
+                    reload_latest = st.form_submit_button("Reload latest action")
 
-            if submitted:
+            if conflicted:
+                draft = {
+                    "action_text": action_text, "owner": owner, "status": status,
+                    "start_date": start_date.isoformat(), "due_date": due_date.isoformat(),
+                }
+                st.markdown("**Compare your unsaved draft with the latest saved action**")
+                st.dataframe([
+                    {"Field": field_labels[field], "Your unsaved draft": draft[field],
+                     "Latest saved": action.get(field, ""),
+                     "Different": draft[field] != action.get(field, "")}
+                    for field in A.EDITABLE_FIELDS
+                ], hide_index=True, use_container_width=True)
+                st.caption("Only editable fields are compared. Saved alert evidence and "
+                           "baseline fields remain read-only. Reload discards the draft "
+                           "in the editor. Keep it for reference first if you need it; "
+                           "the reference stays only in this dashboard session.")
+                if keep_draft:
+                    st.session_state[reference_key] = dict(draft)
+                    st.success("Draft kept for reference in this session. It has not "
+                               "been saved to the action log.")
+                if reload_latest:
+                    st.session_state[snapshot_key] = dict(action)
+                    st.rerun()
+
+            if reference_key in st.session_state:
+                st.markdown("**Kept draft for reference — not saved**")
+                st.caption("Use this reference to manually revise the latest action. "
+                           "It is not automatically applied or saved.")
+                st.dataframe([
+                    {"Field": field_labels[field],
+                     "Kept draft": st.session_state[reference_key][field]}
+                    for field in A.EDITABLE_FIELDS
+                ], hide_index=True, use_container_width=True)
+
+            if submitted and not conflicted:
                 if not action_text.strip():
                     st.error("Enter an action before saving.")
                 elif due_date < start_date:
@@ -1002,6 +1048,10 @@ with tabs[6]:
                         updated = A.edit_saved_action(
                             ACTION_LOG, snapshot, action_text, owner, status,
                             start_date, due_date)
+                    except A.ActionConflictError:
+                        # A manager may save after this run loaded the log.
+                        # Reread it without changing the draft's widget keys.
+                        st.rerun()
                     except (OSError, ValueError) as ex:
                         st.error(f"Couldn't update the action: {ex}")
                     else:

@@ -7,3 +7,4 @@
 - [Agent mode controls](agent-mode-controls.md) — the workspace Build tab and the composer Plan toggle are separate; check the latter for read-only errors.
 - [Theme tuning safeguards](theme-tuning-safety.md) — compare non-target tags per review, not just totals; nearby cue assignment can hide cross-theme changes.
 - [Manager report identity](manager-report-identity.md) — approved local report-only accounts; reuse the identity system for timezone authorization.
+- [Approved theme boundaries](theme-definition-approval.md) — four adjudication definitions approved; individual review decisions still require separate approval.

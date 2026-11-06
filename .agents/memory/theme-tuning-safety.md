@@ -17,3 +17,13 @@ that improvements and regressions not be hidden.
 non-target sets afterward, and disclose any differences. Isolating the price
 interpretation while preserving the existing non-price matching pass is an
 intentional conservative tradeoff, not a reason to silently retune other themes.
+
+Only the narrow monetary-waste wording gap was authorized before the blind
+evaluation freeze; broader indirect-price expansion remains deferred.
+
+**Why:** The user wants a stable actual-app analyzer before independent human
+labeling, not continued tuning on the evaluation batch.
+
+**How to apply:** Freeze implementation hashes and hidden predictions without
+showing unused-review predictions to the labeler. Only the user or restaurant
+manager supplies and approves blind labels; never substitute AI ground truth.

@@ -23,6 +23,19 @@ NEGATORS = {"not", "no", "never", "isn't", "wasn't", "aren't", "weren't",
 NON_PRICE_AMBIGUOUS = {"good", "great", "excellent", "bad", "poor", "worth", "worth it"}
 FEES = {"gratuity", "service charge", "service charges", "tip", "tips", "fee", "fees", "money"}
 WORDS = re.compile(r"[a-z]+(?:'[a-z]+)?")
+# Keep monetary waste out of the shared sentiment vocabulary. A negative
+# imperative is criticism, not the negation of a negative cost opinion.
+MONEY_WARNING = re.compile(r"^(?:please\s+)?(?:do not|don't)\s+waste your money\b")
+MONEY_NOUN = "waste of my money"
+REPORTED_MONEY = re.compile(
+    r"\b(?:say|says|said|tell|told|heard|read|reported|quote|quoted|"
+    r"phrase|discussed|whether|if|would|wonder|wondered)\b"
+)
+
+
+def monetary_context_unclear(text):
+    # Apostrophes inside contractions are not quotation marks.
+    return bool(REPORTED_MONEY.search(text) or re.search(r'["“”‘’]|(?<!\w)\'|\'(?!\w)', text))
 
 
 def matches(term, text):
@@ -57,8 +70,17 @@ def analyze_price(text, themes, hedging):
         uncertain = bool(hedging.search(low)) or bool(re.search(
             r"\b(?:don't|do not|didn't|cannot|can't)\s+(?:think|say|tell)\b", low))
         cues, occupied = [], []
+        money_unclear = monetary_context_unclear(low)
+        warning = MONEY_WARNING.search(low)
+        if warning and not money_unclear:
+            cues.append((warning.span(), "Complaint", warning.group()))
+        if not money_unclear:
+            cues.extend((m.span(), "Complaint", MONEY_NOUN)
+                        for m in matches(MONEY_NOUN, low))
         for polarity, terms in (("Praise", POSITIVE), ("Complaint", NEGATIVE)):
             for term in sorted(terms, key=len, reverse=True):
+                if term == "waste of money" and money_unclear:
+                    continue
                 for match in matches(term, low):
                     span = match.span()
                     cues.append((span, polarity, term))

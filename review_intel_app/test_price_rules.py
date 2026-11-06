@@ -5,7 +5,7 @@ import engine as E
 
 class PriceRulesTests(unittest.TestCase):
     def assert_sides(self, text, praise, complaint):
-        for rating in (1, 5):
+        for rating in (1, 3, 5):
             with self.subTest(text=text, rating=rating):
                 result = E.tag_offline(text, rating)
                 self.assertEqual("price" in result["themes_pos"], praise)
@@ -72,6 +72,51 @@ class PriceRulesTests(unittest.TestCase):
         self.assertIn("pricing", item["matched_terms"])
         self.assertEqual(item["excerpt"], "Fair pricing")
         self.assertTrue(item["reason"])
+
+    def test_original_twelve_monetary_examples(self):
+        # Recreated from the private diagnostic, not imported/executed from it.
+        cases = [
+            ("Do not waste your money here.", False, True, "Complaint"),
+            ("Don't waste your money on this meal.", False, True, "Complaint"),
+            ("This meal was a waste of my money.", False, True, "Complaint"),
+            ("This was a waste of money.", False, True, "Complaint"),
+            ("This was not a waste of money.", True, False, "Praise"),
+            ("I did not waste my money here.", False, False, "Needs review"),
+            ("I did not say you would waste your money.", False, False, "Needs review"),
+            ("We discussed the phrase 'waste your money'.", False, False, "Needs review"),
+            ("Money was on the table.", False, False, "Needs review"),
+            ("Maybe this would waste your money.", False, False, "Needs review"),
+            ("Friendly staff, but do not waste your money here.", False, True, "Complaint"),
+            ("Generous portions, but this was a waste of money.", False, True, "Complaint"),
+        ]
+        for text, praise, complaint, polarity in cases:
+            result = self.assert_sides(text, praise, complaint)
+            self.assertTrue(any(e["theme"] == "price" and e["polarity"] == polarity
+                                and e["excerpt"] and e["matched_terms"] and e["reason"]
+                                for e in result["tag_evidence"]))
+            if polarity == "Needs review":
+                self.assertTrue(result["needs_review"])
+
+    def test_monetary_context_safety(self):
+        for text in (
+            'They said "do not waste your money".',
+            'The phrase "waste of my money" was printed.',
+            'They said it was a waste of my money.',
+            'We discussed whether it was a waste of money.',
+            'Maybe this was a waste of my money.',
+            'Perhaps do not waste your money here.',
+            "I didn't waste my money.",
+            "Do not waste your time.",
+        ):
+            self.assert_sides(text, False, False)
+        self.assert_sides("This was not a waste of my money.", True, False)
+        self.assert_sides("Don’t waste your money here.", False, True)
+        self.assert_sides("Please do not waste your money here.", False, True)
+        self.assert_sides("Fair prices, but do not waste your money here.", True, True)
+        result = self.assert_sides("Generous portions, but a waste of my money.", False, True)
+        self.assertIn("portion_value", result["themes_pos"])
+        result = self.assert_sides("Friendly staff, but don't waste your money here.", False, True)
+        self.assertIn("staff", result["themes_pos"])
 
 
 if __name__ == "__main__":

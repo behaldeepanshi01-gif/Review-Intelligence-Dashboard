@@ -34,3 +34,14 @@ invented provenance would misrepresent what the manager approved.
 **How to apply:** Keep legacy origin explicitly unknown. Retain recorded source
 references even if the earlier decision is later edited or removed. A manual
 correction is a separate origin, not a continuation inferred from matching tags.
+
+Reply rechecking concerns the effective positive/negative tag sets, not whether a
+decision was saved more recently. Undoing back to the tags approved with the reply
+restores that match; saving identical tags does not require a wording recheck.
+
+**Why:** A changed decision timestamp alone says nothing about whether approved
+wording is inconsistent. Managers must explicitly approve wording against changed
+tags, but the application must never silently rewrite that wording.
+
+**How to apply:** Keep reply approval separate from tag approval, including renewed
+tag decisions. Treat missing reply-approval context conservatively as needing review.

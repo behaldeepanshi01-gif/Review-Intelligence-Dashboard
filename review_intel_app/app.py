@@ -306,6 +306,25 @@ if source.startswith("Sample"):
 
 if "approved" not in st.session_state:
     st.session_state["approved"] = {}
+if "approved_reply_tags" not in st.session_state:
+    st.session_state["approved_reply_tags"] = {}
+
+
+def reply_tag_state(row):
+    """Compare effective tags, not decision timestamps or generated wording."""
+    return {
+        "review_key": getattr(row, "correction_key", None),
+        "positive": sorted(set(row.themes_pos)),
+        "negative": sorted(set(row.themes_neg)),
+    }
+
+
+reply_tags = {r.review_id: reply_tag_state(r) for r in tagged.itertuples()}
+reply_rechecks = {
+    review_id for review_id, state in reply_tags.items()
+    if review_id in st.session_state["approved"]
+    and st.session_state["approved_reply_tags"].get(review_id) != state
+}
 
 high_open = view[(view["urgency"] == "High")
                  & (~view["review_id"].isin(st.session_state["approved"].keys()))]
@@ -658,11 +677,21 @@ with tabs[4]:
     show_done = f2.toggle("Show approved", value=False)
     n_show = f3.number_input("Show", min_value=5, max_value=100, value=10, step=5)
 
-    inbox = view[view["urgency"].isin(urg)].sort_values(
+    recheck_count = int(view["review_id"].isin(reply_rechecks).sum())
+    if recheck_count:
+        st.warning(
+            f"{recheck_count} approved replies need a wording recheck. Their effective "
+            "tags differ from the tags at reply approval (or no approval snapshot exists). "
+            "Approved text has not been changed. These replies stay in the queue "
+            "regardless of urgency and Show approved filters."
+        )
+    inbox = view[view["urgency"].isin(urg)
+                 | view["review_id"].isin(reply_rechecks)].sort_values(
         ["urgency", "date"], key=lambda c: c.map({"High": 0, "Medium": 1, "Low": 2})
         if c.name == "urgency" else c, ascending=[True, False])
     if not show_done:
-        inbox = inbox[~inbox["review_id"].isin(st.session_state["approved"].keys())]
+        inbox = inbox[~inbox["review_id"].isin(st.session_state["approved"].keys())
+                      | inbox["review_id"].isin(reply_rechecks)]
     st.caption(f"{len(inbox)} reviews in queue · {len(st.session_state['approved'])} approved")
 
     for r in inbox.head(int(n_show)).itertuples():
@@ -676,6 +705,14 @@ with tabs[4]:
             tags = "".join(f'<span class="tag neg">{E.THEME_LABELS[t]}</span>' for t in r.themes_neg)
             tags += "".join(f'<span class="tag pos">{E.THEME_LABELS[t]}</span>' for t in r.themes_pos)
             st.markdown(tags, unsafe_allow_html=True)
+            needs_recheck = r.review_id in reply_rechecks
+            if needs_recheck:
+                st.warning(
+                    "Approved reply needs recheck: tags changed since approval, or "
+                    "the approval's tag snapshot is unavailable. Read the current tags "
+                    "and wording, edit if needed, then click Recheck and approve reply. "
+                    "The previously approved wording is preserved until you approve again."
+                )
             draft = st.session_state["approved"].get(r.review_id, r.reply_draft)
             draft_key = f"d_{r.review_id}"
             revision_key = f"draft_revision_{r.review_id}"
@@ -693,8 +730,10 @@ with tabs[4]:
                 st.session_state[draft_key] = draft
             st.session_state[revision_key] = revision
             text = st.text_area("Reply draft", key=draft_key, height=150)
-            if st.button("Approve reply", key=f"a_{r.review_id}"):
+            if st.button("Recheck and approve reply" if needs_recheck else "Approve reply",
+                         key=f"a_{r.review_id}"):
                 st.session_state["approved"][r.review_id] = text
+                st.session_state["approved_reply_tags"][r.review_id] = reply_tags[r.review_id]
                 st.toast("Approved")
                 st.rerun()
 
@@ -716,6 +755,7 @@ with tabs[5]:
     out["approved_reply"] = (
         out["review_id"].map(st.session_state["approved"]).astype("object").fillna("")
     )
+    out["approved_reply_needs_recheck"] = out["review_id"].isin(reply_rechecks)
     buf = io.StringIO()
     out.to_csv(buf, index=False)
     st.download_button("Download analyzed reviews (CSV)", buf.getvalue(),

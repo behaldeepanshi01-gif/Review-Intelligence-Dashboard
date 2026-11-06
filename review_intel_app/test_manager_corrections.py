@@ -415,13 +415,80 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertNotIn("the cleanliness issue", reply().value)
             reply().input("Previously approved manager wording").run()
             button("Approve reply").click().run()
-            next(t for t in app.toggle if t.label == "Show approved").set_value(True).run()
+            approved_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
+            self.assertFalse(any(w.label == "Reply draft" for w in app.text_area))
             complaints().set_value(["cleanliness"])
             button("Save manager decision").click().run()
             self.assertEqual(len(app.exception), 0)
             self.assertEqual(reply().value, "Previously approved manager wording")
-            button("Undo manager decision").click().run()
+            self.assertEqual(app.session_state["approved"]["demo-2"],
+                             "Previously approved manager wording")
+            self.assertEqual(app.session_state["approved_reply_tags"], approved_tags)
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+            # Even if the manager excludes its urgency, a stale approval stays visible.
+            next(w for w in app.multiselect if w.label == "Urgency").set_value([]).run()
             self.assertEqual(reply().value, "Previously approved manager wording")
+            # A normal rerun cannot acknowledge the changed tags.
+            app.run()
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+            button("Undo manager decision").click().run()
+            self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assertEqual(app.session_state["approved_reply_tags"], approved_tags)
+            # Undo restores the approval's tags. A later change requires rechecking again.
+            complaints().set_value(["cleanliness"])
+            button("Save manager decision").click().run()
+            button("Recheck and approve reply").click().run()
+            self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assertNotEqual(app.session_state["approved_reply_tags"], approved_tags)
+            self.assertEqual(app.session_state["approved"]["demo-2"],
+                             "Previously approved manager wording")
+            # Undo after reapproval now differs from the new snapshot.
+            button("Undo manager decision").click().run()
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assertEqual(reply().value, "Previously approved manager wording")
+            reply().input("Manager checked and revised wording").run()
+            button("Recheck and approve reply").click().run()
+            self.assertEqual(app.session_state["approved"]["demo-2"],
+                             "Manager checked and revised wording")
+            self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
+
+    def test_approved_reply_recheck_after_renewal_and_unchanged_tags(self):
+        source = APP.read_text().replace(
+            'BASE_DIR = os.path.dirname(os.path.abspath(__file__))',
+            f"BASE_DIR = {str(APP.parent)!r}").replace(
+            'CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")',
+            f"CORRECTIONS_LOG = {self.db!r}").replace(
+            'UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")',
+            f"UPLOAD_DIR = {str(Path(self.temp.name) / 'uploads')!r}")
+        key = C.review_key(APP.parent / "data" / "sample_reviews.csv", self.raw.iloc[1])
+        C.save_correction(self.db, key, [], ["cleanliness"], "old-rules")
+        with patch.object(E, "load_reviews", return_value=self.raw):
+            app = AppTest.from_string(source, default_timeout=30).run()
+
+            def button(label):
+                return next(b for b in app.button if b.label == label)
+
+            app.text_area(key="d_demo-2").input("Approved wait apology").run()
+            button("Approve reply").click().run()
+            original_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
+            button("Approve earlier tags for current rules").click().run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assertEqual(app.text_area(key="d_demo-2").value, "Approved wait apology")
+            self.assertEqual(app.session_state["approved_reply_tags"], original_tags)
+            button("Recheck and approve reply").click().run()
+            checked_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
+            # A new decision with identical effective tags must not invalidate approval.
+            button("Save manager decision").click().run()
+            self.assertEqual(len(app.exception), 0)
+            self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assertEqual(app.session_state["approved_reply_tags"], checked_tags)
+            self.assertEqual(app.session_state["approved"]["demo-2"], "Approved wait apology")
+            # Pre-existing approvals without a snapshot must be explicitly rechecked.
+            app.session_state["approved_reply_tags"] = {}
+            app.run()
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assertEqual(app.text_area(key="d_demo-2").value, "Approved wait apology")
 
 
 if __name__ == "__main__":

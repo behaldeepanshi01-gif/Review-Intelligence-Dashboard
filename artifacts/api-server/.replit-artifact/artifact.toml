@@ -30,3 +30,20 @@ NODE_ENV = "production"
 
 [services.production.health.startup]
 path = "/api/healthz"
+
+[[services]]
+name = "Review Dashboard"
+localPort = 8000
+paths = ["/dashboard"]
+
+[services.development]
+run = "cd /home/runner/workspace/review_intel_app && uv run --project /home/runner/workspace python -m streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.baseUrlPath dashboard --browser.gatherUsageStats false"
+
+[services.env]
+PORT = "8000"
+
+[services.production.run]
+args = ["sh", "-c", "cd review_intel_app && python -m streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.baseUrlPath dashboard --browser.gatherUsageStats false"]
+
+[services.production.health.startup]
+path = "/dashboard/_stcore/health"

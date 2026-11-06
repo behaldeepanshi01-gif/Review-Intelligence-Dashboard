@@ -1,12 +1,41 @@
 """Explicit local dataset identities; filenames never decide action ownership."""
 
 from contextlib import closing
+from collections import Counter
+from datetime import date
+import hashlib
+import json
 from pathlib import Path
 import sqlite3
 import uuid
 
 
 SAMPLE_ID = "builtin:synthetic-sample"
+
+
+def source_cohort(reviews, dataset_id, location, through_date):
+    """Hash analysis inputs through the alert date, not CSV paths or row IDs.
+
+    Generated/duplicate review IDs depend on CSV order. Count identical content
+    instead, so reordering is harmless but removing a duplicate is detectable.
+    Guest names and raw review text are never persisted in the action log.
+    """
+    cutoff = date.fromisoformat(str(through_date)[:10])
+    counts = Counter()
+    for row in reviews:
+        if row.get("location") != location:
+            continue
+        day = date.fromisoformat(str(row["date"])[:10])
+        if day > cutoff:
+            continue
+        payload = [str(row["location"]), str(row["date"]), int(row["rating"]),
+                   str(row["text"])]
+        digest = hashlib.sha256(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
+        ).hexdigest()
+        counts[digest] += 1
+    return {"version": 1, "dataset_id": dataset_id, "location": location,
+            "through_date": cutoff.isoformat(), "counts": dict(sorted(counts.items()))}
 
 
 class DatasetStore:

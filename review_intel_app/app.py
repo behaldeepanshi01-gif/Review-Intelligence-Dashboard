@@ -226,6 +226,19 @@ def show_rule_evidence(row):
 
 locations = sorted(tagged["location"].unique())
 try:
+    all_actions = A.load_actions(ACTION_LOG)
+except (OSError, ValueError) as ex:
+    st.error(f"Couldn't read the action log: {ex}")
+    st.stop()
+# A removed/renamed location cannot be selected in the current-review filters.
+# Still surface its source warning rather than silently hiding every old plan.
+for missing_action in all_actions:
+    if (A.matches_dataset(missing_action, tag, legacy_tag)
+            and missing_action.get("location") not in locations):
+        source_check = A.comparison_source(missing_action, raw.to_dict("records"), tag)
+        st.warning(f"Saved action location {missing_action.get('location', 'Location')} "
+                   f"is absent from this dataset snapshot. {source_check['source_message']}")
+try:
     calendars = LocationSettings(LOCATION_SETTINGS)
     calendar_settings = calendars.load(tag)
 except (OSError, D.sqlite3.Error) as ex:
@@ -330,12 +343,6 @@ high_open = view[(view["urgency"] == "High")
                  & (~view["review_id"].isin(st.session_state["approved"].keys()))]
 neg_share = 100 * (view["themes_neg"].str.len() > 0).mean()
 alerts = E.early_warnings(view, recent_days=window, baseline_days=window * 3)
-try:
-    all_actions = A.load_actions(ACTION_LOG)
-except (OSError, ValueError) as ex:
-    st.error(f"Couldn't read the action log: {ex}")
-    st.stop()
-
 show_history_controls(datasets, dataset, all_actions)
 
 k1, k2, k3, k4 = st.columns(4)
@@ -637,6 +644,7 @@ with tabs[2]:
                                 today=action_today,
                                 tagging_provenance=provenance_by_location.get(
                                     alert["location"]),
+                                source_reviews=raw.to_dict("records"),
                             )
                             try:
                                 A.append_action(ACTION_LOG, action, legacy_tag=legacy_tag)
@@ -791,6 +799,7 @@ with tabs[5]:
             timezones_by_location=timezones_by_location,
             legacy_tag=legacy_tag,
             provenance_by_location=provenance_by_location,
+            source_reviews=raw.to_dict("records"),
         )
         st.code("\n".join(lines + action_lines), language=None)
 
@@ -807,6 +816,10 @@ def show_live_action_tracker():
     )
     st.caption("An older saved baseline may use earlier tagging rules. A change in the "
                "analyzer is not evidence of an operational improvement.")
+    st.caption("Source data is checked separately through each action's saved alert date. "
+               "Edits, removals and backfilled reviews can affect comparability; "
+               "newer follow-up reviews are allowed. Older actions without a saved "
+               "source cohort have unknown source-data comparability.")
     st.caption("Overdue warnings, filters and the owner summary update every 30 seconds "
                "while connected. Action editors below are not refreshed by this timer.")
     saved_actions = [
@@ -858,11 +871,17 @@ def show_live_action_tracker():
             result = A.follow_up(
                 action, location_reviews.to_dict("records"),
                 current_provenance=provenance_by_location.get(action.get("location")),
+                current_source_reviews=raw.to_dict("records"),
+                current_dataset_tag=tag,
             )
             if result["provenance_status"] == "unchanged":
                 st.caption(result["provenance_message"])
             else:
                 st.warning(result["provenance_message"])
+            if result["source_status"] == "unchanged":
+                st.caption(result["source_message"])
+            else:
+                st.warning(result["source_message"])
             if result.get("reason") == "not_started":
                 st.info("Mark the action In progress when it starts to begin follow-up.")
             elif not result["ready"]:

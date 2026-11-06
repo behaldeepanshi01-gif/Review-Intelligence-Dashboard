@@ -9,6 +9,7 @@ import os
 from unittest.mock import patch
 
 import action_report as R
+from dataset_store import source_cohort
 import manager_identity as MI
 
 
@@ -19,7 +20,9 @@ def action(**updates):
     row = dict(dataset_tag="dataset-a", location="Cafe", theme="Speed",
                theme_key="service_speed", action_text="Check kitchen handoffs",
                owner="Shift lead", status="In progress", start_date="2026-01-01",
-               due_date="2026-01-03", baseline_share=40, baseline_provenance=PROVENANCE)
+               due_date="2026-01-03", baseline_share=40, baseline_provenance=PROVENANCE,
+               alert_end_date="2026-01-01",
+               baseline_source=source_cohort([], "dataset-a", "Cafe", "2026-01-01"))
     return dict(row, **updates)
 
 
@@ -64,6 +67,16 @@ class ActionReportTests(unittest.TestCase):
             self.assertIn("Comparison withheld", result)
             self.assertNotIn("Saved baseline:", result)
             self.assertIn("saved baseline is unchanged", result)
+
+    def test_source_changes_and_unknown_source_suppress_comparison(self):
+        for source in (None, source_cohort(
+                [dict(location="Cafe", date="2026-01-01", rating=1, text="Long wait.")],
+                "dataset-a", "Cafe", "2026-01-01")):
+            result = self.render([action(baseline_source=source)], reviews(5))
+            self.assertIn("Comparison withheld", result)
+            self.assertNotIn("Saved baseline:", result)
+            self.assertIn("Tagging provenance unchanged", result)
+            self.assertIn("Source data:", result)
 
     def test_known_private_content_is_removed_from_manager_fields(self):
         row = action(action_text="Ask Guestperson Private: This confidential guest "

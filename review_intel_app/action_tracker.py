@@ -10,6 +10,7 @@ import json
 import os
 import tempfile
 import uuid
+from dataset_store import source_cohort
 
 
 MIN_FOLLOWUP_REVIEWS = 5
@@ -223,6 +224,7 @@ def create_action(
     *, today: date | None = None,
     timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
     tagging_provenance: dict | None = None,
+    source_reviews: list[dict] | None = None,
     timezones_by_location: dict | None = None,
     now: datetime | None = None,
 ) -> dict:
@@ -245,6 +247,9 @@ def create_action(
         "baseline_share": float(alert["recent_share"]),
         "baseline_mentions": int(alert["recent_mentions"]),
         "baseline_provenance": dict(tagging_provenance) if tagging_provenance else None,
+        "baseline_source": source_cohort(
+            source_reviews, dataset_tag, alert["location"], alert_end_date
+        ) if source_reviews is not None else None,
     }
 
 
@@ -329,12 +334,58 @@ def comparison_provenance(action: dict, current: dict | None) -> dict:
     }
 
 
+def comparison_source(action: dict, reviews: list[dict] | None,
+                      dataset_tag: str | None = None) -> dict:
+    """Check the saved source cohort independently of tagging provenance."""
+    baseline = action.get("baseline_source")
+    unknown = {
+        "source_status": "unknown",
+        "source_message": "Source-data comparability unknown — the saved source cohort "
+        "or complete current source data is unavailable. The saved baseline is unchanged.",
+    }
+    if not isinstance(baseline, dict) or baseline.get("version") != 1 or reviews is None:
+        return unknown
+    if (baseline.get("dataset_id") != action.get("dataset_tag")
+            or baseline.get("location") != action.get("location")
+            or baseline.get("through_date") != action.get("alert_end_date")
+            or not isinstance(baseline.get("counts"), dict)
+            or any(not isinstance(n, int) or n < 1 for n in baseline["counts"].values())):
+        return unknown
+    if dataset_tag is not None and dataset_tag != baseline["dataset_id"]:
+        return unknown
+    try:
+        current = source_cohort(
+            reviews, baseline["dataset_id"], baseline["location"], baseline["through_date"])
+    except (KeyError, TypeError, ValueError):
+        return unknown
+    if baseline["counts"] != current["counts"]:
+        return {
+            "source_status": "changed",
+            "source_message": "Source data changed — reviews through the saved alert date "
+            "were edited, removed, or added. This follow-up may not be comparable with "
+            "its saved baseline, even if tagging rules and manager decisions match. "
+            "The saved baseline is unchanged; do not interpret this as an operational result.",
+        }
+    return {
+        "source_status": "unchanged",
+        "source_message": "Source cohort unchanged — reviews through the saved alert date "
+        "match. Newer follow-up reviews do not invalidate this source-data check.",
+    }
+
+
 def follow_up(
     action: dict, reviews: list[dict], *, current_provenance: dict | None = None,
+    current_source_reviews: list[dict] | None = None,
+    current_dataset_tag: str | None = None,
 ) -> dict:
     """Compare newer mentions, carrying a comparability label even while waiting."""
     provenance = comparison_provenance(action, current_provenance)
-    return {**_follow_up_counts(action, reviews), **provenance}
+    source = comparison_source(action, current_source_reviews, current_dataset_tag)
+    statuses = (provenance["provenance_status"], source["source_status"])
+    comparable = "changed" if "changed" in statuses else (
+        "unknown" if "unknown" in statuses else "unchanged")
+    return {**_follow_up_counts(action, reviews), **provenance, **source,
+            "comparability_status": comparable}
 
 
 def _follow_up_counts(action: dict, reviews: list[dict]) -> dict:
@@ -387,6 +438,7 @@ def weekly_action_summary(
     *, legacy_tag: str | None = None,
     timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
     provenance_by_location: dict | None = None,
+    source_reviews: list[dict] | None = None,
     timezones_by_location: dict | None = None,
     now: datetime | None = None,
 ) -> list[str]:
@@ -422,8 +474,11 @@ def weekly_action_summary(
         result = follow_up(
             action, reviews,
             current_provenance=(provenance_by_location or {}).get(location),
+            current_source_reviews=source_reviews,
+            current_dataset_tag=dataset_tag,
         )
         lines.append("  " + result["provenance_message"])
+        lines.append("  " + result["source_message"])
         if result["ready"]:
             lines.append(
                 f"  Follow-up: {result['mentions']} of {result['review_count']} "

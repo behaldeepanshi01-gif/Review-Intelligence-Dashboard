@@ -72,15 +72,17 @@ def build_report(actions, dataset_tag, locations, reviews, *, legacy_tag=None,
             ]
             result = A.follow_up(
                 action, reviews,
-                current_provenance=(provenance_by_location or {}).get(location))
+                current_provenance=(provenance_by_location or {}).get(location),
+                current_source_reviews=reviews, current_dataset_tag=dataset_tag)
             lines.append("Comparability: " + clean(result["provenance_message"]))
+            lines.append("Source data: " + clean(result["source_message"]))
             if not result["ready"]:
                 if result["reason"] == "not_started":
                     lines.append("Follow-up pending: action has not started or has no start date.")
                 else:
                     lines.append(f"Follow-up pending: {result['review_count']} newer reviews; "
                                  f"at least {A.MIN_FOLLOWUP_REVIEWS} are required.")
-            elif result["provenance_status"] != "unchanged":
+            elif result["comparability_status"] != "unchanged":
                 lines.append("Comparison withheld until baseline comparability is confirmed.")
             else:
                 lines.append(

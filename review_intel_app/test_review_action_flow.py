@@ -136,6 +136,165 @@ class ActionProvenanceTests(unittest.TestCase):
         self.assertFalse(waiting["ready"])
         self.assertEqual(waiting["provenance_status"], "changed")
 
+    def test_decision_breakdown_added_changed_removed_and_restored(self):
+        keys = [C.review_key(self.path, self.raw.iloc[i]) for i in range(3)]
+        C.save_correction(self.db, keys[0], [], ["service_speed"], self.version)
+        C.save_correction(self.db, keys[1], [], ["price"], self.version)
+        action = self.action(self.provenance())
+        original = copy.deepcopy(action)
+        C.save_correction(self.db, keys[0], ["service_speed"], [], self.version)
+        C.undo_correction(self.db, keys[1], self.version)
+        C.save_correction(self.db, keys[2], [], [], self.version)
+        result = self.compare(action, self.provenance())
+        self.assertEqual(result["decisions_status"], "changed")
+        self.assertIn("1 added, 1 changed, 1 removed", result["decisions_message"])
+        rows = {row["decision_ref"]: row for row in result["decision_changes"]}
+        self.assertEqual(rows[keys[0]]["change"], "changed")
+        self.assertEqual(rows[keys[0]]["before"]["negative"], ["service_speed"])
+        self.assertEqual(rows[keys[0]]["after"]["positive"], ["service_speed"])
+        self.assertIn("Recorded action-theme tags changed", rows[keys[0]]["theme_evidence"])
+        self.assertIn("unproven", rows[keys[0]]["theme_evidence"])
+        self.assertEqual(rows[keys[1]]["change"], "removed")
+        self.assertIsNone(rows[keys[1]]["after"])
+        self.assertEqual(rows[keys[2]]["change"], "added")
+        self.assertIsNone(rows[keys[2]]["before"])
+        self.assertIn("not established", rows[keys[2]]["theme_evidence"])
+        self.assertIn("Location-wide", result["decisions_scope"])
+        self.assertEqual(action, original)
+        # The returned detail cannot mutate either historical or current records.
+        rows[keys[0]]["before"]["negative"].clear()
+        self.assertEqual(action, original)
+        C.save_correction(self.db, keys[0], [], ["service_speed"], self.version)
+        C.save_correction(self.db, keys[1], [], ["price"], self.version)
+        C.undo_correction(self.db, keys[2], self.version)
+        restored = self.compare(action, self.provenance())
+        self.assertEqual(restored["decisions_status"], "unchanged")
+        self.assertEqual(restored["decision_changes"], [])
+
+    def test_unrelated_theme_and_rules_changes_are_not_proven_action_effects(self):
+        key = C.review_key(self.path, self.raw.iloc[0])
+        C.save_correction(self.db, key, [], ["price"], self.version)
+        action = self.action(self.provenance())
+        C.save_correction(self.db, key, ["price"], [], self.version)
+        result = self.compare(action, self.provenance())
+        self.assertIn("Location-wide change only",
+                      result["decision_changes"][0]["theme_evidence"])
+        upgraded = self.compare(action, self.provenance(version="synthetic-upgrade"))
+        self.assertEqual(upgraded["decision_changes"][0]["change"], "removed")
+        self.assertIn("not an undo", upgraded["decisions_message"])
+        empty = self.action(self.provenance(version="synthetic-upgrade"))
+        same_tags_new_rules = self.compare(empty, self.provenance(version="later-upgrade"))
+        self.assertEqual(same_tags_new_rules["decisions_status"], "unchanged")
+        self.assertEqual(same_tags_new_rules["provenance_status"], "changed")
+
+    def test_missing_legacy_or_partial_detail_stays_unknown_without_backfill(self):
+        current = self.provenance()
+        action = self.action(current)
+        legacy = copy.deepcopy(action)
+        legacy["baseline_provenance"].pop("decisions")
+        legacy["baseline_provenance"].pop("decisions_version")
+        original = copy.deepcopy(legacy)
+        result = self.compare(legacy, current)
+        self.assertEqual(result["provenance_status"], "unchanged")
+        self.assertEqual(result["decisions_status"], "unknown")
+        self.assertEqual(result["decision_changes"], [])
+        self.assertIn("Baseline decision detail unknown", result["decisions_message"])
+        for bad in (None, {}, dict(current, decisions_version=999),
+                    dict(current, decisions={"incomplete": {}}),
+                    dict(current, decisions_fingerprint="wrong")):
+            with self.subTest(bad=bad):
+                result = self.compare(action, bad)
+                self.assertEqual(result["decisions_status"], "unknown")
+                self.assertEqual(result["decision_changes"], [])
+        log = str(self.root / "legacy.json")
+        A.save_actions(log, [legacy])
+        updated = A.edit_saved_action(log, legacy, "Check handoffs.", "Manager", "Done",
+                                      date(2026, 1, 2), date(2026, 1, 20))
+        self.assertEqual(updated["baseline_provenance"], original["baseline_provenance"])
+        self.assertEqual(legacy, original)
+
+    def test_capture_is_detached_minimal_private_and_persists_exactly(self):
+        raw = self.raw.copy()
+        raw["reviewer"] = "SYNTHETIC PRIVATE GUEST"
+        key = C.review_key(self.path, raw.iloc[0])
+        C.save_correction(self.db, key, ["price"], ["service_speed"], self.version)
+        provenance = self.provenance(raw=raw)
+        provenance["raw_text"] = "SYNTHETIC PRIVATE GUEST Service was slow."
+        action = self.action(provenance)
+        baseline = copy.deepcopy(action["baseline_provenance"])
+        provenance["decisions"][key]["positive"].clear()
+        self.assertEqual(action["baseline_provenance"], baseline)
+        log = self.root / "minimal.json"
+        A.save_actions(str(log), [action])
+        saved = log.read_text()
+        for private in ("SYNTHETIC PRIVATE GUEST", "Service was slow.", str(self.path),
+                        "saved_at", "raw_text"):
+            self.assertNotIn(private, saved)
+        self.assertEqual(set(baseline),
+                         {"rules_version", "decisions_fingerprint",
+                          "decisions_version", "decisions"})
+        self.assertEqual(A.load_actions(str(log))[0], action)
+        summary = "\n".join(A.weekly_action_summary(
+            [action], "synthetic", ["Demo Cafe"], [],
+            provenance_by_location={"Demo Cafe": self.provenance(raw=raw)}))
+        self.assertNotIn(key, summary)
+
+    def test_private_decision_ui_rechecks_exact_scope_and_revoked_account(self):
+        import manager_identity as identity
+        import action_decisions_ui as UI
+        key = C.review_key(self.path, self.raw.iloc[0])
+        action = self.action(self.provenance())
+        C.save_correction(self.db, key, [], ["price"], self.version)
+        result = self.compare(action, self.provenance())
+        script = f'''
+import streamlit as st
+from action_decisions_ui import show_decision_changes
+show_decision_changes({action!r}, "synthetic", {result!r})
+'''
+        with patch.object(identity, "DB_PATH", self.root / "accounts.sqlite"):
+            identity.set_account("demo-manager", "synthetic-long-password",
+                                 {"synthetic": ["Demo Cafe"]})
+            grant = identity.authenticate("demo-manager", "synthetic-long-password")
+            app = AppTest.from_string(script).run()
+            self.assertFalse(app.exception)
+            self.assertFalse(app.dataframe)
+            self.assertTrue(any("locked" in item.value for item in app.info))
+            app.session_state["_manager_report_grant"] = grant
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.dataframe[0].value.iloc[0]["Change"], "Added")
+            self.assertEqual(app.dataframe[0].value.iloc[0]["Decision reference"], key)
+            # Same identity, wrong dataset or restaurant: no detail reaches the UI.
+            for dataset, location in (("other-dataset", "Demo Cafe"),
+                                      ("synthetic", "Other Cafe")):
+                denied_script = (
+                    "from action_decisions_ui import show_decision_changes\n"
+                    f"show_decision_changes({dict(action, location=location)!r}, "
+                    f"{dataset!r}, {result!r})")
+                denied = AppTest.from_string(denied_script)
+                denied.session_state["_manager_report_grant"] = grant
+                denied.run()
+                self.assertFalse(denied.exception)
+                self.assertFalse(denied.dataframe)
+            with patch.object(identity.time, "time", return_value=grant["expires"]):
+                app.run()
+                self.assertFalse(app.dataframe)
+            identity.remove_account("demo-manager")
+            app.run()
+            self.assertFalse(app.dataframe)
+            self.assertFalse(app.exception)
+        # Authorized older histories remain visibly unknown, not a zero-change claim.
+        legacy = copy.deepcopy(action)
+        legacy["baseline_provenance"].pop("decisions")
+        with patch.object(UI, "authorized", return_value=True):
+            unknown_result = self.compare(legacy, self.provenance())
+            unknown = AppTest.from_string(
+                "from action_decisions_ui import show_decision_changes\n"
+                f"show_decision_changes({legacy!r}, 'synthetic', {unknown_result!r})").run()
+        self.assertTrue(any("Baseline decision detail unknown" in w.value
+                            for w in unknown.warning))
+        self.assertFalse(unknown.dataframe)
+
     def test_weekly_summary_labels_each_comparison(self):
         known = self.action(self.provenance())
         changed = copy.deepcopy(known)
@@ -217,6 +376,32 @@ class ActionProvenanceTests(unittest.TestCase):
         self.assertTrue(any("Tagging provenance unchanged" in item.value
                             for item in app.caption))
         self.assertTrue(any("Source cohort unchanged" in item.value for item in app.caption))
+
+    def test_action_tracker_wires_private_location_decision_breakdown(self):
+        import action_decisions_ui as UI
+        raw = E.load_reviews(SAMPLE)
+        location = raw.iloc[0]["location"]
+        scoped = raw[raw["location"] == location]
+        baseline = C.tagging_provenance(scoped, SAMPLE, {}, self.version)
+        action = self.action(baseline)
+        action.update(dataset_tag=SAMPLE_ID, location=location)
+        key = C.review_key(SAMPLE, scoped.iloc[0])
+        corrections = {key: {"rules_version": self.version, "themes_pos": [],
+                             "themes_neg": ["price"], "saved_at": "synthetic"}}
+        with patch.object(A, "load_actions", return_value=[action]), \
+                patch.object(C, "load_corrections", return_value=corrections), \
+                patch.object(C, "load_prior_corrections", return_value={}), \
+                patch.object(UI, "authorized", return_value=True):
+            app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
+                                   default_timeout=30).run()
+        self.assertFalse(app.exception)
+        details = [frame.value for frame in app.dataframe
+                   if "Decision reference" in frame.value.columns]
+        self.assertEqual(len(details), 1)
+        self.assertEqual(details[0].iloc[0]["Decision reference"], key)
+        self.assertEqual(details[0].iloc[0]["Change"], "Added")
+        self.assertTrue(any("1 added, 0 changed, 0 removed" in text.value
+                            for text in app.markdown))
 
 
 class SourceComparabilityTests(unittest.TestCase):

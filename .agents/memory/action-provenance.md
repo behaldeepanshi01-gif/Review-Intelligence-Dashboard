@@ -28,3 +28,16 @@ new paths even when the earlier reviews remain identical.
 **How to apply:** Preserve historical baselines without backfilling old source
 snapshots. Treat missing source history as unknown. Compare normalized analysis
 content with duplicate multiplicity, not a whole-file checksum or generated IDs.
+
+Decision explanations describe net changes in applicable approvals, not an audit
+trail of every save or undo. Added or removed approvals do not establish a change
+to effective theme tags because the rule fallback was not captured. A rules
+upgrade can remove an applicable approval without any manager undo.
+
+**Why:** Sparse, private provenance cannot prove historical rule outputs or review
+cohort impact; presenting those inferences as facts would mislead managers.
+
+**How to apply:** Keep legacy decision detail unknown even when its fingerprint
+matches. Distinguish recorded theme-tag changes from proven count effects, and
+reuse the report identity's exact dataset/location checks for private details
+without suggesting the rest of the dashboard is protected by that gate.

@@ -5,7 +5,9 @@ from __future__ import annotations
 from datetime import date, datetime
 from contextlib import contextmanager
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+import copy
 import fcntl
+import hashlib
 import json
 import os
 import tempfile
@@ -246,7 +248,7 @@ def create_action(
         "alert_end_date": alert_end_date.isoformat(),
         "baseline_share": float(alert["recent_share"]),
         "baseline_mentions": int(alert["recent_mentions"]),
-        "baseline_provenance": dict(tagging_provenance) if tagging_provenance else None,
+        "baseline_provenance": capture_tagging_provenance(tagging_provenance),
         "baseline_source": source_cohort(
             source_reviews, dataset_tag, alert["location"], alert_end_date
         ) if source_reviews is not None else None,
@@ -295,6 +297,103 @@ def find_active_action(
     if not matching:
         return None
     return max(matching, key=lambda row: row.get("created_on", ""))
+
+
+def _decision_snapshot(provenance: dict | None) -> dict | None:
+    """Validate complete, versioned history without requiring today's vocabulary."""
+    if (not isinstance(provenance, dict) or provenance.get("decisions_version") != 1
+            or not isinstance(provenance.get("rules_version"), str)
+            or not provenance["rules_version"]):
+        return None
+    decisions = provenance.get("decisions")
+    if not isinstance(decisions, dict):
+        return None
+    for key, tags in decisions.items():
+        if (not isinstance(key, str) or len(key) != 64
+                or any(c not in "0123456789abcdef" for c in key)
+                or not isinstance(tags, dict) or set(tags) != {"positive", "negative"}):
+            return None
+        for values in tags.values():
+            if (not isinstance(values, list) or any(not isinstance(t, str) for t in values)
+                    or values != sorted(set(values))):
+                return None
+    fingerprint = hashlib.sha256(
+        json.dumps(decisions, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    return decisions if fingerprint == provenance.get("decisions_fingerprint") else None
+
+
+def capture_tagging_provenance(provenance: dict | None) -> dict | None:
+    """Capture only the minimal supported fields and detach caller-owned objects."""
+    if not isinstance(provenance, dict):
+        return None
+    captured = {key: provenance[key] for key in ("rules_version", "decisions_fingerprint")
+                if key in provenance}
+    decisions = _decision_snapshot(provenance)
+    if decisions is not None:
+        captured.update(decisions_version=1, decisions=copy.deepcopy(decisions))
+    return captured
+
+
+def comparison_decisions(action: dict, current: dict | None) -> dict:
+    """Explain net location-wide decision changes, never infer missing history."""
+    baseline = action.get("baseline_provenance")
+    before = _decision_snapshot(baseline)
+    after = _decision_snapshot(current)
+    scope = (
+        "Location-wide decisions, independent of dashboard date filters. These changes "
+        "are potentially relevant, not proof that this action theme's counts changed "
+        "or that the action caused an operational result. Added or removed decisions "
+        "do not record the local-rule fallback tags; their effective theme impact is unknown."
+    )
+    if before is None or after is None:
+        missing = "Baseline" if before is None else "Current"
+        return {
+            "decisions_status": "unknown",
+            "decisions_message": f"{missing} decision detail unknown — a complete supported "
+            "decision snapshot was not captured or is unavailable. Added, changed and "
+            "removed decisions cannot be reconstructed. The saved baseline is unchanged.",
+            "decisions_scope": scope,
+            "decision_changes": [],
+        }
+    rows = []
+    for key in sorted(before.keys() | after.keys()):
+        old, new = before.get(key), after.get(key)
+        if old == new:
+            continue
+        kind = "added" if old is None else "removed" if new is None else "changed"
+        theme = action.get("theme_key")
+        theme_changed = (
+            old is not None and new is not None and bool(theme)
+            and any((theme in old[polarity]) != (theme in new[polarity])
+                    for polarity in ("positive", "negative"))
+        )
+        rows.append({
+            "decision_ref": key, "change": kind,
+            "before": copy.deepcopy(old), "after": copy.deepcopy(new),
+            "theme_evidence": (
+                "Recorded action-theme tags changed; effect on comparison counts unproven."
+                if theme_changed else
+                "Location-wide change only; action-theme impact not established."
+            ),
+        })
+    counts = {kind: sum(row["change"] == kind for row in rows)
+              for kind in ("added", "changed", "removed")}
+    rules_changed = baseline.get("rules_version") != current.get("rules_version")
+    message = (
+        f"Since capture: {counts['added']} added, {counts['changed']} changed, "
+        f"{counts['removed']} removed applicable decisions."
+        if rows else "No net manager-decision changes since capture."
+    )
+    if rules_changed:
+        message += (
+            " Rules versions differ: this compares approved tag records only. Removed "
+            "decisions may reflect approvals no longer applicable under the current rules, "
+            "not an undo. Matching records do not establish rules comparability."
+        )
+    return {"decisions_status": "changed" if rows else "unchanged",
+            "decisions_message": message, "decisions_scope": scope,
+            "decision_changes": rows}
 
 
 def comparison_provenance(action: dict, current: dict | None) -> dict:
@@ -385,6 +484,7 @@ def follow_up(
     comparable = "changed" if "changed" in statuses else (
         "unknown" if "unknown" in statuses else "unchanged")
     return {**_follow_up_counts(action, reviews), **provenance, **source,
+            **comparison_decisions(action, current_provenance),
             "comparability_status": comparable}
 
 

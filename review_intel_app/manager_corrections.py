@@ -167,7 +167,9 @@ def tagging_provenance(raw, file_path, corrections, version):
     fingerprint = hashlib.sha256(
         json.dumps(decisions, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
-    return {"rules_version": version, "decisions_fingerprint": fingerprint}
+    # No review text, guest identity, save timestamps or source paths in action logs.
+    return {"rules_version": version, "decisions_fingerprint": fingerprint,
+            "decisions_version": 1, "decisions": decisions}
 
 
 def approve_prior_correction(path, file_path, row, decision, version):

@@ -15,6 +15,7 @@ import plotly.express as px
 import streamlit as st
 
 import action_tracker as A
+from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
 import engine as E
 import manager_corrections as C
@@ -878,6 +879,7 @@ def show_live_action_tracker():
                 st.caption(result["provenance_message"])
             else:
                 st.warning(result["provenance_message"])
+            show_decision_changes(action, tag, result)
             if result["source_status"] == "unchanged":
                 st.caption(result["source_message"])
             else:

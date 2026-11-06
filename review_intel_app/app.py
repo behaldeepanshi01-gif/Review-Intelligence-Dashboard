@@ -923,6 +923,37 @@ with tabs[6]:
             f"Edit {action.get('location', 'Location')}: {action.get('theme', 'Theme')} "
             f"· {action.get('owner') or 'Not assigned'}"
         ):
+            st.markdown("**Action edit history**")
+            st.caption("Successful saves only, newest first. Times are UTC. "
+                       "Earlier edits made before history was available are not recorded. "
+                       "Owner is the plan's assigned owner, not the person who saved it.")
+            history = action.get("edit_history", [])
+            if not history:
+                st.info("No recorded action edits yet.")
+            elif not isinstance(history, list):
+                st.error("The saved action edit history is invalid.")
+            else:
+                field_labels = {
+                    "action_text": "Manager action", "owner": "Owner",
+                    "status": "Status", "start_date": "Action start date",
+                    "due_date": "Due date",
+                }
+                history_rows = []
+                for entry in reversed(history):
+                    for field, values in entry["changes"].items():
+                        history_rows.append({
+                            "Saved at (UTC)": entry["saved_at"],
+                            "Field": field_labels.get(field, field),
+                            "Before": values["before"],
+                            "After": values["after"],
+                        })
+                    if not entry["changes"]:
+                        history_rows.append({
+                            "Saved at (UTC)": entry["saved_at"],
+                            "Field": "Saved without field changes",
+                            "Before": "", "After": "",
+                        })
+                st.dataframe(history_rows, hide_index=True, use_container_width=True)
             # Streamlit reloads the log on submit. Keep the snapshot the manager
             # actually saw, rather than treating that fresh load as their version.
             snapshot_key = f"action_snapshot_{tag}_{action_id}"

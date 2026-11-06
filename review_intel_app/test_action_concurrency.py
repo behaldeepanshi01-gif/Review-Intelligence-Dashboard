@@ -99,7 +99,9 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertIn(legacy, saved)
         expected = A.update_action(
             original, "Updated handoff.", "Updated handoff.", "In progress", DAY, DAY)
-        self.assertIn(expected, saved)
+        edited = next(a for a in saved if a["action_id"] == original["action_id"])
+        self.assertEqual({k: v for k, v in edited.items() if k != "edit_history"}, expected)
+        self.assertEqual(len(edited["edit_history"]), 1)
 
     def test_overlapping_edits_to_distinct_actions_both_survive(self):
         first, second = plan(), plan("Cleanliness")
@@ -119,6 +121,7 @@ class ConcurrentActionTests(unittest.TestCase):
         ], True), ["saved", "conflict"])
         saved = A.load_actions(self.path)[0]
         self.assertIn(saved["action_text"], ["First edit", "Second edit"])
+        self.assertEqual(len(saved["edit_history"]), 1)
         self.assertEqual(saved["baseline_provenance"], original["baseline_provenance"])
 
     def test_bulk_save_cannot_replace_a_stale_log(self):
@@ -203,6 +206,14 @@ class ConcurrentActionTests(unittest.TestCase):
         saved = A.load_actions(self.path)[0]
         self.assertEqual(saved["action_text"], "Reviewed latest and saved")
         self.assertEqual(saved["baseline_provenance"], original["baseline_provenance"])
+        self.assertEqual(len(saved["edit_history"]), 2)
+        history = next(table for table in app.dataframe
+                       if "Saved at (UTC)" in table.value.columns).value
+        text_changes = history[history["Field"] == "Manager action"]
+        self.assertEqual(list(text_changes["Before"]),
+                         ["Other manager saved", "Check handoffs."])
+        self.assertEqual(list(text_changes["After"]),
+                         ["Reviewed latest and saved", "Other manager saved"])
 
 
 if __name__ == "__main__":

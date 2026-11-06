@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from contextlib import contextmanager
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import copy
@@ -17,6 +17,7 @@ from dataset_store import source_cohort
 
 MIN_FOLLOWUP_REVIEWS = 5
 STATUS_OPTIONS = ("Planned", "In progress", "Done")
+EDITABLE_FIELDS = ("action_text", "owner", "status", "start_date", "due_date")
 DEFAULT_RESTAURANT_TIMEZONE = "America/New_York"
 
 
@@ -209,6 +210,19 @@ def edit_saved_action(
                 "Reload the latest action before editing again.")
         updated = update_action(
             actions[index], action_text, owner, status, start_date, due_date)
+        history = actions[index].get("edit_history", [])
+        if not isinstance(history, list):
+            raise ValueError("The action edit history is invalid; nothing was saved.")
+        # Keep the audit entry in the same atomic write as the edited action.
+        # Never infer earlier edits for legacy actions or include alert baselines.
+        updated["edit_history"] = history + [{
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "changes": {
+                field: {"before": actions[index].get(field), "after": updated[field]}
+                for field in EDITABLE_FIELDS
+                if actions[index].get(field) != updated[field]
+            },
+        }]
         actions[index] = updated
         _write_actions(path, actions)
         return updated

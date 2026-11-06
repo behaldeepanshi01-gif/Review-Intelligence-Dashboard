@@ -21,3 +21,8 @@ timeoutMs = 20000
 [nix]
 channel = "stable-25_05"
 packages = ["glibcLocales"]
+
+[userenv]
+
+[userenv.development]
+STREAMLIT_SERVER_HEADLESS = "true"

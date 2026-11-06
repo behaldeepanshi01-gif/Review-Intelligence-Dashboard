@@ -11,3 +11,4 @@
 - [Dashboard routing](dashboard-routing.md) — distinguish interactive Streamlit from the root demo; verify public HTTP and WebSocket access, not just localhost health.
 - [Live calendar refresh safety](live-calendar-refresh.md) — unsent Streamlit forms require isolation from timer reruns; AppTest alone cannot prove browser draft preservation.
 - [Streamlit test isolation](streamlit-test-isolation.md) — run multiprocessing checks before AppTest; select sample data explicitly in dashboard fixtures.
+- [Upload publication dates](upload-date-semantics.md) — preserve source calendar dates across timezone offsets to avoid shifting trend periods.

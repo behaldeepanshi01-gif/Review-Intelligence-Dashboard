@@ -39,7 +39,11 @@ Website-selected testimonials attributed to Google are not reviews independently
 retrieved from Google. They do not establish the complete review history.
 Positive selection bias makes them unsuitable for representative complaint rates.
 Without real dates, they cannot support early warnings or weekly trends.
-The current app loader drops undated rows. Do not substitute retrieval time for
+The upload preview reports missing and invalid dates before saving. Files with
+no eligible reviews cannot replace an existing dataset. Saved CSVs retain all
+original bytes, but undated records are excluded from analysis and trends.
+Cancel upload leaves saved datasets unchanged; Download original CSV retains
+even an all-undated file without importing it. Do not substitute retrieval time for
 publication date or import this collection as a date-complete dashboard dataset.
 Use the owner's authorized, dated export for a separate verified analysis.
 

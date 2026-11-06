@@ -76,6 +76,14 @@ def dataset_label(dataset_id):
     return f"{item['label']} · {dataset_id[-8:]}"
 
 
+def cancel_upload():
+    st.session_state.pop("saved_upload", None)
+    st.session_state["upload_generation"] = st.session_state.get("upload_generation", 0) + 1
+    st.session_state["data_source"] = (
+        "Saved file" if saved_datasets else "Sample data (synthetic)"
+    )
+
+
 if "data_source" not in st.session_state:
     st.session_state["data_source"] = (
         "Saved file" if saved_datasets else "Sample data (synthetic)"
@@ -97,7 +105,7 @@ if source == "Saved file":
 elif source.startswith("Upload"):
     upload = st.sidebar.file_uploader(
         "CSV with columns: location, date, rating, text (reviewer, review_id optional)",
-        type="csv")
+        type="csv", key=f"review_upload_{st.session_state.get('upload_generation', 0)}")
     if upload is None:
         st.info("Upload a CSV to begin, or switch back to the sample data.")
         st.stop()
@@ -117,10 +125,30 @@ elif source.startswith("Upload"):
         )
         st.sidebar.warning("This replaces the selected dataset's current reviews. "
                            "Its actions and original baselines will be kept.")
-    if st.sidebar.button("Save CSV", type="primary"):
+    st.sidebar.button("Cancel upload", on_click=cancel_upload)
+    content = upload.getvalue()
+    try:
+        _, validation = E.preview_reviews(io.BytesIO(content))
+    except (ValueError, UnicodeError) as ex:
+        st.error(f"Couldn't validate that CSV: {ex}")
+        st.stop()
+    st.subheader("Upload validation preview")
+    st.write(f"Total records: {validation['total']} · "
+             f"Accepted: {validation['accepted']} · Rejected: {validation['rejected']}")
+    for reason, count in validation["reasons"].items():
+        if count:
+            st.write(f"{reason}: {count}")
+    st.caption("Reasons can overlap. Rejected records are excluded from analysis and trends. "
+               "Dates are never filled with the retrieval or upload date. "
+               "Saving preserves the original CSV, including rejected records.")
+    st.download_button("Download original CSV", content, file_name=os.path.basename(upload.name),
+                       mime="text/csv")
+    if not validation["accepted"]:
+        st.warning("No reviews are eligible for analysis. Nothing will be saved or replaced. "
+                   "Keep the original CSV and supply real review dates before importing.")
+    if st.sidebar.button("Save CSV", type="primary", disabled=not validation["accepted"]):
         try:
-            E.load_reviews(io.BytesIO(upload.getvalue()))
-            dataset = datasets.save_snapshot(upload.name, upload.getvalue(), target_id)
+            dataset = datasets.save_snapshot(upload.name, content, target_id)
             st.session_state["saved_upload"] = {
                 "file_id": upload.file_id, "target_id": target_id,
                 "dataset_id": dataset["dataset_id"],
@@ -131,7 +159,8 @@ elif source.startswith("Upload"):
     saved_upload = st.session_state.get("saved_upload", {})
     if (saved_upload.get("file_id") != upload.file_id
             or saved_upload.get("target_id") != target_id):
-        st.info("Choose whether this is a separate dataset or an update, then save the CSV.")
+        st.info("Review the validation counts, then choose Save CSV to confirm or Cancel upload. "
+                "No dataset has been changed by this preview.")
         st.stop()
     dataset = datasets.get(saved_upload["dataset_id"])
     st.sidebar.success("Saved. Next time pick it under 'Saved file'.")

@@ -612,9 +612,12 @@ class ReviewActionFlowTests(unittest.TestCase):
                     name="newer.csv", file_id="bad", getvalue=lambda: b"wrong,columns\n1,2\n"
                 )
                 app.run()
-                save()
-                self.assertTrue(any("Couldn't save that CSV" in item.value for item in app.error))
+                self.assertEqual(list(app.exception), [])
+                self.assertTrue(any("Couldn't validate that CSV" in item.value
+                                    for item in app.error))
+                self.assertFalse(any(item.label == "Save CSV" for item in app.sidebar.button))
                 self.assertEqual(store.get(first["dataset_id"]), updated)
+                self.assertEqual(Path(updated["path"]).read_bytes(), newer)
 
                 radio("Data").set_value("Saved file").run()
                 next(item for item in app.sidebar.selectbox

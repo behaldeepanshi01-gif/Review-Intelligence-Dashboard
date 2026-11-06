@@ -440,6 +440,16 @@ REQUIRED = ["location", "date", "rating", "text"]
 
 
 def load_reviews(file_or_path) -> pd.DataFrame:
+    """Load only analysis-eligible records; use preview_reviews before import."""
+    return preview_reviews(file_or_path)[0]
+
+
+def preview_reviews(file_or_path) -> tuple[pd.DataFrame, dict]:
+    """Validate without writing or inventing dates; counts refer to source rows.
+
+    Reasons may overlap (a record can lack both its date and its text).
+    The caller retains the original bytes, including rejected records.
+    """
     df = pd.read_csv(file_or_path)
     df.columns = [c.strip().lower() for c in df.columns]
     rename = {"stars": "rating", "review": "text", "review_text": "text",
@@ -453,15 +463,34 @@ def load_reviews(file_or_path) -> pd.DataFrame:
         df["review_id"] = [f"R{i:05d}" for i in range(len(df))]
     if "reviewer" not in df.columns:
         df["reviewer"] = "Guest"
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date", "text"])
+    missing_date = df["date"].isna() | df["date"].astype(str).str.strip().eq("")
+    # Keep each source's publication calendar date, not its UTC-converted day.
+    # Parse individually because a CSV may mix naive timestamps and offsets.
+    def publication_date(value):
+        parsed = pd.to_datetime(value, errors="coerce", format="mixed")
+        return parsed.tz_localize(None) if not pd.isna(parsed) else pd.NaT
+
+    parsed_dates = pd.to_datetime(df["date"].map(publication_date), errors="coerce")
+    missing_text = df["text"].isna() | df["text"].astype(str).str.strip().eq("")
+    rejected = parsed_dates.isna() | missing_text
+    summary = {
+        "total": len(df), "accepted": int((~rejected).sum()),
+        "rejected": int(rejected.sum()),
+        "reasons": {
+            "Missing date": int(missing_date.sum()),
+            "Invalid date": int((parsed_dates.isna() & ~missing_date).sum()),
+            "Missing review text": int(missing_text.sum()),
+        },
+    }
+    df["date"] = parsed_dates
+    df = df.loc[~rejected].copy()
     df["rating"] = pd.to_numeric(df["rating"], errors="coerce").fillna(3).clip(1, 5).astype(int)
     df["review_id"] = df["review_id"].astype(str)
     dup = df["review_id"].duplicated(keep=False)
     if dup.any():  # make every ID unique so results never get mixed up
         df.loc[dup, "review_id"] = (df.loc[dup, "review_id"] + "-"
                                     + df[dup].groupby("review_id").cumcount().astype(str))
-    return df.sort_values("date").reset_index(drop=True)
+    return df.sort_values("date").reset_index(drop=True), summary
 
 
 # ----------------------------------------------------------------------------

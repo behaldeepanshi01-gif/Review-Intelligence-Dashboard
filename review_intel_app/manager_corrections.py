@@ -21,16 +21,27 @@ def review_key(file_path, row):
 def _connect(path):
     db = sqlite3.connect(path, timeout=10)
     try:
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS corrections (
-                review_key TEXT NOT NULL,
-                rules_version TEXT NOT NULL,
-                positive TEXT NOT NULL,
-                negative TEXT NOT NULL,
-                saved_at TEXT NOT NULL,
-                PRIMARY KEY (review_key, rules_version)
-            )
-        """)
+        # Serialize additive migration across sessions; never recreate local data.
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS corrections (
+                    review_key TEXT NOT NULL,
+                    rules_version TEXT NOT NULL,
+                    positive TEXT NOT NULL,
+                    negative TEXT NOT NULL,
+                    saved_at TEXT NOT NULL,
+                    PRIMARY KEY (review_key, rules_version)
+                )
+            """)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(corrections)")}
+            for name, definition in (
+                ("decision_origin", "TEXT NOT NULL DEFAULT 'legacy'"),
+                ("source_rules_version", "TEXT"),
+                ("source_decision_revision", "TEXT"),
+            ):
+                if name not in columns:
+                    db.execute(f"ALTER TABLE corrections ADD COLUMN {name} {definition}")
     except Exception:
         db.close()
         raise
@@ -50,7 +61,11 @@ def save_correction(path, key, positive, negative, version):
     db = _connect(path)
     try:
         with db:
-            db.execute("INSERT OR REPLACE INTO corrections VALUES (?, ?, ?, ?, ?)",
+            db.execute(
+                "INSERT OR REPLACE INTO corrections "
+                "(review_key, rules_version, positive, negative, saved_at, "
+                "decision_origin, source_rules_version, source_decision_revision) "
+                "VALUES (?, ?, ?, ?, ?, 'correction', NULL, NULL)",
                        (key, version, json.dumps(positive), json.dumps(negative),
                         datetime.now(timezone.utc).isoformat()))
     finally:
@@ -73,13 +88,16 @@ def load_corrections(path, version):
     db = _connect(path)
     try:
         rows = db.execute(
-            "SELECT review_key, positive, negative, saved_at FROM corrections "
+            "SELECT review_key, positive, negative, saved_at, decision_origin, "
+            "source_rules_version, source_decision_revision FROM corrections "
             "WHERE rules_version=?", (version,)).fetchall()
         result = {}
-        for key, positive, negative, saved_at in rows:
+        for key, positive, negative, saved_at, origin, source_version, source_revision in rows:
             positive, negative = _validate(json.loads(positive), json.loads(negative))
             result[key] = dict(themes_pos=positive, themes_neg=negative,
-                               rules_version=version, saved_at=saved_at)
+                               rules_version=version, saved_at=saved_at,
+                               decision_origin=origin, source_rules_version=source_version,
+                               source_decision_revision=source_revision)
         return result
     finally:
         db.close()
@@ -92,20 +110,37 @@ def load_prior_corrections(path, version):
     db = _connect(path)
     try:
         rows = db.execute(
-            "SELECT review_key, rules_version, positive, negative, saved_at "
+            "SELECT review_key, rules_version, positive, negative, saved_at, "
+            "decision_origin, source_rules_version, source_decision_revision "
             "FROM corrections WHERE rules_version != ? "
             "ORDER BY saved_at DESC, rules_version DESC", (version,)).fetchall()
         result = {}
-        for key, prior_version, positive, negative, saved_at in rows:
+        for (key, prior_version, positive, negative, saved_at, origin,
+             source_version, source_revision) in rows:
             # Retired themes are valid history, not valid current decisions.
             positive, negative = _validate(json.loads(positive), json.loads(negative),
                                            allow_obsolete=True)
             result.setdefault(key, []).append(dict(
                 themes_pos=positive, themes_neg=negative,
-                rules_version=prior_version, saved_at=saved_at))
+                rules_version=prior_version, saved_at=saved_at, decision_origin=origin,
+                source_rules_version=source_version,
+                source_decision_revision=source_revision))
         return result
     finally:
         db.close()
+
+
+def decision_origin_label(decision):
+    """Describe recorded origin, without inferring provenance for legacy rows."""
+    if decision.get("decision_origin") == "renewal":
+        return (
+            "Renewed approval — source rules: "
+            f"{decision['source_rules_version']} | "
+            f"Source decision revision (saved at): {decision['source_decision_revision']}"
+        )
+    if decision.get("decision_origin") == "correction":
+        return "Newly entered manager correction — not a renewed approval."
+    return "Legacy manager decision — origin not recorded."
 
 
 def renewal_queue(raw, file_path, current, prior):
@@ -161,9 +196,16 @@ def approve_prior_correction(path, file_path, row, decision, version):
                     "SELECT 1 FROM corrections WHERE review_key=? AND rules_version=?",
                     (key, version)).fetchone():
                 raise ValueError("This review already has a current decision. Refresh to see it.")
-            db.execute("INSERT INTO corrections VALUES (?, ?, ?, ?, ?)",
+            # saved_at is the existing decision revision used by stale-screen
+            # validation. Capture the selected source, not the latest history.
+            db.execute(
+                "INSERT INTO corrections "
+                "(review_key, rules_version, positive, negative, saved_at, "
+                "decision_origin, source_rules_version, source_decision_revision) "
+                "VALUES (?, ?, ?, ?, ?, 'renewal', ?, ?)",
                        (key, version, json.dumps(positive), json.dumps(negative),
-                        datetime.now(timezone.utc).isoformat()))
+                        datetime.now(timezone.utc).isoformat(),
+                        decision["rules_version"], saved[2]))
     finally:
         db.close()
 

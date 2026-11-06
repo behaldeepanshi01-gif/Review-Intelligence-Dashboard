@@ -152,6 +152,9 @@ class ManagerCorrectionTests(unittest.TestCase):
         C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
                                    history[self.key][1], E.LOCAL_ANALYZER_VERSION)
         current = C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)
+        self.assertEqual(current[self.key]["source_rules_version"], "old-a")
+        self.assertEqual(current[self.key]["source_decision_revision"],
+                         history[self.key][1]["saved_at"])
         self.assertEqual(C.renewal_queue(self.raw, self.file, current, history), {})
         self.assertEqual(self.effective().iloc[0]["themes_neg"], ["cleanliness"])
         self.assertEqual(C.load_prior_corrections(self.db, E.LOCAL_ANALYZER_VERSION),
@@ -179,6 +182,67 @@ class ManagerCorrectionTests(unittest.TestCase):
             C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], earlier,
                                        E.LOCAL_ANALYZER_VERSION)
         self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION), {})
+
+    def test_legacy_migration_preserves_records_without_guessing_origin(self):
+        with closing(C.sqlite3.connect(self.db)) as db, db:
+            db.execute(
+                "CREATE TABLE corrections (review_key TEXT, rules_version TEXT, "
+                "positive TEXT, negative TEXT, saved_at TEXT, "
+                "PRIMARY KEY (review_key, rules_version))")
+            original = (self.key, "old", '["staff"]', '["cleanliness"]', "legacy-revision")
+            db.execute("INSERT INTO corrections VALUES (?, ?, ?, ?, ?)", original)
+        earlier = C.load_prior_corrections(self.db, "current")[self.key][0]
+        self.assertEqual(earlier["decision_origin"], "legacy")
+        self.assertIsNone(earlier["source_rules_version"])
+        self.assertIsNone(earlier["source_decision_revision"])
+        self.assertIn("origin not recorded", C.decision_origin_label(earlier))
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], earlier, "current")
+        renewed = C.load_corrections(self.db, "current")[self.key]
+        self.assertEqual(renewed["source_rules_version"], "old")
+        self.assertEqual(renewed["source_decision_revision"], "legacy-revision")
+        # Repeated opens are safe, and the original row's bytes remain unchanged.
+        self.assertEqual(C.load_prior_corrections(self.db, "current")[self.key][0], earlier)
+        with closing(C.sqlite3.connect(self.db)) as db:
+            self.assertEqual(db.execute(
+                "SELECT review_key, rules_version, positive, negative, saved_at "
+                "FROM corrections WHERE rules_version='old'").fetchone(), original)
+
+    def test_renewal_links_selected_revision_across_reload_chain_edit_and_undo(self):
+        C.save_correction(self.db, self.key, ["staff"], [], "first")
+        first = C.load_corrections(self.db, "first")[self.key]
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], first, "second")
+        second = C.load_corrections(self.db, "second")[self.key]
+        self.assertEqual(second["decision_origin"], "renewal")
+        self.assertEqual(second["source_rules_version"], "first")
+        self.assertEqual(second["source_decision_revision"], first["saved_at"])
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], second, "third")
+        third = C.load_corrections(self.db, "third")[self.key]
+        self.assertEqual(third["source_rules_version"], "second")
+        self.assertEqual(third["source_decision_revision"], second["saved_at"])
+        history = C.load_prior_corrections(self.db, "third")[self.key]
+        self.assertIn(second, history)
+        self.assertIn(first, history)
+        # A separate manual save is not attributed to a renewal, even with identical tags.
+        C.save_correction(self.db, self.key, ["staff"], [], "third")
+        edited = C.load_corrections(self.db, "third")[self.key]
+        self.assertEqual(edited["decision_origin"], "correction")
+        self.assertIsNone(edited["source_rules_version"])
+        self.assertIsNone(edited["source_decision_revision"])
+        C.undo_correction(self.db, self.key, "third")
+        self.assertEqual(C.load_prior_corrections(self.db, "third")[self.key], history)
+        # Removing the source cannot erase an already-recorded renewal origin.
+        C.undo_correction(self.db, self.key, "first")
+        self.assertEqual(C.load_corrections(self.db, "second")[self.key], second)
+
+    def test_same_tags_but_changed_source_revision_cannot_be_renewed(self):
+        C.save_correction(self.db, self.key, [], [], "old")
+        earlier = C.load_corrections(self.db, "old")[self.key]
+        with closing(C.sqlite3.connect(self.db)) as db, db:
+            db.execute("UPDATE corrections SET saved_at=?", ("different-revision",))
+        with self.assertRaisesRegex(ValueError, "changed"):
+            C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
+                                      earlier, "current")
+        self.assertEqual(C.load_corrections(self.db, "current"), {})
 
     def test_obsolete_history_is_visible_but_cannot_be_reapproved(self):
         C.save_correction(self.db, self.key, [], ["staff"], "old")
@@ -244,6 +308,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         sample = APP.parent / "data" / "sample_reviews.csv"
         key = C.review_key(sample, self.raw.iloc[1])
         C.save_correction(self.db, key, ["staff"], ["cleanliness"], "old-rules")
+        earlier = C.load_corrections(self.db, "old-rules")[key]
         changed = self.raw.iloc[0].copy()
         changed["text"] = "No longer the same review."
         C.save_correction(self.db, C.review_key(sample, changed), [], ["staff"], "old-rules")
@@ -276,8 +341,14 @@ class ManagerCorrectionTests(unittest.TestCase):
                                 for h in app.subheader))
             self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)[
                 key]["themes_neg"], ["cleanliness"])
+            renewed = C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)[key]
+            self.assertEqual(renewed["source_rules_version"], "old-rules")
+            self.assertEqual(renewed["source_decision_revision"], earlier["saved_at"])
+            origin = C.decision_origin_label(renewed)
+            self.assertTrue(any(c.value == origin for c in app.caption))
             self.assertTrue(any("Current source: manager" in c.value for c in app.caption))
             app = AppTest.from_string(source, default_timeout=30).run()
+            self.assertTrue(any(c.value == origin for c in app.caption))
             self.assertFalse(any(b.label == "Approve earlier tags for current rules"
                                  for b in app.button))
             self.assertEqual(len(C.load_prior_corrections(
@@ -299,6 +370,8 @@ class ManagerCorrectionTests(unittest.TestCase):
             button("Save manager decision").click().run()
             self.assertEqual(len(app.exception), 0)
             self.assertTrue(any("Current source: manager" in c.value for c in app.caption))
+            self.assertTrue(any("Newly entered manager correction" in c.value
+                                for c in app.caption))
             # A fresh session must recover the same decision from disk.
             app = AppTest.from_string(source, default_timeout=30).run()
             self.assertEqual(themes("Confirmed complaint themes").value, ["cleanliness"])

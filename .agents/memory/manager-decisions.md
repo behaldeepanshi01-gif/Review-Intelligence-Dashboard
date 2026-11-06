@@ -23,3 +23,14 @@ is never applied. Keep history compatibility separate from current-decision vali
 
 **How to apply:** Show obsolete tags for review, require supported current tags
 before saving a new decision, and never silently drop or translate historical tags.
+
+Do not infer whether a legacy decision was a renewal from matching tags. A renewal
+must reference the particular source rules version and saved decision revision
+selected by the manager, not merely the most recent earlier decision.
+
+**Why:** Identical tags can result from either a new correction or a renewal;
+invented provenance would misrepresent what the manager approved.
+
+**How to apply:** Keep legacy origin explicitly unknown. Retain recorded source
+references even if the earlier decision is later edited or removed. A manual
+correction is a separate origin, not a continuation inferred from matching tags.

@@ -457,6 +457,7 @@ with tabs[1]:
                 st.write("Earlier manager tags — not currently applied")
                 st.caption(f"Rules: {earlier['rules_version']} | "
                            f"Saved: {earlier['saved_at']}")
+                st.caption(C.decision_origin_label(earlier))
                 st.json({k: earlier[k] for k in ("themes_pos", "themes_neg")})
             with rule_column:
                 st.write("Current rule output")
@@ -516,6 +517,7 @@ with tabs[1]:
                    f"Current source: {r['tag_source']} | Rules: {r['rules_version']}")
         if r["manager_correction"]:
             st.info("Manager decision saved " + r["manager_correction"]["saved_at"])
+            st.caption(C.decision_origin_label(r["manager_correction"]))
         st.write("Original rule result")
         st.json(r["rule_output"])
         st.write("Original rule evidence")

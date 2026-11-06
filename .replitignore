@@ -15,3 +15,5 @@ review_intel_app/data/manager_accounts.sqlite*
 review_intel_app/data/manager_permissions*.json
 # Human-label adjudication and evaluation packets contain private review text.
 review_intel_app/data/private_evaluation/
+review_intel_app/data/private_source_readiness/
+attached_assets/mumbai_central_reviews_*.csv

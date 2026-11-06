@@ -16,6 +16,7 @@ from streamlit.testing.v1 import AppTest
 import action_tracker as A
 import engine as E
 from dataset_store import SAMPLE_ID
+from calendar_test_support import manager_session, sample_app
 
 
 DAY = date(2026, 1, 1)
@@ -183,7 +184,9 @@ class ConcurrentActionTests(unittest.TestCase):
         source = source.replace(
             "BASE_DIR = os.path.dirname(os.path.abspath(__file__))",
             f"BASE_DIR = {str(Path(__file__).parent.resolve())!r}")
-        app = AppTest.from_string(source, default_timeout=30).run()
+        session = manager_session(self, self.temp.name,
+                                  {SAMPLE_ID: list(sample["location"].unique())})
+        app = sample_app(AppTest.from_string(source, default_timeout=30), session)
         self.assertEqual(list(app.exception), [])
         return original, app
 
@@ -196,7 +199,7 @@ class ConcurrentActionTests(unittest.TestCase):
         # It must compare against the open-time snapshot, not that fresh load.
         original, app = self.open_app()
         text = next(item for item in app.text_area
-                    if item.key.startswith("update_text_"))
+                    if item.key and item.key.startswith("update_text_"))
         text.set_value("Stale manager draft")
         next(item for item in app.text_input
              if item.key and item.key.startswith("update_owner_")).set_value("")
@@ -224,7 +227,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertTrue(text.key in [t.key for t in app.text_area])
         next(b for b in app.button if b.label == "Reload latest action").click().run()
         text = next(item for item in app.text_area
-                    if item.key.startswith("update_text_"))
+                    if item.key and item.key.startswith("update_text_"))
         self.assertEqual(text.value, "Other manager saved")
         text.set_value("Reviewed latest and saved")
         next(b for b in app.button if b.label == "Save updates").click().run()
@@ -246,7 +249,7 @@ class ConcurrentActionTests(unittest.TestCase):
 
     def test_kept_reference_survives_reload_and_never_overwrites_newer_saves(self):
         original, app = self.open_app()
-        next(t for t in app.text_area if t.key.startswith("update_text_")).set_value(
+        next(t for t in app.text_area if t.key and t.key.startswith("update_text_")).set_value(
             "Keep this draft\nFor manual comparison")
         other = A.edit_saved_action(
             self.path, original, "Other saved", "Other", "In progress", DAY, DAY)
@@ -254,7 +257,7 @@ class ConcurrentActionTests(unittest.TestCase):
         before = Path(self.path).read_bytes()
         # Keep must submit the form too, including changes made after the
         # initial conflict, not just the draft from the rejected save.
-        next(t for t in app.text_area if t.key.startswith("update_text_")).set_value(
+        next(t for t in app.text_area if t.key and t.key.startswith("update_text_")).set_value(
             "Keep this revised draft\nFor manual comparison")
         next(b for b in app.button if b.label == "Keep draft for reference").click().run()
         self.assertFalse(app.exception)
@@ -273,7 +276,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertEqual(A.load_actions(self.path), [latest])
         next(b for b in app.button if b.label == "Reload latest action").click().run()
         self.assertFalse(app.exception)
-        text = next(t for t in app.text_area if t.key.startswith("update_text_"))
+        text = next(t for t in app.text_area if t.key and t.key.startswith("update_text_"))
         self.assertEqual(text.value, "Third saved")
         self.assertFalse(text.disabled)
         self.assertFalse(any("Your unsaved draft" in t.value.columns for t in app.dataframe))
@@ -294,7 +297,7 @@ class ConcurrentActionTests(unittest.TestCase):
 
     def test_save_time_race_shows_comparison_without_losing_draft(self):
         original, app = self.open_app()
-        next(t for t in app.text_area if t.key.startswith("update_text_")).set_value(
+        next(t for t in app.text_area if t.key and t.key.startswith("update_text_")).set_value(
             "Race draft")
         real_edit = A.edit_saved_action
 

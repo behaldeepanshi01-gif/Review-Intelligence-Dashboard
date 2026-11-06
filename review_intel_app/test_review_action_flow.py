@@ -18,6 +18,7 @@ import dataset_store as D
 import engine as E
 import manager_corrections as C
 from dataset_store import DatasetStore, SAMPLE_ID
+from calendar_test_support import manager_session, sample_app
 
 
 SAMPLE = Path(__file__).parent / "data" / "sample_reviews.csv"
@@ -312,6 +313,7 @@ show_decision_changes({action!r}, "synthetic", {result!r})
 
     def test_action_tracker_renders_known_changed_and_legacy_provenance(self):
         raw = E.load_reviews(SAMPLE)
+        session = manager_session(self, self.root, {SAMPLE_ID: list(raw["location"].unique())})
         location = raw.iloc[0]["location"]
         provenance = C.tagging_provenance(
             raw[raw["location"] == location], SAMPLE, {}, self.version)
@@ -335,7 +337,8 @@ show_decision_changes({action!r}, "synthetic", {result!r})
                 patch.object(C, "load_corrections", return_value={}), \
                 patch.object(C, "load_prior_corrections", return_value={}):
             app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
-                                   default_timeout=30).run()
+                                   default_timeout=30)
+            sample_app(app, session)
         self.assertEqual(list(app.exception), [])
         self.assertTrue(any("Tagging provenance unchanged" in item.value
                             for item in app.caption))
@@ -351,6 +354,8 @@ show_decision_changes({action!r}, "synthetic", {result!r})
 
     def test_saving_action_from_warning_captures_location_provenance(self):
         actions = []
+        session = manager_session(self, self.root,
+                                  {SAMPLE_ID: list(E.load_reviews(SAMPLE)["location"].unique())})
 
         def save(_path, action, **_kwargs):
             actions.append(action)
@@ -360,7 +365,8 @@ show_decision_changes({action!r}, "synthetic", {result!r})
                 patch.object(C, "load_corrections", return_value={}), \
                 patch.object(C, "load_prior_corrections", return_value={}):
             app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
-                                   default_timeout=30).run()
+                                   default_timeout=30)
+            sample_app(app, session)
             self.assertEqual(list(app.exception), [])
             next(button for button in app.button
                  if button.label == "Save action plan").click().run()
@@ -380,6 +386,7 @@ show_decision_changes({action!r}, "synthetic", {result!r})
     def test_action_tracker_wires_private_location_decision_breakdown(self):
         import action_decisions_ui as UI
         raw = E.load_reviews(SAMPLE)
+        session = manager_session(self, self.root, {SAMPLE_ID: list(raw["location"].unique())})
         location = raw.iloc[0]["location"]
         scoped = raw[raw["location"] == location]
         baseline = C.tagging_provenance(scoped, SAMPLE, {}, self.version)
@@ -393,7 +400,8 @@ show_decision_changes({action!r}, "synthetic", {result!r})
                 patch.object(C, "load_prior_corrections", return_value={}), \
                 patch.object(UI, "authorized", return_value=True):
             app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
-                                   default_timeout=30).run()
+                                   default_timeout=30)
+            sample_app(app, session)
         self.assertFalse(app.exception)
         details = [frame.value for frame in app.dataframe
                    if "Decision reference" in frame.value.columns]

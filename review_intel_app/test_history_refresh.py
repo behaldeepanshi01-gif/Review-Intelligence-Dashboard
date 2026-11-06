@@ -13,6 +13,7 @@ import action_tracker as A
 import dataset_store as D
 import engine as E
 from legacy_history_ui import history_changed
+from calendar_test_support import manager_session
 
 
 DAY = date(2026, 1, 1)
@@ -44,6 +45,8 @@ class HistoryRefreshTests(unittest.TestCase):
             f"BASE_DIR = {str(self.root)!r}")
         self.app = AppTest.from_string(source, default_timeout=30)
         self.app.session_state["data_source"] = "Sample data (synthetic)"
+        self.app.session_state["_manager_report_grant"] = manager_session(
+            self, self.root, {D.SAMPLE_ID: list(E.load_reviews(sample)["location"].unique())})
         self.app.run()
         self.assertFalse(self.app.exception)
 
@@ -53,7 +56,7 @@ class HistoryRefreshTests(unittest.TestCase):
 
     def text(self, action):
         return next(t for t in self.app.text_area
-                    if t.key.startswith(f"update_text_{action['action_id']}_"))
+                    if t.key and t.key.startswith(f"update_text_{action['action_id']}_"))
 
     def transfer(self):
         # A separate Streamlit session performs the actual manager correction.
@@ -88,7 +91,7 @@ show_history_controls(store, store.get(st.session_state["id"]), st.session_state
         self.assertTrue(any("Showing 1 of 1" in c.value for c in self.app.caption))
         self.button("Keep draft and refresh editor").click().run()
         self.assertFalse(self.app.exception)
-        self.assertFalse(any(t.key.startswith(f"update_text_{self.legacy['action_id']}_")
+        self.assertFalse(any(t.key and t.key.startswith(f"update_text_{self.legacy['action_id']}_")
                              for t in self.app.text_area))
         draft = self.app.session_state[f"history_drafts_{D.SAMPLE_ID}"]
         self.assertEqual(draft[self.legacy["action_id"]]["draft"]["action_text"],

@@ -6,18 +6,20 @@ import unittest
 
 import action_tracker as A
 from location_settings import LocationSettings, SettingsConflictError
+from calendar_test_support import manager_session
 
 
 class LocationSettingsTests(unittest.TestCase):
     def test_two_managers_locations_and_dataset_ownership(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "calendars.sqlite"
-            manager_one = LocationSettings(path)
-            manager_two = LocationSettings(path)
+            session = manager_session(self, directory, {"dataset": ["East", "India"]})
+            manager_one = LocationSettings(path, session=session)
+            manager_two = LocationSettings(path, session=session)
             manager_one.save("dataset", "East", "America/New_York", expected_revision=0)
             manager_two.save("dataset", "India", "Asia/Kolkata", expected_revision=0)
             self.assertEqual(manager_one.load("dataset"), manager_two.load("dataset"))
-            self.assertEqual(LocationSettings(path).load("dataset"), manager_one.load("dataset"))
+            self.assertEqual(LocationSettings(path, session=session).load("dataset"), manager_one.load("dataset"))
             self.assertEqual(manager_two.load("unrelated"), {})
             with self.assertRaises(SettingsConflictError):
                 manager_two.save("dataset", "East", "UTC", expected_revision=0)

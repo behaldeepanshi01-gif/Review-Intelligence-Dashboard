@@ -12,16 +12,31 @@ import engine as E
 import action_tracker as A
 from dataset_store import SAMPLE_ID
 from location_settings import LocationSettings
+from calendar_test_support import manager_session, sample_app
+import manager_report_ui  # Import the real report gate before the fixture patches it.
 
 
 APP = Path(__file__).with_name("app.py")
 
 
 class LocalAppTests(unittest.TestCase):
+    def open_app(self):
+        return sample_app(AppTest.from_file(str(APP), default_timeout=30))
+
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        settings = LocationSettings(Path(directory.name) / "calendars.sqlite")
+        sample = E.load_reviews(APP.parent / "data" / "sample_reviews.csv")
+        session = manager_session(self, directory.name,
+                                  {SAMPLE_ID: list(sample["location"].unique()) + ["Demo Cafe"]})
+        def signed_in(**kwargs):
+            import streamlit as st
+            st.session_state["_manager_report_grant"] = session
+            return True
+        gate = patch("manager_report_access.require_manager", side_effect=signed_in)
+        gate.start()
+        self.addCleanup(gate.stop)
+        settings = LocationSettings(Path(directory.name) / "calendars.sqlite", session=session)
         store = patch("location_settings.LocationSettings", return_value=settings)
         mocked_store = store.start()
         mocked_store.default.side_effect = LocationSettings.default
@@ -36,8 +51,8 @@ class LocalAppTests(unittest.TestCase):
         instant = datetime.fromisoformat("2026-01-02T00:00:00+00:00")
         with patch.object(A, "restaurant_today",
                           side_effect=lambda zone: real_today(zone, now=instant)):
-            app = AppTest.from_file(str(APP), default_timeout=30).run()
-            second_manager = AppTest.from_file(str(APP), default_timeout=30).run()
+            app = self.open_app()
+            second_manager = self.open_app()
             self.assertFalse(app.exception)
             self.assertTrue(any("Action calendar: 2026-01-01" in c.value for c in app.caption))
             setting = next(t for t in app.text_input if t.label == "Restaurant timezone")
@@ -74,7 +89,7 @@ class LocalAppTests(unittest.TestCase):
         with patch.object(A, "load_actions", return_value=[action]), patch.object(
             A, "restaurant_today", return_value=date(2026, 1, 1)
         ) as clock:
-            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            app = self.open_app()
             app.radio(key="action_status_filter").set_value("Overdue only").run()
             self.assertTrue(any("No overdue action plans" in i.value for i in app.info))
             self.assertFalse(any("OVERDUE" in c.value for c in app.code))
@@ -136,7 +151,7 @@ class LocalAppTests(unittest.TestCase):
         with patch.object(E, "load_reviews", return_value=sample), patch.object(
             A, "load_actions", return_value=actions
         ), patch("os.listdir", return_value=[]):
-            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            app = self.open_app()
 
             def shown():
                 self.assertEqual(list(app.exception), [])
@@ -192,7 +207,7 @@ class LocalAppTests(unittest.TestCase):
         with patch.object(E, "load_reviews", return_value=sample), patch.object(
             A, "load_actions", return_value=actions
         ), patch("os.listdir", return_value=[]):
-            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            app = self.open_app()
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(sum("Overdue" in item.value for item in app.warning), 1)
         summary = next(item.value for item in app.code if "Manager actions:" in item.value)
@@ -204,7 +219,7 @@ class LocalAppTests(unittest.TestCase):
         with patch.object(E, "load_reviews", return_value=sample), patch(
             "urllib.request.urlopen", side_effect=AssertionError("Network forbidden")
         ):
-            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            app = self.open_app()
         self.assertEqual(len(app.exception), 0)
         engine = next(radio for radio in app.sidebar.radio if radio.label == "Analysis engine")
         self.assertTrue(engine.value.startswith("Local Review Analyzer"))
@@ -221,7 +236,7 @@ class LocalAppTests(unittest.TestCase):
             for index in range(2)
         ])
         with patch.object(E, "load_reviews", return_value=df):
-            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            app = self.open_app()
         self.assertEqual(len(app.exception), 0)
         self.assertTrue(any("No clear praise" in info.value for info in app.info))
 

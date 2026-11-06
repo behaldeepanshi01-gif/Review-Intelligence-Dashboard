@@ -17,6 +17,8 @@ import streamlit as st
 import action_tracker as A
 from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
+from manager_report_access import require_manager, authorized
+import manager_identity as identity
 import engine as E
 import manager_corrections as C
 import dataset_store as D
@@ -230,6 +232,17 @@ def show_rule_evidence(row):
             st.caption(item["reason"])
 
 locations = sorted(tagged["location"].unique())
+with st.sidebar.expander("Manager calendar access", expanded=True):
+    if not require_manager(purpose="restaurant calendars"):
+        st.stop()
+session = st.session_state.get("_manager_report_grant")
+account = identity.current_account(session)
+allowed_locations = account["grants"].get(tag, []) if account else []
+locations = [loc for loc in locations if loc in allowed_locations]
+if not locations:
+    st.warning("You do not have calendar access to any current restaurant in this dataset. "
+               "Choose an assigned dataset or ask the app owner for access.")
+    st.stop()
 try:
     all_actions = A.load_actions(ACTION_LOG)
 except (OSError, ValueError) as ex:
@@ -244,7 +257,7 @@ for missing_action in all_actions:
         st.warning(f"Saved action location {missing_action.get('location', 'Location')} "
                    f"is absent from this dataset snapshot. {source_check['source_message']}")
 try:
-    calendars = LocationSettings(LOCATION_SETTINGS)
+    calendars = LocationSettings(LOCATION_SETTINGS, session=session)
     calendar_settings = calendars.load(tag)
 except (OSError, D.sqlite3.Error) as ex:
     st.error(f"Couldn't read location calendars: {ex}")
@@ -258,9 +271,9 @@ with st.sidebar.expander("Location calendars"):
         st.success(notice)
     show_calendar_rename(datasets, dataset, calendars, calendar_settings, locations)
     st.caption(
-        "Shared by all managers of this saved dataset. Separate datasets own "
-        "separate settings, even when location names match. Anyone with access "
-        "to this local app can edit them. Existing due dates never change.")
+        "Only signed-in managers assigned to this dataset and exact restaurant "
+        "can read or edit its calendar. Separate datasets own separate settings. "
+        "Existing due dates never change.")
     calendar_location = st.selectbox("Calendar location", locations)
     current_calendar = calendar_settings.get(calendar_location, LocationSettings.default())
     calendar_key = f"calendar_{tag}_{calendar_location}"
@@ -291,6 +304,9 @@ with st.sidebar.expander("Location calendars"):
     @st.fragment(run_every="30s")
     def show_calendar_days():
         for loc in locations:
+            if not authorized(tag, [loc]):
+                st.warning("Calendar access expired or was removed. Sign in again.")
+                return
             st.caption(f"{loc} — Action calendar: "
                        f"{A.location_today(loc, timezones_by_location).isoformat()} · "
                        f"{timezones_by_location[loc]}")

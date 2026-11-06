@@ -8,6 +8,8 @@ from unittest.mock import patch
 import pandas as pd
 from streamlit.testing.v1 import AppTest
 import engine as E
+from calendar_test_support import manager_session
+from dataset_store import SAMPLE_ID
 
 
 class PriceAppTests(unittest.TestCase):
@@ -24,7 +26,10 @@ class PriceAppTests(unittest.TestCase):
                  "text": "A service charge is included."},
             ])
             with patch.object(E, "load_reviews", return_value=rows):
-                app = AppTest.from_file(str(app_file), default_timeout=30).run()
+                session = manager_session(self, directory, {SAMPLE_ID: ["Demo Cafe"]})
+                app = AppTest.from_file(str(app_file), default_timeout=30)
+                app.session_state["_manager_report_grant"] = session
+                app.run()
                 self.assertFalse(app.exception)
                 next(s for s in app.selectbox if s.label == "Theme").select("Price")
                 next(r for r in app.radio if r.label == "Showing").set_value("Praise")

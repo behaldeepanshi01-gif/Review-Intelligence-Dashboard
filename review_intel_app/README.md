@@ -35,7 +35,18 @@ save an IANA **Restaurant timezone** (for example, `America/New_York` or
 Falls Church demo. Settings belong to the stable dataset identity and exact
 location name, not to a browser session or filename. Updating the same dataset
 retains them; separate datasets and renamed locations have independent settings.
-All managers with access to this local app can edit them (there are no user roles).
+Calendar reads and edits require an individual local manager account, using the
+same accounts as manager reports (see `MANAGER_ACTION_REPORT.md` and
+`manage_managers.py`). The app owner grants access to stable dataset IDs and exact
+location names; no filename matching, wildcard, or automatic ownership is used.
+Only assigned locations appear in calendar-dependent dashboard views. Sessions
+expire after 30 minutes; account removal or permission/password replacement
+revokes access. Storage methods recheck permission on every read and write,
+including rename operations, which require grants for both old and new names.
+Unsigned access is denied even when no accounts have been configured.
+This is not a complete dashboard privacy boundary: upload, dataset management,
+and other data paths still need their separate access-control work before shared
+external use.
 Settings persist in `data/location_settings.sqlite` on the shared local filesystem;
 independent deployment hosts do not share this file. Back it up with the action log.
 Stale manager edits are rejected; use **Reload saved timezone** before retrying.

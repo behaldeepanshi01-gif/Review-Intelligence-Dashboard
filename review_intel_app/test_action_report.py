@@ -123,12 +123,12 @@ class ActionReportAppTests(unittest.TestCase):
                 password = next(x for x in app_test.text_input if x.label == "Manager report password")
                 next(x for x in app_test.text_input if x.label == "Manager ID").set_value("test-manager")
                 password.set_value("wrong")
-                next(x for x in app_test.button if x.label == "Unlock manager report").click().run()
+                next(x for x in app_test.button if x.label == "Unlock restaurant calendars").click().run()
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))
                 next(x for x in app_test.text_input if x.label == "Manager report password").set_value(
                     "synthetic-test-passphrase-only")
                 next(x for x in app_test.text_input if x.label == "Manager ID").set_value("test-manager")
-                next(x for x in app_test.button if x.label == "Unlock manager report").click().run()
+                next(x for x in app_test.button if x.label == "Unlock restaurant calendars").click().run()
                 self.assertFalse(app_test.exception)
                 preview = next(x for x in app_test.text_area if x.label == "Manager report preview")
                 self.assertIn("Check kitchen handoffs", preview.value)
@@ -163,7 +163,7 @@ class ActionReportAppTests(unittest.TestCase):
                 app_test.run()
                 self.assertFalse(app_test.exception)
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))
-                self.assertTrue(any("Manager report locked" in x.value for x in app_test.warning))
+                self.assertTrue(any("Restaurant calendars locked" in x.value for x in app_test.warning))
 
 
 if __name__ == "__main__":

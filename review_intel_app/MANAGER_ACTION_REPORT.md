@@ -31,8 +31,10 @@ Early warnings first, or select a file/location with saved actions.
   The old shared password is no longer accepted. There are no default accounts.
   Access expires after 30 minutes. Password/grant replacement and account removal
   revoke sessions on the next check. Use **Lock manager report** to log out.
-  This protects this report only, not the existing dashboard, ordinary CSV exports,
-  timezone settings or Action tracker. Do not share the full app with untrusted users.
+  The same account assignments now protect calendar reads, timezone edits, and
+  calendar renames. Calendar-dependent views require sign-in first. This is not
+  complete access control for dataset management, ordinary exports, or all Action
+  tracker operations. Do not share the full app with untrusted users.
   Downloaded files cannot be revoked; previously rendered content cannot be recalled.
   Streamlit download links already issued are not a separately authenticated API.
   Downloaded copies must stay private.

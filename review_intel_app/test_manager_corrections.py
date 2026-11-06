@@ -15,6 +15,8 @@ import manager_corrections as C
 
 
 APP = Path(__file__).with_name("app.py")
+from calendar_test_support import manager_session, sample_app
+from dataset_store import SAMPLE_ID
 
 
 def reviews():
@@ -27,6 +29,10 @@ def reviews():
 
 
 class ManagerCorrectionTests(unittest.TestCase):
+    def open_app(self, source):
+        session = manager_session(self, self.temp.name, {SAMPLE_ID: ["Demo Cafe"]})
+        return sample_app(AppTest.from_string(source, default_timeout=30), session)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -273,7 +279,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         with closing(C.sqlite3.connect(self.db)) as db, db:
             db.execute("UPDATE corrections SET negative=?", ('["retired_theme"]',))
         with patch.object(E, "load_reviews", return_value=self.raw):
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             self.assertEqual(len(app.exception), 0)
             self.assertEqual(len(app.error), 0)
             self.assertTrue(app.tabs)
@@ -290,7 +296,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)[key][
                 "themes_neg"], ["cleanliness"])
             # Only unrelated obsolete history remains; reports still load.
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             self.assertEqual(len(app.exception), 0)
             self.assertEqual(len(app.error), 0)
             self.assertTrue(any("Decisions needing renewed approval (0)" == h.value
@@ -313,7 +319,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         changed["text"] = "No longer the same review."
         C.save_correction(self.db, C.review_key(sample, changed), [], ["staff"], "old-rules")
         with patch.object(E, "load_reviews", return_value=self.raw):
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             self.assertEqual(len(app.exception), 0)
             self.assertTrue(any("1 unchanged reviews need renewed" in w.value
                                 for w in app.warning))
@@ -333,7 +339,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertFalse(any(b.label == "Approve earlier tags for current rules"
                                  for b in app.button))
             # A new session recovers the queue from disk and can explicitly approve.
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             next(b for b in app.button
                  if b.label == "Approve earlier tags for current rules").click().run()
             self.assertEqual(len(app.exception), 0)
@@ -347,7 +353,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             origin = C.decision_origin_label(renewed)
             self.assertTrue(any(c.value == origin for c in app.caption))
             self.assertTrue(any("Current source: manager" in c.value for c in app.caption))
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             self.assertTrue(any(c.value == origin for c in app.caption))
             self.assertFalse(any(b.label == "Approve earlier tags for current rules"
                                  for b in app.button))
@@ -360,7 +366,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             f"CORRECTIONS_LOG = {self.db!r}")
         with patch.object(E, "load_reviews", return_value=self.raw), patch(
                 "os.listdir", return_value=[]):
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             self.assertEqual(len(app.exception), 0)
             def button(label):
                 return next(b for b in app.button if b.label == label)
@@ -373,7 +379,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertTrue(any("Newly entered manager correction" in c.value
                                 for c in app.caption))
             # A fresh session must recover the same decision from disk.
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             self.assertEqual(themes("Confirmed complaint themes").value, ["cleanliness"])
             themes("Confirmed complaint themes").set_value([])
             themes("Confirmed praise themes").set_value(["service_speed"])
@@ -392,7 +398,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             f"CORRECTIONS_LOG = {self.db!r}")
         with patch.object(E, "load_reviews", return_value=self.raw), patch(
                 "os.listdir", return_value=[]):
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
             def button(label):
                 return next(b for b in app.button if b.label == label)
             def complaints():
@@ -463,7 +469,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         key = C.review_key(APP.parent / "data" / "sample_reviews.csv", self.raw.iloc[1])
         C.save_correction(self.db, key, [], ["cleanliness"], "old-rules")
         with patch.object(E, "load_reviews", return_value=self.raw):
-            app = AppTest.from_string(source, default_timeout=30).run()
+            app = self.open_app(source)
 
             def button(label):
                 return next(b for b in app.button if b.label == label)

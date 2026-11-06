@@ -8,6 +8,8 @@ from streamlit.testing.v1 import AppTest
 
 from dataset_store import DatasetStore
 from location_settings import LocationSettings, SettingsConflictError
+from calendar_test_support import manager_session
+import manager_identity as identity
 
 
 def reviews(location):
@@ -21,9 +23,10 @@ class CalendarRenameTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         root = Path(temp.name)
         self.store = DatasetStore(root / "uploads", root / "sample.csv")
-        self.calendars = LocationSettings(root / "calendars.sqlite")
         self.dataset = self.store.save_snapshot("reviews.csv", reviews("Old"))
         self.id = self.dataset["dataset_id"]
+        self.session = manager_session(self, root, {self.id: ["Old", "New", "Third"]})
+        self.calendars = LocationSettings(root / "calendars.sqlite", session=self.session)
         self.calendars.save(self.id, "Old", "Asia/Kolkata", expected_revision=0)
         self.dataset = self.store.save_snapshot("reviews.csv", reviews("New"), self.id)
 
@@ -37,7 +40,7 @@ class CalendarRenameTests(unittest.TestCase):
             self.rename(confirmed=False)
         self.assertEqual(set(self.calendars.load(self.id)), {"Old"})
         self.rename()
-        reopened = LocationSettings(self.calendars.path)
+        reopened = LocationSettings(self.calendars.path, session=self.session)
         self.assertEqual(reopened.load(self.id), {"New": {"timezone": "Asia/Kolkata", "revision": 2}})
         with self.assertRaises(SettingsConflictError):
             reopened.save(self.id, "Old", "UTC", expected_revision=0)
@@ -64,6 +67,10 @@ class CalendarRenameTests(unittest.TestCase):
     def test_independent_datasets_with_identical_names_and_files(self):
         other = self.store.save_snapshot("reviews.csv", reviews("New"))
         other_id = other["dataset_id"]
+        identity.set_account("test-manager", "synthetic-calendar-password",
+                             {self.id: ["Old", "New", "Third"], other_id: ["Old", "New"]})
+        self.session = identity.authenticate("test-manager", "synthetic-calendar-password")
+        self.calendars.session = self.session
         self.calendars.save(other_id, "Old", "UTC", expected_revision=0)
         before = self.calendars.load(other_id)
         self.rename()

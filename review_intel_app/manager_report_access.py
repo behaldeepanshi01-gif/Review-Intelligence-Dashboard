@@ -38,10 +38,10 @@ def _try_login():
         st.session_state["_manager_report_error"] = "Manager ID or password not accepted."
 
 
-def require_manager():
+def require_manager(*, purpose="manager report"):
     if authorized():
         st.caption("Signed in as " + st.session_state["_manager_report_grant"]["username"])
-        if st.button("Lock manager report"):
+        if st.button("Lock " + purpose, key=f"lock_{purpose}"):
             st.session_state.pop("_manager_report_grant", None)
             for key in list(st.session_state):
                 if key.startswith("manager_report_checked_"):
@@ -49,14 +49,14 @@ def require_manager():
             st.rerun()
         return True
     if not identity.configured():
-        st.warning("Manager report locked. The app owner must set up individual accounts "
+        st.warning(f"{purpose.capitalize()} locked. The app owner must set up individual accounts "
                    "using manage_managers.py. The shared report password is no longer accepted.")
         return False
-    st.info("Sign in with your individual manager account to view or download this report.")
-    with st.form("manager_report_login", clear_on_submit=True):
+    st.info(f"Sign in with your individual manager account to access {purpose}.")
+    with st.form(f"{purpose}_login", clear_on_submit=True):
         st.text_input("Manager ID", key="_manager_username")
         st.text_input("Manager report password", type="password", key="_manager_report_password")
-        st.form_submit_button("Unlock manager report", on_click=_try_login)
+        st.form_submit_button("Unlock " + purpose, on_click=_try_login)
     if st.session_state.get("_manager_report_error"):
         st.error(st.session_state["_manager_report_error"])
     return False

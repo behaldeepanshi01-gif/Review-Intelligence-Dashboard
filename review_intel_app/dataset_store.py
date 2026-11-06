@@ -1,6 +1,6 @@
 """Explicit local dataset identities; filenames never decide action ownership."""
 
-from contextlib import closing
+from contextlib import closing, contextmanager
 from collections import Counter
 from datetime import date, datetime, timezone
 import hashlib
@@ -11,6 +11,10 @@ import uuid
 
 
 SAMPLE_ID = "builtin:synthetic-sample"
+
+
+class HistoryAssociationError(ValueError):
+    """An open legacy editor no longer has its approved history association."""
 
 
 def source_cohort(reviews, dataset_id, location, through_date):
@@ -120,6 +124,27 @@ class DatasetStore:
         if row is None:
             raise ValueError("That saved dataset no longer exists.")
         return dict(row)
+
+    @contextmanager
+    def action_history_guard(self, dataset_id, action_tag, expected_revision):
+        """Hold ownership stable through the JSON write, including unlink/relink."""
+        if action_tag == dataset_id:
+            yield
+            return
+        with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute(
+                "SELECT legacy_tag, history_revision FROM datasets WHERE dataset_id = ?",
+                (dataset_id,),
+            ).fetchone()
+            if (current is None or action_tag is None
+                    or current["legacy_tag"] != action_tag
+                    or expected_revision is None
+                    or current["history_revision"] != expected_revision):
+                raise HistoryAssociationError(
+                    "The dataset history link changed. Your draft was not saved. "
+                    "Refresh the history and review its current ownership before editing.")
+            yield
 
     def save_snapshot(self, name, content, dataset_id=None):
         """Create a new dataset unless a specific existing ID was selected.

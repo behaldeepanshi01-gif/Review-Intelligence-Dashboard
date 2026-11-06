@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import copy
 import fcntl
@@ -194,9 +194,19 @@ def append_action(path: str, action: dict, *, legacy_tag: str | None = None) -> 
 def edit_saved_action(
     path: str, expected: dict, action_text: str, owner: str, status: str,
     start_date: date, due_date: date,
+    *, history_store=None, dataset_id=None, expected_history_revision=None,
 ) -> dict:
     """Compare the displayed snapshot, then update only manager-editable fields."""
-    with _action_lock(path) as path:
+    if history_store is not None and not dataset_id:
+        raise ValueError("A dataset identity is required to validate action ownership.")
+    guard = (
+        history_store.action_history_guard(
+            dataset_id, expected.get("dataset_tag"), expected_history_revision)
+        if history_store is not None else nullcontext()
+    )
+    # Always acquire the registry transaction before the JSON lock. Transfers
+    # cannot slip between ownership validation and the atomic action write.
+    with guard, _action_lock(path) as path:
         actions = load_actions(path)
         matches = [i for i, row in enumerate(actions)
                    if row.get("action_id") == expected.get("action_id")]

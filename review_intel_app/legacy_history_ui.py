@@ -5,6 +5,50 @@ import sqlite3
 import streamlit as st
 
 
+def history_changed(store, association):
+    current = store.get(association["dataset_id"])
+    return (current["legacy_tag"], current["history_revision"]) != (
+        association["legacy_tag"], association["history_revision"])
+
+
+@st.fragment(run_every="30s")
+def show_live_history_notice(store, association):
+    """Only this notice rerenders; browser-buffered action forms stay intact."""
+    try:
+        changed = history_changed(store, association)
+    except (ValueError, sqlite3.Error) as ex:
+        st.error(f"Couldn't check the history link: {ex}. Ownership is checked again on save.")
+        return
+    if changed:
+        st.warning(
+            "The dataset history link changed in another session. Action views refresh "
+            "every 30 seconds. Older-history editors are retained to protect your draft; "
+            "their saves must pass a fresh ownership check. Use Keep draft and refresh "
+            "editor in an affected form before continuing. Dataset-ID actions are unaffected."
+        )
+
+
+def action_editors(state, dataset, actions):
+    """Retain old legacy editors, not their ownership permission, across reruns."""
+    key = f"history_editors_{dataset['dataset_id']}"
+    editors = state.setdefault(key, {})
+    current = []
+    for action in actions:
+        if action.get("dataset_tag") == dataset["dataset_id"]:
+            current.append((action, None))
+        elif dataset["legacy_tag"] is not None and action.get("dataset_tag") == dataset["legacy_tag"]:
+            action_id = action.get("action_id", "")
+            if action_id not in editors:
+                editors[action_id] = (dict(action), dict(dataset))
+    # Prefer the latest action for concurrency comparison, but preserve the
+    # association the editor was opened against even if the link comes back.
+    latest = {action.get("action_id"): action for action in actions}
+    return current + [
+        (latest.get(action_id, action), association)
+        for action_id, (action, association) in editors.items()
+    ]
+
+
 def show_history_link_log(store, dataset_id):
     """Read-only association audit, independent of recovery controls/actions."""
     with st.sidebar.expander("History-link corrections"):

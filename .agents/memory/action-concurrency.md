@@ -28,3 +28,16 @@ not silently substitute the old saved values.
 conflict. Use form submit controls to capture reference drafts; a retained draft
 is session-only reference material, never implicit permission to overwrite a
 newer saved action.
+
+Legacy action edits must hold association ownership stable through the action
+write, not just check it when rendering the form. Always acquire the dataset
+registry transaction before the action-log lock when both are needed.
+
+**Why:** History transfers do not modify action records, so action snapshot
+comparison alone cannot reject a former owner's draft. A separate pre-save
+ownership read also leaves a race between checking the association and writing.
+
+**How to apply:** Check both the legacy tag and the open-time association
+revision, including unlink/relink cycles. Dataset-ID actions do not depend on
+legacy association revisions. Retain stale editors only as drafts, not as
+permission to save; collect browser-buffered edits with form submit controls.

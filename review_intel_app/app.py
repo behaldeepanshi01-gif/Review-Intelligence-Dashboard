@@ -21,7 +21,9 @@ import engine as E
 import manager_corrections as C
 import dataset_store as D
 from location_settings import LocationSettings
-from legacy_history_ui import show_history_controls
+from legacy_history_ui import (
+    show_history_controls, show_live_history_notice, history_changed, action_editors,
+)
 
 st.set_page_config(page_title="Review Intelligence", page_icon="🍛", layout="wide")
 
@@ -134,6 +136,7 @@ elif source.startswith("Upload"):
 data_path, tag = dataset["path"], dataset["dataset_id"]
 legacy_tag = dataset["legacy_tag"]
 st.sidebar.caption(f"Dataset identity: {tag}")
+show_live_history_notice(datasets, dataset)
 
 try:
     raw = E.load_reviews(data_path)
@@ -792,13 +795,14 @@ with tabs[5]:
     @st.fragment(run_every="30s")
     def show_live_owner_summary():
         # Never mutate the captured review summary on a timer tick.
+        current_history = datasets.get(tag)["legacy_tag"]
         action_lines = A.weekly_action_summary(
-            all_actions,
+            A.load_actions(ACTION_LOG),
             dataset_tag=tag,
             locations=pick,
             reviews=tagged.to_dict("records"),
             timezones_by_location=timezones_by_location,
-            legacy_tag=legacy_tag,
+            legacy_tag=current_history,
             provenance_by_location=provenance_by_location,
             source_reviews=raw.to_dict("records"),
         )
@@ -823,9 +827,10 @@ def show_live_action_tracker():
                "source cohort have unknown source-data comparability.")
     st.caption("Overdue warnings, filters and the owner summary update every 30 seconds "
                "while connected. Action editors below are not refreshed by this timer.")
+    current_history = datasets.get(tag)["legacy_tag"]
     saved_actions = [
-        action for action in all_actions
-        if A.matches_dataset(action, tag, legacy_tag) and action.get("location") in pick
+        action for action in A.load_actions(ACTION_LOG)
+        if A.matches_dataset(action, tag, current_history) and action.get("location") in pick
     ]
     saved_actions.sort(key=lambda action: action.get("created_on", ""), reverse=True)
 
@@ -911,12 +916,18 @@ with tabs[6]:
     st.subheader("Edit action plans")
     st.caption("Editors stay available regardless of the status filter above, so "
                "a calendar update cannot remove an unsaved draft.")
+    for reference in st.session_state.get(f"history_drafts_{tag}", {}).values():
+        st.markdown("**Kept history-link draft for reference — not saved**")
+        st.caption(f"Action: {reference['action_id']} · Older history: "
+                   f"{reference['dataset_tag']}. Session-only reference; not reapplied.")
+        st.json(reference["draft"])
     editable_actions = sorted(
-        (action for action in all_actions
-         if A.matches_dataset(action, tag, legacy_tag) and action.get("location") in pick),
-        key=lambda action: action.get("created_on", ""), reverse=True,
+        ((action, association) for action, association in
+         action_editors(st.session_state, dataset, all_actions)
+         if action.get("location") in pick),
+        key=lambda item: item[0].get("created_on", ""), reverse=True,
     )
-    for action in editable_actions:
+    for action, editor_association in editable_actions:
         action_id = action.get("action_id", "")
         action_today = A.location_today(action.get("location"), timezones_by_location)
         with st.expander(
@@ -961,6 +972,14 @@ with tabs[6]:
                 st.session_state[snapshot_key] = dict(action)
             snapshot = st.session_state[snapshot_key]
             conflicted = snapshot != action
+            association_stale = (
+                editor_association is not None
+                and history_changed(datasets, editor_association)
+            )
+            if association_stale:
+                st.warning("This older-history link changed. Your draft has not been "
+                           "saved. Keep the draft and refresh this editor to review "
+                           "the current history. Dataset-ID actions are unaffected.")
             reference_key = f"action_draft_reference_{tag}_{action_id}"
             field_labels = {
                 "action_text": "Manager action", "owner": "Owner",
@@ -996,13 +1015,33 @@ with tabs[6]:
                     "Due date",
                     value=A.parse_date(snapshot.get("due_date"), action_today),
                     key=f"update_due_{form_key}")
-                submitted = st.form_submit_button("Save updates", disabled=conflicted)
+                submitted = st.form_submit_button(
+                    "Save updates", disabled=conflicted or association_stale)
+                refresh_editor = False
+                if association_stale:
+                    refresh_editor = st.form_submit_button("Keep draft and refresh editor")
                 keep_draft = reload_latest = False
                 if conflicted:
                     # Submit these choices with the form so even newer,
                     # browser-buffered draft changes are available to Keep.
                     keep_draft = st.form_submit_button("Keep draft for reference")
                     reload_latest = st.form_submit_button("Reload latest action")
+
+            if refresh_editor or (submitted and association_stale):
+                references = st.session_state.setdefault(f"history_drafts_{tag}", {})
+                references[action_id] = {
+                    "action_id": action_id, "dataset_tag": snapshot.get("dataset_tag"),
+                    "draft": {
+                        "action_text": action_text, "owner": owner, "status": status,
+                        "start_date": start_date.isoformat(), "due_date": due_date.isoformat(),
+                    },
+                }
+                if refresh_editor:
+                    st.session_state[f"history_editors_{tag}"].pop(action_id, None)
+                    st.session_state.pop(snapshot_key, None)
+                    st.rerun()
+                st.error("History ownership changed. Nothing was saved. Your submitted "
+                         "draft is kept for reference; use Keep draft and refresh editor.")
 
             if conflicted:
                 draft = {
@@ -1038,7 +1077,7 @@ with tabs[6]:
                     for field in A.EDITABLE_FIELDS
                 ], hide_index=True, use_container_width=True)
 
-            if submitted and not conflicted:
+            if submitted and not conflicted and not association_stale:
                 if not action_text.strip():
                     st.error("Enter an action before saving.")
                 elif due_date < start_date:
@@ -1047,12 +1086,26 @@ with tabs[6]:
                     try:
                         updated = A.edit_saved_action(
                             ACTION_LOG, snapshot, action_text, owner, status,
-                            start_date, due_date)
+                            start_date, due_date, history_store=datasets, dataset_id=tag,
+                            expected_history_revision=(
+                                editor_association["history_revision"]
+                                if editor_association else None),
+                        )
+                    except D.HistoryAssociationError as ex:
+                        st.session_state.setdefault(f"history_drafts_{tag}", {})[action_id] = {
+                            "action_id": action_id, "dataset_tag": snapshot.get("dataset_tag"),
+                            "draft": {
+                                "action_text": action_text, "owner": owner, "status": status,
+                                "start_date": start_date.isoformat(),
+                                "due_date": due_date.isoformat(),
+                            },
+                        }
+                        st.error(str(ex) + " Your draft is kept for reference.")
                     except A.ActionConflictError:
                         # A manager may save after this run loaded the log.
                         # Reread it without changing the draft's widget keys.
                         st.rerun()
-                    except (OSError, ValueError) as ex:
+                    except (OSError, ValueError, D.sqlite3.Error) as ex:
                         st.error(f"Couldn't update the action: {ex}")
                     else:
                         st.session_state[snapshot_key] = updated

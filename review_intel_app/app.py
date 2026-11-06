@@ -267,10 +267,14 @@ with st.sidebar.expander("Location calendars"):
             st.rerun()
     st.caption("Saved calendars reload on each interaction or page refresh. "
                "Plans become overdue the day after their local due date.")
-    for loc in locations:
-        st.caption(f"{loc} — Action calendar: "
-                   f"{A.location_today(loc, timezones_by_location).isoformat()} · "
-                   f"{timezones_by_location[loc]}")
+    @st.fragment(run_every="30s")
+    def show_calendar_days():
+        for loc in locations:
+            st.caption(f"{loc} — Action calendar: "
+                       f"{A.location_today(loc, timezones_by_location).isoformat()} · "
+                       f"{timezones_by_location[loc]}")
+
+    show_calendar_days()
 
 pick = st.sidebar.multiselect("Locations", locations, default=locations)
 dmin, dmax = tagged["date"].min().date(), tagged["date"].max().date()
@@ -734,27 +738,35 @@ with tabs[5]:
         lines.append(f"Most praised staff: {top['staff']} at {top['location']} "
                      f"({int(top['mentions'])} mentions).")
     lines.append(f"High-urgency reviews still needing a reply: {len(high_open)}.")
-    lines.extend(A.weekly_action_summary(
-        all_actions,
-        dataset_tag=tag,
-        locations=pick,
-        reviews=tagged.to_dict("records"),
-        timezones_by_location=timezones_by_location,
-        legacy_tag=legacy_tag,
-        provenance_by_location=provenance_by_location,
-    ))
-    st.code("\n".join(lines), language=None)
+    @st.fragment(run_every="30s")
+    def show_live_owner_summary():
+        # Never mutate the captured review summary on a timer tick.
+        action_lines = A.weekly_action_summary(
+            all_actions,
+            dataset_tag=tag,
+            locations=pick,
+            reviews=tagged.to_dict("records"),
+            timezones_by_location=timezones_by_location,
+            legacy_tag=legacy_tag,
+            provenance_by_location=provenance_by_location,
+        )
+        st.code("\n".join(lines + action_lines), language=None)
+
+    show_live_owner_summary()
 
 # ----------------------------------------------------------------------------
 # Action tracker
 # ----------------------------------------------------------------------------
-with tabs[6]:
+@st.fragment(run_every="30s")
+def show_live_action_tracker():
     st.markdown(
         "Keep a manager's action with the alert, then check later reviews for the same theme. "
         "A change in review mentions is a signal, not proof that an action caused it."
     )
     st.caption("An older saved baseline may use earlier tagging rules. A change in the "
                "analyzer is not evidence of an operational improvement.")
+    st.caption("Overdue warnings, filters and the owner summary update every 30 seconds "
+               "while connected. Action editors below are not refreshed by this timer.")
     saved_actions = [
         action for action in all_actions
         if A.matches_dataset(action, tag, legacy_tag) and action.get("location") in pick
@@ -831,6 +843,23 @@ with tabs[6]:
                     "This is a review trend only. It does not prove the action caused the change."
                 )
 
+with tabs[6]:
+    show_live_action_tracker()
+    st.subheader("Edit action plans")
+    st.caption("Editors stay available regardless of the status filter above, so "
+               "a calendar update cannot remove an unsaved draft.")
+    editable_actions = sorted(
+        (action for action in all_actions
+         if A.matches_dataset(action, tag, legacy_tag) and action.get("location") in pick),
+        key=lambda action: action.get("created_on", ""), reverse=True,
+    )
+    for action in editable_actions:
+        action_id = action.get("action_id", "")
+        action_today = A.location_today(action.get("location"), timezones_by_location)
+        with st.expander(
+            f"Edit {action.get('location', 'Location')}: {action.get('theme', 'Theme')} "
+            f"· {action.get('owner') or 'Not assigned'}"
+        ):
             # Streamlit reloads the log on submit. Keep the snapshot the manager
             # actually saw, rather than treating that fresh load as their version.
             snapshot_key = f"action_snapshot_{tag}_{action_id}"

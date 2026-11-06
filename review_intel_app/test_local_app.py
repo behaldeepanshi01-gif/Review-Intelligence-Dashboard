@@ -63,6 +63,53 @@ class LocalAppTests(unittest.TestCase):
 
     _real_today = staticmethod(A.restaurant_today)
 
+    def test_midnight_refresh_updates_overdue_views_without_rekeying_editors(self):
+        sample = E.load_reviews(APP.parent / "data" / "sample_reviews.csv")
+        action = {
+            "dataset_tag": SAMPLE_ID, "action_id": "midnight",
+            "location": sample.iloc[0]["location"], "theme": "Service speed",
+            "status": "Planned", "start_date": "2026-01-01",
+            "due_date": "2026-01-01", "action_text": "Check handoffs.",
+        }
+        with patch.object(A, "load_actions", return_value=[action]), patch.object(
+            A, "restaurant_today", return_value=date(2026, 1, 1)
+        ) as clock:
+            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            app.radio(key="action_status_filter").set_value("Overdue only").run()
+            self.assertTrue(any("No overdue action plans" in i.value for i in app.info))
+            self.assertFalse(any("OVERDUE" in c.value for c in app.code))
+            editor = next(t for t in app.text_area
+                          if t.key and t.key.startswith("update_text_"))
+            editor_key = editor.key
+            clock.return_value = date(2026, 1, 2)
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertTrue(any("Showing 1 of 1" in c.value for c in app.caption))
+            self.assertTrue(any("Overdue —" in w.value for w in app.warning))
+            self.assertTrue(any("OVERDUE" in c.value for c in app.code))
+            # AppTest.run is a full rerun, not a browser timer event. Check
+            # stable identity here; test_midnight_browser.cjs covers unsent input.
+            self.assertEqual(app.text_area(key=editor_key).key, editor_key)
+
+    def test_timers_never_render_edit_forms_or_trigger_full_reruns(self):
+        # AppTest cannot emulate browser timer events. Guard the isolation
+        # boundary here; browser testing verifies unsubmitted frontend input.
+        import ast
+        tree = ast.parse(APP.read_text())
+        fragments = [
+            node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
+            and any(isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute)
+                    and d.func.attr == "fragment" for d in node.decorator_list)
+        ]
+        self.assertEqual(len(fragments), 3)
+        for fragment in fragments:
+            calls = [n for n in ast.walk(fragment) if isinstance(n, ast.Call)
+                     and isinstance(n.func, ast.Attribute)]
+            self.assertFalse({"form", "rerun"} & {n.func.attr for n in calls})
+            decorator = fragment.decorator_list[0]
+            self.assertTrue(any(k.arg == "run_every" and k.value.value == "30s"
+                                for k in decorator.keywords))
+
     def test_action_status_filter_preserves_scope_and_handles_empty_results(self):
         sample = E.load_reviews(APP.parent / "data" / "sample_reviews.csv")
         location = sample.iloc[0]["location"]
@@ -84,6 +131,8 @@ class LocalAppTests(unittest.TestCase):
             dict(base, action_id="other_dataset", dataset_tag="unrelated"),
             dict(base, action_id="other_location", location="Unselected restaurant"),
         ]
+        for action in actions:
+            action["owner"] = action["action_id"]
         with patch.object(E, "load_reviews", return_value=sample), patch.object(
             A, "load_actions", return_value=actions
         ), patch("os.listdir", return_value=[]):
@@ -92,13 +141,20 @@ class LocalAppTests(unittest.TestCase):
             def shown():
                 self.assertEqual(list(app.exception), [])
                 return {
-                    item.key.removeprefix("update_text_").rsplit("_", 1)[0]
-                    for item in app.text_area if item.key and item.key.startswith("update_text_")
+                    item.value.split("Owner: ", 1)[1].split(" | Due:", 1)[0]
+                    for item in app.caption if item.value.startswith("Status:")
                 }
 
             self.assertEqual(shown(), {"late", "progress", "today", "future", "missing", "invalid"})
             app.radio(key="action_status_filter").set_value("Overdue only").run()
             self.assertEqual(shown(), {"late", "progress"})
+            # Editors are deliberately independent of the live status filter.
+            self.assertEqual(
+                {item.key.removeprefix("update_text_").rsplit("_", 1)[0]
+                 for item in app.text_area
+                 if item.key and item.key.startswith("update_text_")},
+                {"late", "progress", "done", "today", "future", "missing", "invalid"},
+            )
             app.radio(key="action_status_filter").set_value("Completed plans").run()
             self.assertEqual(shown(), {"done"})
             actions[:] = [row for row in actions if row["action_id"] != "done"]

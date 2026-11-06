@@ -8,3 +8,4 @@
 - [Theme tuning safeguards](theme-tuning-safety.md) — compare non-target tags per review, not just totals; nearby cue assignment can hide cross-theme changes.
 - [Manager report identity](manager-report-identity.md) — approved local report-only accounts; reuse the identity system for timezone authorization.
 - [Approved theme boundaries](theme-definition-approval.md) — four adjudication definitions approved; individual review decisions still require separate approval.
+- [Live calendar refresh safety](live-calendar-refresh.md) — unsent Streamlit forms require isolation from timer reruns; AppTest alone cannot prove browser draft preservation.

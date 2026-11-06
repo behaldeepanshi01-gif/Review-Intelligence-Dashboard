@@ -27,3 +27,15 @@ labeling, not continued tuning on the evaluation batch.
 **How to apply:** Freeze implementation hashes and hidden predictions without
 showing unused-review predictions to the labeler. Only the user or restaurant
 manager supplies and approves blind labels; never substitute AI ground truth.
+
+Approval of a file with AI-draft provenance does not establish independent
+human-only reference labels, even if the user confirms personal labeling blind
+to analyzer predictions. Preserve both statements rather than removing the
+draft notes or silently claiming independence.
+
+**Why:** Blindness to the evaluated analyzer and independence from AI-assisted
+labeling are different properties.
+
+**How to apply:** Record explicit batch-specific chat approval separately from
+blank CSV checkboxes; report provenance limitations and coverage gaps with any
+scores. Never convert an AI-draft evaluation into an independent accuracy claim.

@@ -224,3 +224,45 @@ mtime_ms = 1793985481397
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/33ae54dc-3e2a-4d61-9bc6-e255edfbc857/c61eb373-06a8-4e3f-8b74-1de3490716fe"
 storage_version_token = "1793985507041999"
 content_type = "text/csv"
+
+[[outputs]]
+id = "b5ZNGqJfJJtCMEOAIT2SH"
+uri = "file://review_intel_app/data/private_evaluation/heldout_money_waste_20261106/labeling_sheet.csv"
+type = "table"
+title = "Use this file: 30-passage blind labeling sheet"
+description = "Complete theme labels for H001–H030, mark reviewed rows Yes, and return this CSV. Keep private."
+logical_id = "79164a56-edb7-4a84-be74-39784ac7ca14"
+content_hash = "sha256:1ed2fe626d586ae250eae5b3f395cd2bb0fe742f7cd456a3138be07caa48ca97"
+size = 10784
+mtime_ms = 1794003194529
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/79164a56-edb7-4a84-be74-39784ac7ca14/b72479c5-89b9-49ba-a927-fd5417cb2dc5"
+storage_version_token = "1794003813698262"
+content_type = "text/csv"
+
+[[outputs]]
+id = "cCQD7VzRnpr7Yr1cuf2a4"
+uri = "file://review_intel_app/data/private_evaluation/heldout_money_waste_20261106/labeling_guide.html"
+type = "html"
+title = "Instructions for the 30-passage sheet"
+description = "Human-only labeling choices and theme definitions; no analyzer predictions."
+logical_id = "e90a638d-c0d2-4c3f-aaf5-eaf79f48cba7"
+content_hash = "sha256:a6cdb165e75f2d66eac36e09c66da7ec9cc22b33a7a21ec3c1c4e55f6500c494"
+size = 6288
+mtime_ms = 1794003194529
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/e90a638d-c0d2-4c3f-aaf5-eaf79f48cba7/970a1e04-9e41-47e6-b41d-9650ed2e8d6c"
+storage_version_token = "1794003814163575"
+content_type = "text/html"
+
+[[outputs]]
+id = "jto36JYbzSmMK0L-VvAQ5"
+uri = "file://review_intel_app/data/private_evaluation/heldout_money_waste_20261106/scored_once/report.html"
+type = "html"
+title = "Private 30-passage evaluation report"
+description = "Per-theme praise and complaint results, mixed/unclear counts, review-needed flags, and reference-label provenance limitations. Keep private."
+logical_id = "c778a940-9911-4e93-bd3e-d6dfada26149"
+content_hash = "sha256:75de589f6c2067da112c184e1f81f9cb41c7b14afda0686cd684d674f79920d4"
+size = 2436
+mtime_ms = 1794004912694
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/c778a940-9911-4e93-bd3e-d6dfada26149/b0ec37ae-9a08-4c13-b186-17a7f58f8677"
+storage_version_token = "1794004980707695"
+content_type = "text/html"

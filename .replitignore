@@ -17,3 +17,6 @@ review_intel_app/data/manager_permissions*.json
 review_intel_app/data/private_evaluation/
 review_intel_app/data/private_source_readiness/
 attached_assets/mumbai_central_reviews_*.csv
+attached_assets/*labeling_sheet*.csv
+attached_assets/*manager_decisions*.csv
+attached_assets/*definitions_blank*.csv

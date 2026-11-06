@@ -5,6 +5,35 @@ import sqlite3
 import streamlit as st
 
 
+def show_history_link_log(store, dataset_id):
+    """Read-only association audit, independent of recovery controls/actions."""
+    with st.sidebar.expander("History-link corrections"):
+        st.caption(
+            "Read-only record of older-history claims, unlinks, and transfers "
+            "involving this dataset, newest first. This is not action-edit history. "
+            "Original actions and baselines are unchanged. Changes made before "
+            "recording began are not available."
+        )
+        try:
+            events = store.history_link_events(dataset_id)
+        except sqlite3.Error as ex:
+            st.error(f"Couldn't load history-link corrections: {ex}")
+            return
+        if not events:
+            st.info("No recorded history-link changes for this dataset.")
+            return
+        st.dataframe([
+            {
+                "Time (UTC)": event["occurred_at"],
+                "Operation": event["operation"].capitalize(),
+                "Legacy tag": event["legacy_tag"],
+                "Source dataset ID": event["source_dataset_id"] or "Unlinked",
+                "Destination dataset ID": event["destination_dataset_id"] or "Unlinked",
+            }
+            for event in events
+        ], hide_index=True)
+
+
 def show_history_controls(store, dataset, actions):
     dataset_id = dataset["dataset_id"]
     legacy_tag = dataset["legacy_tag"]
@@ -12,6 +41,7 @@ def show_history_controls(store, dataset, actions):
     notice = st.session_state.pop("history_link_notice", None)
     if notice:
         st.sidebar.success(notice)
+    show_history_link_log(store, dataset_id)
 
     if legacy_tag is None:
         unclaimed = store.unclaimed_legacy_tags(actions)

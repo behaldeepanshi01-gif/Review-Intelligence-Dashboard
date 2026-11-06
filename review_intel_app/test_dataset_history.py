@@ -2,7 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
-from datetime import date
+from datetime import date, datetime, timedelta
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -189,10 +189,75 @@ class HistoryCorrectionTests(unittest.TestCase):
         self.assertEqual(old["legacy_tag"], "old.csv")
         self.assertEqual(old["history_revision"], 0)
         self.assertEqual(old["correction_path"], str(self.root / "original.csv"))
+        self.assertEqual(migrated.history_link_events("upload:old"), [])
         migrated.correct_legacy_history(
             "upload:old", "old.csv", expected_source_revision=0,
         )
         self.assertIsNone(migrated.get("upload:old")["legacy_tag"])
+
+    def test_audit_records_claim_transfer_unlink_and_recovery_after_restart(self):
+        self.correct(self.target)
+        target = self.store.get(self.target["dataset_id"])
+        self.correct(source=target)
+        self.store.claim_legacy_history(self.source["dataset_id"], "old.csv", self.actions)
+        self.store = DatasetStore(self.root / "uploads", self.sample)
+        source_events = self.store.history_link_events(self.source["dataset_id"])
+        target_events = self.store.history_link_events(self.target["dataset_id"])
+        self.assertEqual([e["operation"] for e in source_events], ["claim", "transfer", "claim"])
+        self.assertEqual([e["operation"] for e in target_events], ["unlink", "transfer"])
+        claim = source_events[-1]
+        transfer = target_events[-1]
+        unlink = target_events[0]
+        self.assertIsNone(claim["source_dataset_id"])
+        self.assertEqual(claim["destination_dataset_id"], self.source["dataset_id"])
+        self.assertEqual(transfer["source_dataset_id"], self.source["dataset_id"])
+        self.assertEqual(transfer["destination_dataset_id"], self.target["dataset_id"])
+        self.assertEqual(unlink["source_dataset_id"], self.target["dataset_id"])
+        self.assertIsNone(unlink["destination_dataset_id"])
+        self.assertEqual(self.store.history_link_events(self.third["dataset_id"]), [])
+        for event in source_events + target_events:
+            self.assertEqual(event["legacy_tag"], "old.csv")
+            self.assertEqual(datetime.fromisoformat(event["occurred_at"]).utcoffset(),
+                             timedelta(0))
+        self.assertEqual(Path(self.log).read_bytes(), self.original_bytes)
+
+    def test_rejected_and_competing_changes_do_not_add_spurious_events(self):
+        before = self.store.history_link_events(self.source["dataset_id"])
+        for operation in (
+            lambda: self.correct(dict(self.target, history_revision=99)),
+            lambda: self.correct(source=dict(self.source, history_revision=99)),
+            lambda: self.store.claim_legacy_history(
+                self.target["dataset_id"], "old.csv", self.actions),
+            lambda: self.store.claim_legacy_history(
+                self.source["dataset_id"], "other.csv", self.actions),
+        ):
+            with self.assertRaises(ValueError):
+                operation()
+            self.assertEqual(self.store.history_link_events(self.source["dataset_id"]), before)
+        self.run_race([lambda: self.correct(self.target), lambda: self.correct(self.third)])
+        self.assertEqual(len(self.store.history_link_events(self.source["dataset_id"])), 2)
+        with closing(self.store.connect()) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM history_link_events").fetchone()[0], 2)
+
+    def test_audit_insert_failure_rolls_back_association_and_revision(self):
+        with closing(self.store.connect()) as db, db:
+            db.execute("""
+                CREATE TRIGGER fail_audit BEFORE INSERT ON history_link_events
+                BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END
+            """)
+        before = self.store.list_datasets(include_sample=True)
+        for operation in (
+            lambda: self.correct(),
+            lambda: self.correct(self.target),
+            lambda: self.store.claim_legacy_history(
+                self.target["dataset_id"], "other.csv", self.actions),
+        ):
+            with self.assertRaisesRegex(sqlite3.IntegrityError, "audit unavailable"):
+                operation()
+            self.assertEqual(self.store.list_datasets(include_sample=True), before)
+            self.assertEqual(len(self.store.history_link_events(self.source["dataset_id"])), 1)
+            self.assertEqual(self.store.history_link_events(self.target["dataset_id"]), [])
+        self.assertEqual(Path(self.log).read_bytes(), self.original_bytes)
 
     def ui(self):
         app = AppTest.from_string("""
@@ -202,7 +267,7 @@ from legacy_history_ui import show_history_controls
 store = st.session_state["store"]
 show_history_controls(store, store.get(st.session_state["dataset_id"]),
                       A.load_actions(st.session_state["log"]))
-""")
+""", default_timeout=10)
         app.session_state["store"] = self.store
         app.session_state["dataset_id"] = self.source["dataset_id"]
         app.session_state["log"] = self.log
@@ -253,6 +318,22 @@ show_history_controls(store, store.get(st.session_state["dataset_id"]),
         app.selectbox[0].set_value(self.third["dataset_id"]).run()
         self.assertFalse(app.checkbox[0].value)
         self.assertTrue(self.button(app, "Confirm history correction").disabled)
+
+    def test_ui_log_is_separate_read_only_and_visible_after_unlink(self):
+        app = self.ui()
+        self.assertFalse(app.exception)
+        self.assertIn("History-link corrections", [item.label for item in app.expander])
+        self.assertEqual(app.dataframe[0].value["Operation"].tolist(), ["Claim"])
+        self.assertTrue(any("not action-edit history" in item.value for item in app.caption))
+        app.checkbox[0].check().run()
+        self.button(app, "Confirm history correction").click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.dataframe[0].value["Operation"].tolist(), ["Unlink", "Claim"])
+        app.session_state["dataset_id"] = self.third["dataset_id"]
+        app.run()
+        self.assertFalse(app.exception)
+        self.assertFalse(app.dataframe)
+        self.assertTrue(any("No recorded history-link changes" in item.value for item in app.info))
 
 
 if __name__ == "__main__":

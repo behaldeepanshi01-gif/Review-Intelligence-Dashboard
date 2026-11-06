@@ -2,7 +2,7 @@
 
 from contextlib import closing
 from collections import Counter
-from datetime import date
+from datetime import date, datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -65,6 +65,16 @@ class DatasetStore:
             db.execute("""
                 CREATE TABLE IF NOT EXISTS imported_files (
                     path TEXT PRIMARY KEY
+                )
+            """)
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS history_link_events (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_dataset_id TEXT,
+                    destination_dataset_id TEXT,
+                    legacy_tag TEXT NOT NULL,
+                    operation TEXT NOT NULL CHECK (operation IN ('claim', 'unlink', 'transfer')),
+                    occurred_at TEXT NOT NULL
                 )
             """)
             db.execute(
@@ -161,6 +171,33 @@ class DatasetStore:
             and row["dataset_tag"] not in claimed
         })
 
+    def history_link_events(self, dataset_id):
+        """Read association changes involving this dataset, newest first.
+
+        Existing associations are not backfilled: their original operation and
+        time are unknown. This log is separate from action-field edit history.
+        """
+        with closing(self.connect()) as db:
+            return [
+                dict(row) for row in db.execute(
+                    "SELECT * FROM history_link_events "
+                    "WHERE source_dataset_id = ? OR destination_dataset_id = ? "
+                    "ORDER BY event_id DESC",
+                    (dataset_id, dataset_id),
+                )
+            ]
+
+    @staticmethod
+    def _record_history_link(db, operation, legacy_tag, source_id, destination_id):
+        """Use the caller's transaction so neither half can commit alone."""
+        db.execute(
+            "INSERT INTO history_link_events "
+            "(source_dataset_id, destination_dataset_id, legacy_tag, operation, occurred_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (source_id, destination_id, legacy_tag, operation,
+             datetime.now(timezone.utc).isoformat()),
+        )
+
     def claim_legacy_history(self, dataset_id, legacy_tag, actions, *, expected_revision=None):
         """Link an old filename-scoped history once, without rewriting its log."""
         if (not isinstance(legacy_tag, str)
@@ -188,6 +225,7 @@ class DatasetStore:
             )
             if result.rowcount != 1:
                 raise ValueError("This dataset already has a linked history.")
+            self._record_history_link(db, "claim", legacy_tag, None, dataset_id)
         return self.get(dataset_id)
 
     def correct_legacy_history(
@@ -230,3 +268,7 @@ class DatasetStore:
                     "UPDATE datasets SET legacy_tag = ?, history_revision = history_revision + 1 "
                     "WHERE dataset_id = ?", (legacy_tag, target_id),
                 )
+            self._record_history_link(
+                db, "transfer" if target_id is not None else "unlink",
+                legacy_tag, source_id, target_id,
+            )

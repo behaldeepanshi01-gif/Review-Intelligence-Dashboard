@@ -25,3 +25,13 @@ dataset-owned actions or rewriting historical baselines.
 **How to apply:** Keep unlinking reversible through explicit recovery, require
 confirmation for transfers, and reject stale ownership decisions rather than
 overwriting another manager's link.
+
+Do not backfill association audit events for links that predate recording.
+
+**Why:** An existing association establishes current ownership, not when or how
+it was created; a fabricated claim date would mislead managers investigating a
+correction.
+
+**How to apply:** Explain that earlier changes are unavailable, keep association
+events separate from action-edit history, and record only actual successful
+association changes atomically with their ownership updates.

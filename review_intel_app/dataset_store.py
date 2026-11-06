@@ -146,12 +146,14 @@ class DatasetStore:
                     "Refresh the history and review its current ownership before editing.")
             yield
 
-    def save_snapshot(self, name, content, dataset_id=None):
+    def save_snapshot(self, name, content, dataset_id=None, *, expected_path=None):
         """Create a new dataset unless a specific existing ID was selected.
 
         Keep previous CSV snapshots untouched. Publish the new path only once
         its complete bytes have been written; failed writes keep the old path.
         Callers must validate CSV content before saving.
+        Protected callers pass the exact path whose locations were authorized.
+        A conditional update atomically rejects a replacement of a newer snapshot.
         """
         if dataset_id == SAMPLE_ID:
             raise ValueError("The built-in sample cannot be replaced by an upload.")
@@ -166,7 +168,16 @@ class DatasetStore:
             file.write(content)
         try:
             with closing(self.connect()) as db, db:
-                if db.execute(
+                if expected_path is not None:
+                    result = db.execute(
+                        "UPDATE datasets SET path = ? WHERE dataset_id = ? AND path = ?",
+                        (str(path), dataset_id, expected_path),
+                    )
+                    if result.rowcount != 1:
+                        raise ValueError(
+                            "The dataset snapshot changed. Reload and validate the upload "
+                            "again before saving. Nothing was replaced.")
+                elif db.execute(
                     "SELECT 1 FROM datasets WHERE dataset_id = ?", (dataset_id,)
                 ).fetchone():
                     db.execute(

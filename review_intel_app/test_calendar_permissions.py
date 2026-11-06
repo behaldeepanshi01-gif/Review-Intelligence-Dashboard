@@ -83,7 +83,7 @@ class CalendarPermissionsTests(unittest.TestCase):
             self.assertFalse(any(t.label == "Restaurant timezone" for t in app.text_input))
             app.text_input(key="_manager_username").set_value("test-manager")
             app.text_input(key="_manager_report_password").set_value("synthetic-calendar-password")
-            next(b for b in app.button if b.label == "Unlock restaurant calendars").click().run()
+            next(b for b in app.button if b.label == "Unlock restaurant dashboard").click().run()
             self.assertFalse(app.exception)
             picker = next(s for s in app.selectbox if s.label == "Calendar location")
             self.assertEqual(picker.options, ["Cafe"])

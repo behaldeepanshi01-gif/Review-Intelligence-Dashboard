@@ -8,6 +8,14 @@ _lock = threading.Lock()
 _attempts = []
 
 
+def clear_private_state():
+    """An identity change must not retain another manager's widgets or drafts."""
+    for key in list(st.session_state):
+        if key not in {"_manager_username", "_manager_report_password",
+                       "_manager_report_error", "_manager_report_grant"}:
+            del st.session_state[key]
+
+
 def authorized(dataset_id=None, locations=None):
     grant = st.session_state.get("_manager_report_grant")
     if dataset_id is None:
@@ -19,6 +27,7 @@ def _try_login():
     password = st.session_state.pop("_manager_report_password", "")
     username = st.session_state.get("_manager_username", "").strip()
     st.session_state.pop("_manager_report_grant", None)
+    clear_private_state()
     # Clear privacy acknowledgments on every identity change.
     for key in list(st.session_state):
         if key.startswith("manager_report_checked_"):
@@ -43,6 +52,7 @@ def require_manager(*, purpose="manager report"):
         st.caption("Signed in as " + st.session_state["_manager_report_grant"]["username"])
         if st.button("Lock " + purpose, key=f"lock_{purpose}"):
             st.session_state.pop("_manager_report_grant", None)
+            clear_private_state()
             for key in list(st.session_state):
                 if key.startswith("manager_report_checked_"):
                     del st.session_state[key]

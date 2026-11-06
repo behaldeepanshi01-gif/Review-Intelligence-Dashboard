@@ -13,7 +13,7 @@ def main():
     args = parser.parse_args()
     if args.operation == "remove":
         identity.remove_account(args.manager_id)
-        print("Account removed. Existing sessions no longer authorize reports or calendars.")
+        print("Account removed. Existing sessions no longer authorize the dashboard.")
         return
     if not args.permissions:
         parser.error("set requires --permissions")

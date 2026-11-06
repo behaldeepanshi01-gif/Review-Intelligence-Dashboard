@@ -19,6 +19,33 @@ Inside the dashboard, Export sits beside Reply inbox. Manager action reports
 require individual account setup; see `MANAGER_ACTION_REPORT.md`.
 The printable export is separate pending work, not added by this routing fix.
 
+## Private dashboard access
+
+The entire interactive dashboard now requires the same individual local manager
+account as reports and restaurant calendars. Assign stable dataset IDs and exact
+location names using `manage_managers.py`; the synthetic dataset also needs a
+grant. Missing accounts or grants fail closed before data selectors or analysis.
+Only assigned restaurants contribute to counts, date ranges, analysis, review
+inspection, exports, saved actions and live summaries. Revocation or expiry
+blocks the next interaction/live refresh; locking clears session drafts.
+Previously viewed or downloaded information cannot be recalled.
+
+Managers may replace an assigned existing dataset only when they have access to
+every location in both the current CSV and the replacement, including rejected
+rows. This prevents a partial-location manager from deleting another location's
+reviews. Previous snapshots, corrections and action histories are preserved.
+Publication also checks that the authorized snapshot is still current: a
+simultaneous replacement is rejected and must be reviewed again before saving.
+Creating datasets and claiming/transferring unassigned filename-based history
+are trusted local-owner operations, not permissions implied by a location grant.
+The owner can use `dataset_store.DatasetStore` locally to register a new dataset
+and inspect its stable ID before assigning it. Legacy history controls are not
+exposed on the manager dashboard because those histories have no independent
+authorization scope. Existing authorized linked histories remain usable.
+
+The public root animation is separate and remains synthetic. This is local
+application authorization, not encryption against someone with filesystem access.
+
 ## Undo
 
 Backups with SHA-256 hashes are under

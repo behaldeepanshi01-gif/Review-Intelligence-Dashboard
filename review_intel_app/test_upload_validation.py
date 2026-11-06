@@ -11,6 +11,7 @@ from streamlit.testing.v1 import AppTest
 
 import dataset_store as D
 import engine as E
+from calendar_test_support import manager_session
 
 
 VALID = b"location,date,rating,text\nDemo,2026-01-02,5,Good\n"
@@ -62,6 +63,8 @@ class UploadUITests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.store = D.DatasetStore(self.directory.name, APP.parent / "data/sample_reviews.csv")
         self.existing = self.store.save_snapshot("existing.csv", VALID)
+        self.session = manager_session(
+            self, self.directory.name, {self.existing["dataset_id"]: ["Demo"]})
         # Run the actual upload section, stopping before unrelated dashboard analysis.
         source = APP.read_text().split('data_path, tag = dataset["path"]')[0]
         self.source = f"__file__ = {str(APP)!r}\n" + source + "\nst.stop()\n"
@@ -80,6 +83,7 @@ class UploadUITests(unittest.TestCase):
 
     def open_app(self):
         app = AppTest.from_string(self.source, default_timeout=30)
+        app.session_state["_manager_report_grant"] = self.session
         app.session_state["data_source"] = "Upload my reviews (CSV)"
         app.run()
         self.assertFalse(app.exception)

@@ -18,6 +18,8 @@ import action_tracker as A
 from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
 from manager_report_access import require_manager, authorized
+from manager_report_access import clear_private_state
+from dashboard_access import DashboardAccess
 import manager_identity as identity
 import engine as E
 import manager_corrections as C
@@ -25,7 +27,7 @@ import dataset_store as D
 from location_settings import LocationSettings
 from calendar_rename_ui import show_calendar_rename
 from legacy_history_ui import (
-    show_history_controls, show_live_history_notice, history_changed, action_editors,
+    history_changed, action_editors,
 )
 
 st.set_page_config(page_title="Review Intelligence", page_icon="🍛", layout="wide")
@@ -61,11 +63,27 @@ LOCATION_SETTINGS = os.path.join(BASE_DIR, "data", "location_settings.sqlite")
 st.sidebar.title("🍛 Review Intelligence")
 st.sidebar.caption("AI review assistant for multi-location restaurants")
 
+if not authorized():
+    clear_private_state()
+if not require_manager(purpose="restaurant dashboard"):
+    st.stop()
+access = DashboardAccess(st.session_state.get("_manager_report_grant"))
+
+
+def require_access(dataset_id, locations=None):
+    try:
+        return access.require(dataset_id, locations)
+    except PermissionError as ex:
+        clear_private_state()
+        st.warning(str(ex))
+        st.stop()
+
+
 UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 try:
     datasets = D.DatasetStore(UPLOAD_DIR, SAMPLE)
-    saved_datasets = datasets.list_datasets()
+    saved_datasets = access.datasets(datasets)
 except (OSError, D.sqlite3.Error) as ex:
     st.error(f"Couldn't open saved dataset identities: {ex}")
     st.stop()
@@ -84,12 +102,18 @@ def cancel_upload():
     )
 
 
-if "data_source" not in st.session_state:
+source_options = ["Saved file", "Upload my reviews (CSV)"]
+if access.grants().get(D.SAMPLE_ID):
+    source_options.insert(0, "Sample data (synthetic)")
+if not saved_datasets and not access.grants().get(D.SAMPLE_ID):
+    st.info("No datasets are assigned to this account. Ask the app owner for access.")
+    st.stop()
+if st.session_state.get("data_source") not in source_options:
     st.session_state["data_source"] = (
         "Saved file" if saved_datasets else "Sample data (synthetic)"
     )
 source = st.sidebar.radio(
-    "Data", ["Sample data (synthetic)", "Saved file", "Upload my reviews (CSV)"],
+    "Data", source_options,
     key="data_source",
     help="Uploaded files are saved, so they're still here after a refresh or restart.")
 dataset = datasets.get(D.SAMPLE_ID)
@@ -101,6 +125,7 @@ if source == "Saved file":
         "Dataset", [item["dataset_id"] for item in saved_datasets],
         format_func=dataset_label,
     )
+    require_access(selected_id)
     dataset = datasets.get(selected_id)
 elif source.startswith("Upload"):
     upload = st.sidebar.file_uploader(
@@ -110,7 +135,7 @@ elif source.startswith("Upload"):
         st.info("Upload a CSV to begin, or switch back to the sample data.")
         st.stop()
     mode = st.sidebar.radio(
-        "Upload purpose", ["Create a separate dataset", "Update an existing dataset"],
+        "Upload purpose", ["Update an existing dataset"],
         help="Matching filenames never share actions automatically. Update only "
              "when this CSV is a newer snapshot of the same restaurant dataset.",
     )
@@ -129,7 +154,8 @@ elif source.startswith("Upload"):
     content = upload.getvalue()
     try:
         _, validation = E.preview_reviews(io.BytesIO(content))
-    except (ValueError, UnicodeError) as ex:
+        access.validate_replacement(datasets, target_id, content)
+    except (ValueError, UnicodeError, PermissionError) as ex:
         st.error(f"Couldn't validate that CSV: {ex}")
         st.stop()
     st.subheader("Upload validation preview")
@@ -148,7 +174,7 @@ elif source.startswith("Upload"):
                    "Keep the original CSV and supply real review dates before importing.")
     if st.sidebar.button("Save CSV", type="primary", disabled=not validation["accepted"]):
         try:
-            dataset = datasets.save_snapshot(upload.name, content, target_id)
+            dataset = access.save_snapshot(datasets, upload.name, content, target_id)
             st.session_state["saved_upload"] = {
                 "file_id": upload.file_id, "target_id": target_id,
                 "dataset_id": dataset["dataset_id"],
@@ -166,14 +192,26 @@ elif source.startswith("Upload"):
     st.sidebar.success("Saved. Next time pick it under 'Saved file'.")
 
 data_path, tag = dataset["path"], dataset["dataset_id"]
+require_access(tag)
+scope = (st.session_state["_manager_report_grant"]["revision"], tag)
+if st.session_state.get("_dashboard_scope") != scope:
+    for state_key in list(st.session_state):
+        if state_key.startswith(("approved", "claude_", "history_editors_",
+                                 "history_drafts_", "action_draft_", "action_snapshot_",
+                                 "reply_", "d_", "draft_revision_")):
+            del st.session_state[state_key]
+    st.session_state["_dashboard_scope"] = scope
 legacy_tag = dataset["legacy_tag"]
 st.sidebar.caption(f"Dataset identity: {tag}")
-show_live_history_notice(datasets, dataset)
 
 try:
-    raw = E.load_reviews(data_path)
+    raw = access.reviews(dataset)
 except Exception as ex:  # show a friendly error instead of a stack trace
     st.error(f"Couldn't read that file: {ex}")
+    st.stop()
+
+if raw.empty:
+    st.info("No current reviews are available for your assigned restaurants.")
     st.stop()
 
 engine_choice = st.sidebar.radio(
@@ -196,10 +234,14 @@ def run_offline(df: pd.DataFrame, rules_version: str) -> pd.DataFrame:
 tagged = run_offline(raw, E.LOCAL_ANALYZER_VERSION)
 
 if engine_choice.startswith("Claude"):
-    snapshot_tag = f"{tag}-{os.path.basename(data_path)}"
+    scope_digest = hashlib.sha256(
+        json.dumps(sorted(raw["location"].unique()), ensure_ascii=False).encode()
+    ).hexdigest()
+    snapshot_tag = f"{tag}-{os.path.basename(data_path)}-{scope_digest}"
     key = st.sidebar.text_input("Anthropic API key", type="password",
                                 value=os.environ.get("ANTHROPIC_API_KEY", ""))
     if st.sidebar.button("Run Claude analysis", type="primary", disabled=not key):
+        require_access(tag, raw["location"].unique().tolist())
         bar = st.sidebar.progress(0.0, text="Reading reviews...")
         try:
             st.session_state["claude_result"] = E.analyze_with_claude(
@@ -261,9 +303,6 @@ def show_rule_evidence(row):
             st.caption(item["reason"])
 
 locations = sorted(tagged["location"].unique())
-with st.sidebar.expander("Manager calendar access", expanded=True):
-    if not require_manager(purpose="restaurant calendars"):
-        st.stop()
 session = st.session_state.get("_manager_report_grant")
 account = identity.current_account(session)
 allowed_locations = account["grants"].get(tag, []) if account else []
@@ -273,7 +312,7 @@ if not locations:
                "Choose an assigned dataset or ask the app owner for access.")
     st.stop()
 try:
-    all_actions = A.load_actions(ACTION_LOG)
+    all_actions = access.actions(ACTION_LOG, dataset)
 except (OSError, ValueError) as ex:
     st.error(f"Couldn't read the action log: {ex}")
     st.stop()
@@ -355,7 +394,7 @@ view = tagged[tagged["location"].isin(pick)
 if view.empty:
     st.warning("No reviews match these filters.")
     try:
-        report_actions = A.load_actions(ACTION_LOG)
+        report_actions = access.actions(ACTION_LOG, dataset)
     except (OSError, ValueError) as ex:
         st.error(f"Couldn't read the action log: {ex}")
         st.stop()
@@ -396,7 +435,8 @@ high_open = view[(view["urgency"] == "High")
                  & (~view["review_id"].isin(st.session_state["approved"].keys()))]
 neg_share = 100 * (view["themes_neg"].str.len() > 0).mean()
 alerts = E.early_warnings(view, recent_days=window, baseline_days=window * 3)
-show_history_controls(datasets, dataset, all_actions)
+st.sidebar.caption("New datasets and legacy-history reassignment require the app owner. "
+                   "Existing private histories are preserved.")
 
 k1, k2, k3, k4 = st.columns(4)
 for col, val, label in [
@@ -612,6 +652,7 @@ with tabs[1]:
                 default=r["themes_neg"], format_func=E.THEME_LABELS.get)
             save = st.form_submit_button("Save manager decision")
         if save:
+            require_access(tag, [r["location"]])
             try:
                 C.save_correction(CORRECTIONS_LOG, selected, positive, negative,
                                   E.LOCAL_ANALYZER_VERSION)
@@ -621,6 +662,7 @@ with tabs[1]:
                 st.rerun()
         if r["manager_correction"] and st.button(
                 "Undo manager decision", key=f"undo-{selected}"):
+            require_access(tag, [r["location"]])
             try:
                 C.undo_correction(CORRECTIONS_LOG, selected, E.LOCAL_ANALYZER_VERSION)
             except (OSError, ValueError, C.sqlite3.Error) as ex:
@@ -672,6 +714,7 @@ with tabs[2]:
                     submitted = st.form_submit_button("Save action plan")
 
                 if submitted:
+                    require_access(tag, [alert["location"]])
                     if not action_text.strip():
                         st.error("Enter an action before saving.")
                     elif due_date < start_date:
@@ -700,6 +743,7 @@ with tabs[2]:
                                 source_reviews=raw.to_dict("records"),
                             )
                             try:
+                                require_access(tag, [action["location"]])
                                 A.append_action(ACTION_LOG, action, legacy_tag=legacy_tag)
                             except (OSError, ValueError) as ex:
                                 st.error(f"Couldn't save the action plan: {ex}")
@@ -793,6 +837,7 @@ with tabs[4]:
             text = st.text_area("Reply draft", key=draft_key, height=150)
             if st.button("Recheck and approve reply" if needs_recheck else "Approve reply",
                          key=f"a_{r.review_id}"):
+                require_access(tag, [r.location])
                 st.session_state["approved"][r.review_id] = text
                 st.session_state["approved_reply_tags"][r.review_id] = reply_tags[r.review_id]
                 st.toast("Approved")
@@ -802,6 +847,7 @@ with tabs[4]:
 # Export
 # ----------------------------------------------------------------------------
 with tabs[5]:
+    require_access(tag, pick)
     show_manager_report(all_actions, tag, pick, tagged, legacy_tag,
                         provenance_by_location, timezones_by_location)
     st.divider()
@@ -843,10 +889,11 @@ with tabs[5]:
     lines.append(f"High-urgency reviews still needing a reply: {len(high_open)}.")
     @st.fragment(run_every="30s")
     def show_live_owner_summary():
+        require_access(tag, pick)
         # Never mutate the captured review summary on a timer tick.
         current_history = datasets.get(tag)["legacy_tag"]
         action_lines = A.weekly_action_summary(
-            A.load_actions(ACTION_LOG),
+            access.actions(ACTION_LOG, datasets.get(tag)),
             dataset_tag=tag,
             locations=pick,
             reviews=tagged.to_dict("records"),
@@ -864,6 +911,7 @@ with tabs[5]:
 # ----------------------------------------------------------------------------
 @st.fragment(run_every="30s")
 def show_live_action_tracker():
+    require_access(tag, pick)
     st.markdown(
         "Keep a manager's action with the alert, then check later reviews for the same theme. "
         "A change in review mentions is a signal, not proof that an action caused it."
@@ -878,7 +926,7 @@ def show_live_action_tracker():
                "while connected. Action editors below are not refreshed by this timer.")
     current_history = datasets.get(tag)["legacy_tag"]
     saved_actions = [
-        action for action in A.load_actions(ACTION_LOG)
+        action for action in access.actions(ACTION_LOG, datasets.get(tag))
         if A.matches_dataset(action, tag, current_history) and action.get("location") in pick
     ]
     saved_actions.sort(key=lambda action: action.get("created_on", ""), reverse=True)
@@ -1133,6 +1181,7 @@ with tabs[6]:
                     st.error("The due date must be on or after the start date.")
                 else:
                     try:
+                        require_access(tag, [snapshot["location"]])
                         updated = A.edit_saved_action(
                             ACTION_LOG, snapshot, action_text, owner, status,
                             start_date, due_date, history_store=datasets, dataset_id=tag,

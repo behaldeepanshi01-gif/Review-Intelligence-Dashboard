@@ -313,7 +313,8 @@ show_decision_changes({action!r}, "synthetic", {result!r})
 
     def test_action_tracker_renders_known_changed_and_legacy_provenance(self):
         raw = E.load_reviews(SAMPLE)
-        session = manager_session(self, self.root, {SAMPLE_ID: list(raw["location"].unique())})
+        session = manager_session(self, self.root, {
+            SAMPLE_ID: list(raw["location"].unique()) + ["Removed Cafe"]})
         location = raw.iloc[0]["location"]
         provenance = C.tagging_provenance(
             raw[raw["location"] == location], SAMPLE, {}, self.version)
@@ -557,6 +558,8 @@ class ReviewActionFlowTests(unittest.TestCase):
             sample = root / "sample.csv"
             sample.write_bytes(content)
             store = DatasetStore(root / "uploads", sample)
+            first = store.save_snapshot("sample.csv", content)
+            session = manager_session(self, folder, {first["dataset_id"]: ["Demo Cafe"]})
             upload = SimpleNamespace(name="sample.csv", file_id="first",
                                      getvalue=lambda: content)
             analyze = E.analyze_offline
@@ -570,7 +573,9 @@ class ReviewActionFlowTests(unittest.TestCase):
                 side_effect=lambda raw: analyze(raw).assign(engine="upload_ui_fixture"),
             ):
                 app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
-                                       default_timeout=30).run()
+                                       default_timeout=30)
+                app.session_state["_manager_report_grant"] = session
+                app.run()
 
                 def radio(label):
                     return next(item for item in app.sidebar.radio if item.label == label)
@@ -581,19 +586,10 @@ class ReviewActionFlowTests(unittest.TestCase):
                     self.assertEqual(list(app.exception), [])
 
                 radio("Data").set_value("Upload my reviews (CSV)").run()
-                self.assertEqual(len(store.list_datasets()), 0)
+                self.assertEqual(radio("Upload purpose").options, ["Update an existing dataset"])
                 save()
-                first = store.list_datasets()[0]
                 app.run()
                 self.assertEqual(len(store.list_datasets()), 1)
-
-                uploader.return_value = SimpleNamespace(
-                    name="sample.csv", file_id="unrelated", getvalue=lambda: content
-                )
-                app.run()
-                save()
-                self.assertEqual(len(store.list_datasets()), 2)
-                self.assertEqual(store.get(first["dataset_id"]), first)
 
                 newer = content + b"Demo Cafe,2026-01-03,5,Quick service.\n"
                 uploader.return_value = SimpleNamespace(
@@ -604,7 +600,7 @@ class ReviewActionFlowTests(unittest.TestCase):
                      if item.label == "Dataset to update").set_value(first["dataset_id"]).run()
                 save()
                 updated = store.get(first["dataset_id"])
-                self.assertEqual(len(store.list_datasets()), 2)
+                self.assertEqual(len(store.list_datasets()), 1)
                 self.assertEqual(Path(updated["path"]).read_bytes(), newer)
                 self.assertEqual(Path(first["path"]).read_bytes(), content)
 

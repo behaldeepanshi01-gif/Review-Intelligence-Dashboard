@@ -6,7 +6,7 @@
 - [Local action concurrency](action-concurrency.md) — preserve existing JSON histories; shared-file locking is not a multi-host persistence guarantee.
 - [Agent mode controls](agent-mode-controls.md) — the workspace Build tab and the composer Plan toggle are separate; check the latter for read-only errors.
 - [Theme tuning safeguards](theme-tuning-safety.md) — compare non-target tags per review, not just totals; nearby cue assignment can hide cross-theme changes.
-- [Manager report identity](manager-report-identity.md) — approved local report-only accounts; reuse the identity system for timezone authorization.
+- [Manager identity boundary](manager-report-identity.md) — one local identity system now covers the dashboard, reports and calendars; orphan history remains owner-only.
 - [Approved theme boundaries](theme-definition-approval.md) — four adjudication definitions approved; individual review decisions still require separate approval.
 - [Dashboard routing](dashboard-routing.md) — distinguish interactive Streamlit from the root demo; verify public HTTP and WebSocket access, not just localhost health.
 - [Live calendar refresh safety](live-calendar-refresh.md) — unsent Streamlit forms require isolation from timer reruns; AppTest alone cannot prove browser draft preservation.

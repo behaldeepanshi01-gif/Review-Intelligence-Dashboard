@@ -182,3 +182,45 @@ mtime_ms = 1793921319304
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/7e894878-4ebe-412d-baa7-77e218fa6283/943ab147-686a-40ae-bd82-478102a22d00"
 storage_version_token = "1793921549146239"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "WkIeSXaajU-ZJNHBZYvYM"
+uri = "file://review_intel_app/data/private_evaluation/adjudication_20261106/guide.html"
+type = "html"
+title = "Private theme decision guide"
+description = "Proposed definitions, synthetic examples, and manager instructions."
+logical_id = "34f50999-ac2b-4fda-b845-3542c83b725c"
+content_hash = "sha256:ca55f3558ac878c25d3b11276c79d2fc38d7fe7f7436a5cdd599f268b14fce0f"
+size = 4884
+mtime_ms = 1793985481402
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/34f50999-ac2b-4fda-b845-3542c83b725c/19ddb500-63bd-4c53-bf4f-0739548c8a51"
+storage_version_token = "1793985506109209"
+content_type = "text/html"
+
+[[outputs]]
+id = "MCWopUD3g4OphIa5any5B"
+uri = "file://review_intel_app/data/private_evaluation/adjudication_20261106/definitions_blank.csv"
+type = "table"
+title = "Theme definitions for approval"
+description = "Four proposed boundaries with blank manager approval fields."
+logical_id = "e00b395d-8017-4839-a45d-06566fe79dce"
+content_hash = "sha256:3f1754d4766e95e7a4c26655fe4dd2eb31d9b54b8157d2554fb37a8189094679"
+size = 1434
+mtime_ms = 1793985481402
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/e00b395d-8017-4839-a45d-06566fe79dce/570827b0-1dde-41e5-b239-4be1547a2ae4"
+storage_version_token = "1793985506595985"
+content_type = "text/csv"
+
+[[outputs]]
+id = "Mm-_WH7DYI8GXRQ8QUqe9"
+uri = "file://review_intel_app/data/private_evaluation/adjudication_20261106/manager_decisions_blank.csv"
+type = "table"
+title = "Private review decision sheet"
+description = "24 review/theme decisions, including all 13 original Unclear cells. Contains real review text. Keep private."
+logical_id = "33ae54dc-3e2a-4d61-9bc6-e255edfbc857"
+content_hash = "sha256:76ca215a761736bb1403e0994b3459f51918118a85d5304da9a17c83f59d5810"
+size = 10010
+mtime_ms = 1793985481397
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/33ae54dc-3e2a-4d61-9bc6-e255edfbc857/c61eb373-06a8-4e3f-8b74-1de3490716fe"
+storage_version_token = "1793985507041999"
+content_type = "text/csv"

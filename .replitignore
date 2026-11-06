@@ -13,3 +13,5 @@ review_intel_app/data/manager_corrections.sqlite*
 review_intel_app/data/private_website_reviews/
 review_intel_app/data/manager_accounts.sqlite*
 review_intel_app/data/manager_permissions*.json
+# Human-label adjudication and evaluation packets contain private review text.
+review_intel_app/data/private_evaluation/

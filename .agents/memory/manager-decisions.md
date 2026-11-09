@@ -35,6 +35,17 @@ invented provenance would misrepresent what the manager approved.
 references even if the earlier decision is later edited or removed. A manual
 correction is a separate origin, not a continuation inferred from matching tags.
 
+Archive access is for inspection, not renewed approval. If a referenced source was
+lost before archiving began, report it as unavailable rather than reconstructing
+it from another decision with matching tags.
+
+**Why:** Historical provenance and present approval eligibility are different:
+undo must still remove approval, and a plausible replacement is not evidence of
+what the manager originally selected.
+
+**How to apply:** Keep archived revisions out of renewal candidate lists and make
+missing historical references explicit in the inspection view.
+
 Reply rechecking concerns the effective positive/negative tag sets, not whether a
 decision was saved more recently. Undoing back to the tags approved with the reply
 restores that match; saving identical tags does not require a wording recheck.

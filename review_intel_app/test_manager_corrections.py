@@ -250,6 +250,138 @@ class ManagerCorrectionTests(unittest.TestCase):
                                       earlier, "current")
         self.assertEqual(C.load_corrections(self.db, "current"), {})
 
+    def test_revision_archive_preserves_edits_undo_and_exact_renewal_chain(self):
+        C.save_correction(self.db, self.key, ["staff"], [], "first")
+        first = C.load_corrections(self.db, "first")[self.key]
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], first, "second")
+        second = C.load_corrections(self.db, "second")[self.key]
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], second, "third")
+        third = C.load_corrections(self.db, "third")[self.key]
+        # Each referenced source can be replaced and then undone without losing it.
+        for version in ("first", "second", "third"):
+            C.save_correction(self.db, self.key, [], ["cleanliness"], version)
+            C.undo_correction(self.db, self.key, version)
+            C.undo_correction(self.db, self.key, version)
+            self.assertEqual(C.load_corrections(self.db, version), {})
+        revisions = C.load_correction_revisions(self.db, self.key)
+        self.assertEqual(len(revisions), 6)
+        found = C.find_correction_revision(revisions, "third", third["saved_at"])
+        self.assertEqual(found, third)
+        for expected in (second, first):
+            found = C.find_correction_revision(
+                revisions, found["source_rules_version"], found["source_decision_revision"])
+            self.assertEqual(found, expected)
+        self.assertIsNone(C.find_correction_revision(revisions, "first", "missing"))
+        self.assertEqual(C.load_correction_revisions(self.db, "other-review"), [])
+        self.assertEqual(C.load_prior_corrections(self.db, "future"), {})
+        # Archived or undone sources are not eligible for renewal.
+        with self.assertRaisesRegex(ValueError, "changed"):
+            C.approve_prior_correction(
+                self.db, self.file, self.raw.iloc[0], second, "future")
+        self.assertEqual(self.effective().iloc[0]["tag_source"], "local_rules")
+
+    def test_archive_backfills_legacy_and_retired_tags_without_rewriting(self):
+        with closing(C.sqlite3.connect(self.db)) as db, db:
+            db.execute(
+                "CREATE TABLE corrections (review_key TEXT, rules_version TEXT, "
+                "positive TEXT, negative TEXT, saved_at TEXT, "
+                "PRIMARY KEY (review_key, rules_version))")
+            original = (self.key, "old", '["retired_theme"]', "[]", "legacy-revision")
+            db.execute("INSERT INTO corrections VALUES (?, ?, ?, ?, ?)", original)
+        before = C.load_correction_revisions(self.db, self.key)
+        self.assertEqual(before[0]["themes_pos"], ["retired_theme"])
+        self.assertEqual(before[0]["decision_origin"], "legacy")
+        C.undo_correction(self.db, self.key, "old")
+        self.assertEqual(C.load_correction_revisions(self.db, self.key), before)
+        with closing(C.sqlite3.connect(self.db)) as db:
+            self.assertEqual(db.execute(
+                "SELECT review_key, rules_version, positive, negative, saved_at "
+                "FROM correction_revisions").fetchone(), original)
+            for operation in (
+                    "UPDATE correction_revisions SET positive='[]'",
+                    "DELETE FROM correction_revisions"):
+                with self.assertRaisesRegex(C.sqlite3.IntegrityError, "append-only"):
+                    db.execute(operation)
+
+    def test_repeated_clock_still_produces_distinct_immutable_references(self):
+        instant = C.datetime(2026, 1, 1, tzinfo=C.timezone.utc)
+        with patch.object(C, "datetime", wraps=C.datetime) as clock:
+            clock.now.return_value = instant
+            for _ in range(3):
+                C.save_correction(self.db, self.key, [], [], "same")
+                C.undo_correction(self.db, self.key, "same")
+        revisions = C.load_correction_revisions(self.db, self.key)
+        self.assertEqual(len(revisions), 3)
+        self.assertEqual(len({r["saved_at"] for r in revisions}), 3)
+
+    def test_archive_failure_rolls_back_manual_save_and_renewal(self):
+        C.save_correction(self.db, self.key, ["staff"], [], "old")
+        earlier = C.load_corrections(self.db, "old")[self.key]
+        with closing(C.sqlite3.connect(self.db)) as db, db:
+            db.execute("""
+                CREATE TRIGGER fail_new_revision BEFORE INSERT ON correction_revisions
+                WHEN NOT EXISTS (
+                    SELECT 1 FROM correction_revisions
+                    WHERE review_key=NEW.review_key AND rules_version=NEW.rules_version
+                          AND saved_at=NEW.saved_at
+                )
+                BEGIN SELECT RAISE(ABORT, 'synthetic archive failure'); END
+            """)
+        with self.assertRaisesRegex(C.sqlite3.IntegrityError, "synthetic archive"):
+            C.save_correction(self.db, self.key, [], ["cleanliness"], "old")
+        self.assertEqual(C.load_corrections(self.db, "old")[self.key], earlier)
+        with self.assertRaisesRegex(C.sqlite3.IntegrityError, "synthetic archive"):
+            C.approve_prior_correction(
+                self.db, self.file, self.raw.iloc[0], earlier, "current")
+        self.assertEqual(C.load_corrections(self.db, "current"), {})
+        self.assertEqual(C.load_correction_revisions(self.db, self.key), [earlier])
+
+    def test_streamlit_archive_inspects_chain_after_edit_and_undo_read_only(self):
+        C.save_correction(self.db, self.key, ["staff"], [], "first")
+        first = C.load_corrections(self.db, "first")[self.key]
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], first, "second")
+        second = C.load_corrections(self.db, "second")[self.key]
+        C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], second, "third")
+        third = C.load_corrections(self.db, "third")[self.key]
+        C.save_correction(self.db, self.key, [], ["cleanliness"], "first")
+        for version in ("first", "second", "third"):
+            C.undo_correction(self.db, self.key, version)
+        source = (
+            "import manager_correction_history as H\n"
+            f"H.render({self.db!r}, {self.key!r}, context='test')\n")
+        app = AppTest.from_string(source, default_timeout=30).run()
+        self.assertFalse(app.exception)
+        app.selectbox[0].set_value(("third", third["saved_at"])).run()
+        self.assertFalse(app.exception)
+        self.assertEqual(len(app.json), 3)
+        self.assertEqual(len(app.button), 0)
+        self.assertFalse(app.warning)
+        self.assertIn(first["saved_at"], app.json[2].value)
+        self.assertIn('"staff"', app.json[2].value)
+        self.assertNotIn('"cleanliness"', app.json[2].value)
+        self.assertEqual(C.load_prior_corrections(self.db, "future"), {})
+        self.assertEqual(len(C.load_correction_revisions(self.db, self.key)), 4)
+        # A fresh view still offers undone revisions.
+        fresh = AppTest.from_string(source, default_timeout=30).run()
+        self.assertEqual(len(fresh.selectbox[0].options), 4)
+
+    def test_streamlit_unrecoverable_legacy_reference_is_explicit(self):
+        C.save_correction(self.db, self.key, [], [], "old")
+        with closing(C.sqlite3.connect(self.db)) as db, db:
+            db.execute(
+                "UPDATE corrections SET decision_origin='renewal', "
+                "source_rules_version='lost-rules', source_decision_revision='lost-revision', "
+                "saved_at='legacy-renewal'")
+        app = AppTest.from_string(
+            "import manager_correction_history as H\n"
+            f"H.render({self.db!r}, {self.key!r}, context='missing')\n",
+            default_timeout=30).run()
+        self.assertFalse(app.exception)
+        app.selectbox[0].set_value(("old", "legacy-renewal")).run()
+        self.assertTrue(any("Referenced tag revision unavailable" in w.value
+                            and "lost-revision" in w.value for w in app.warning))
+        self.assertEqual(len(app.json), 1)
+
     def test_obsolete_history_is_visible_but_cannot_be_reapproved(self):
         C.save_correction(self.db, self.key, [], ["staff"], "old")
         # Simulate a theme that was valid when the old rules were active.

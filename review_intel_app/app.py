@@ -24,6 +24,7 @@ from dashboard_access import DashboardAccess
 import manager_identity as identity
 import engine as E
 import manager_corrections as C
+import manager_correction_history as correction_history
 import dataset_store as D
 from location_settings import LocationSettings
 from calendar_rename_ui import show_calendar_rename
@@ -584,6 +585,7 @@ with tabs[1]:
                     f"{history[i]['rules_version']} | saved {history[i]['saved_at']}"),
             )
             earlier = history[history_index]
+            correction_history.render(CORRECTIONS_LOG, renewal_key, context="renewal")
             obsolete = sorted(
                 (set(earlier["themes_pos"]) | set(earlier["themes_neg"])) - set(E.THEMES))
             old_column, rule_column = st.columns(2)
@@ -646,6 +648,7 @@ with tabs[1]:
                 f"{inspection.loc[inspection['correction_key'] == key, 'location'].iloc[0]}"),
         )
         r = inspection.loc[inspection["correction_key"] == selected].iloc[0]
+        correction_history.render(CORRECTIONS_LOG, selected, context="correction")
         st.text(r["text"])
         st.caption(f"{r['date'].date()} | {r['rating']} stars | "
                    f"Current source: {r['tag_source']} | Rules: {r['rules_version']}")

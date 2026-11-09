@@ -1,6 +1,6 @@
 """Private, local manager decisions layered over (never written into) rule results."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -42,6 +42,35 @@ def _connect(path):
             ):
                 if name not in columns:
                     db.execute(f"ALTER TABLE corrections ADD COLUMN {name} {definition}")
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS correction_revisions (
+                    review_key TEXT NOT NULL,
+                    rules_version TEXT NOT NULL,
+                    positive TEXT NOT NULL,
+                    negative TEXT NOT NULL,
+                    saved_at TEXT NOT NULL,
+                    decision_origin TEXT NOT NULL,
+                    source_rules_version TEXT,
+                    source_decision_revision TEXT,
+                    PRIMARY KEY (review_key, rules_version, saved_at)
+                )
+            """)
+            # Preserve surviving legacy decisions verbatim, including their revision
+            # references. Decisions removed before this migration cannot be recovered.
+            db.execute("""
+                INSERT OR IGNORE INTO correction_revisions
+                SELECT review_key, rules_version, positive, negative, saved_at,
+                       decision_origin, source_rules_version, source_decision_revision
+                FROM corrections
+            """)
+            for operation in ("UPDATE", "DELETE"):
+                db.execute(f"""
+                    CREATE TRIGGER IF NOT EXISTS correction_revisions_no_{operation.lower()}
+                    BEFORE {operation} ON correction_revisions
+                    BEGIN
+                        SELECT RAISE(ABORT, 'Tag revision archive is append-only');
+                    END
+                """)
     except Exception:
         db.close()
         raise
@@ -56,18 +85,46 @@ def _validate(positive, negative, *, allow_obsolete=False):
     return sorted(set(positive)), sorted(set(negative))
 
 
+def _next_revision(db, key, version):
+    """Keep saved-at references unique even if the clock repeats or moves back."""
+    instant = datetime.now(timezone.utc)
+    for (saved_at,) in db.execute(
+            "SELECT saved_at FROM correction_revisions "
+            "WHERE review_key=? AND rules_version=?", (key, version)):
+        try:
+            previous = datetime.fromisoformat(saved_at)
+            if previous.tzinfo is not None and previous >= instant:
+                instant = previous + timedelta(microseconds=1)
+        except ValueError:
+            pass  # Legacy revision strings remain valid lookup keys.
+    return instant.isoformat()
+
+
+def _archive_current(db, key, version):
+    db.execute("""
+        INSERT OR IGNORE INTO correction_revisions
+        SELECT review_key, rules_version, positive, negative, saved_at,
+               decision_origin, source_rules_version, source_decision_revision
+        FROM corrections WHERE review_key=? AND rules_version=?
+    """, (key, version))
+
+
 def save_correction(path, key, positive, negative, version):
     positive, negative = _validate(positive, negative)
     db = _connect(path)
     try:
         with db:
+            db.execute("BEGIN IMMEDIATE")
+            _archive_current(db, key, version)
+            revision = _next_revision(db, key, version)
             db.execute(
                 "INSERT OR REPLACE INTO corrections "
                 "(review_key, rules_version, positive, negative, saved_at, "
                 "decision_origin, source_rules_version, source_decision_revision) "
                 "VALUES (?, ?, ?, ?, ?, 'correction', NULL, NULL)",
                        (key, version, json.dumps(positive), json.dumps(negative),
-                        datetime.now(timezone.utc).isoformat()))
+                        revision))
+            _archive_current(db, key, version)
     finally:
         db.close()
 
@@ -76,6 +133,8 @@ def undo_correction(path, key, version):
     db = _connect(path)
     try:
         with db:
+            db.execute("BEGIN IMMEDIATE")
+            _archive_current(db, key, version)
             db.execute("DELETE FROM corrections WHERE review_key=? AND rules_version=?",
                        (key, version))
     finally:
@@ -128,6 +187,36 @@ def load_prior_corrections(path, version):
         return result
     finally:
         db.close()
+
+
+def load_correction_revisions(path, key):
+    """Read-only history for one exact review; never an approval candidate list."""
+    if not Path(path).exists():
+        return []
+    db = _connect(path)
+    try:
+        rows = db.execute(
+            "SELECT rules_version, positive, negative, saved_at, decision_origin, "
+            "source_rules_version, source_decision_revision FROM correction_revisions "
+            "WHERE review_key=? ORDER BY saved_at DESC, rules_version DESC",
+            (key,)).fetchall()
+        result = []
+        for version, pos, neg, revision, origin, source_version, source_revision in rows:
+            pos, neg = _validate(json.loads(pos), json.loads(neg), allow_obsolete=True)
+            result.append(dict(
+                rules_version=version, themes_pos=pos, themes_neg=neg,
+                saved_at=revision, decision_origin=origin,
+                source_rules_version=source_version,
+                source_decision_revision=source_revision))
+        return result
+    finally:
+        db.close()
+
+
+def find_correction_revision(revisions, version, saved_at):
+    """Resolve the exact source reference, never the latest decision for its rules."""
+    return next((r for r in revisions if r["rules_version"] == version
+                 and r["saved_at"] == saved_at), None)
 
 
 def decision_origin_label(decision):
@@ -206,8 +295,9 @@ def approve_prior_correction(path, file_path, row, decision, version):
                 "decision_origin, source_rules_version, source_decision_revision) "
                 "VALUES (?, ?, ?, ?, ?, 'renewal', ?, ?)",
                        (key, version, json.dumps(positive), json.dumps(negative),
-                        datetime.now(timezone.utc).isoformat(),
+                        _next_revision(db, key, version),
                         decision["rules_version"], saved[2]))
+            _archive_current(db, key, version)
     finally:
         db.close()
 

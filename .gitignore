@@ -57,4 +57,5 @@ Thumbs.db
 # Local review dataset identities and retained snapshots
 /review_intel_app/data/uploads/
 /review_intel_app/data/location_settings.sqlite*
+/review_intel_app/data/manager_corrections_reply_approvals.sqlite*
 /review_intel_app/data/private_source_readiness/

@@ -15,6 +15,7 @@ from streamlit.testing.v1 import AppTest
 
 import action_tracker as A
 import engine as E
+import manager_identity as identity
 from dataset_store import SAMPLE_ID
 from calendar_test_support import manager_session, sample_app
 
@@ -32,14 +33,16 @@ def plan(theme="Service speed", dataset=SAMPLE_ID):
     )
 
 
-def worker(path, barrier, operation, action, text):
+def worker(path, barrier, session, account_path, operation, action, text):
+    # Spawned processes share the parent's temporary identity store.
+    identity.DB_PATH = Path(account_path)
     barrier.wait(timeout=10)
     try:
         if operation == "create":
             A.append_action(path, action)
         else:
             A.edit_saved_action(
-                path, action, text, text, "In progress", DAY, DAY)
+                path, action, text, text, "In progress", DAY, DAY, session=session)
         return "saved"
     except A.ActionConflictError:
         return "conflict"
@@ -50,6 +53,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = str(Path(self.temp.name) / "actions.json")
+        self.session = manager_session(self, self.temp.name, {SAMPLE_ID: ["Demo Cafe"]})
 
     def overlap(self, jobs, processes=False):
         if processes:
@@ -59,12 +63,14 @@ class ConcurrentActionTests(unittest.TestCase):
                 with ProcessPoolExecutor(
                     len(jobs), mp_context=context
                 ) as executor:
-                    futures = [executor.submit(worker, self.path, barrier, *job)
+                    futures = [executor.submit(worker, self.path, barrier,
+                                               self.session, str(identity.DB_PATH), *job)
                                for job in jobs]
                     return [future.result(timeout=20) for future in futures]
         barrier = threading.Barrier(len(jobs))
         with ThreadPoolExecutor(len(jobs)) as executor:
-            futures = [executor.submit(worker, self.path, barrier, *job) for job in jobs]
+            futures = [executor.submit(worker, self.path, barrier,
+                                       self.session, str(identity.DB_PATH), *job) for job in jobs]
             return [future.result(timeout=20) for future in futures]
 
     def test_overlapping_creates_preserve_all_datasets_threads_and_processes(self):
@@ -168,13 +174,16 @@ class ConcurrentActionTests(unittest.TestCase):
         for actions in ([], [original, original]):
             Path(self.path).write_text(json.dumps(actions), encoding="utf-8")
             with self.assertRaises(A.ActionConflictError):
-                A.edit_saved_action(self.path, original, "Edit", "", "Done", DAY, DAY)
+                A.edit_saved_action(self.path, original, "Edit", "", "Done", DAY, DAY,
+                                    session=self.session)
             self.assertEqual(A.load_actions(self.path), actions)
 
-    def open_app(self):
+    def open_app(self, history=None):
         sample = E.load_reviews(Path(__file__).parent / "data" / "sample_reviews.csv")
         original = plan()
         original["location"] = sample.iloc[0]["location"]
+        if history is not None:
+            original["edit_history"] = history
         A.save_actions(self.path, [original])
         source = (Path(__file__).parent / "app.py").read_text()
         source = source.replace(
@@ -186,6 +195,7 @@ class ConcurrentActionTests(unittest.TestCase):
             f"BASE_DIR = {str(Path(__file__).parent.resolve())!r}")
         session = manager_session(self, self.temp.name,
                                   {SAMPLE_ID: list(sample["location"].unique())})
+        self.session = session
         app = sample_app(AppTest.from_string(source, default_timeout=30), session)
         self.assertEqual(list(app.exception), [])
         return original, app
@@ -193,6 +203,25 @@ class ConcurrentActionTests(unittest.TestCase):
     def comparison(self, app):
         return next(table.value for table in app.dataframe
                     if "Your unsaved draft" in table.value.columns)
+
+    def test_history_shows_unknown_legacy_actor_and_verified_unchanged_save(self):
+        legacy_entry = {
+            "saved_at": "2025-12-01T00:00:00+00:00",
+            "changes": {"owner": {"before": "", "after": "Manager"}},
+        }
+        original, app = self.open_app(history=[legacy_entry])
+        history = next(t.value for t in app.dataframe
+                       if "Saved at (UTC)" in t.value.columns)
+        self.assertEqual(list(history["Saved by"]), ["Unknown"])
+        next(b for b in app.button if b.label == "Save updates").click().run()
+        self.assertFalse(app.exception)
+        history = next(t.value for t in app.dataframe
+                       if "Saved at (UTC)" in t.value.columns)
+        self.assertEqual(list(history["Saved by"]), ["test-manager", "Unknown"])
+        self.assertEqual(history.iloc[0]["Field"], "Saved without field changes")
+        saved = A.load_actions(self.path)[0]
+        self.assertEqual(saved["edit_history"][0], original["edit_history"][0])
+        self.assertEqual(saved["owner"], "Manager")
 
     def test_open_form_rejects_other_manager_edit_and_can_reload(self):
         # A real Streamlit form reruns the script before handling its submit.
@@ -210,7 +239,8 @@ class ConcurrentActionTests(unittest.TestCase):
         next(item for item in app.date_input
              if item.key and item.key.startswith("update_due_")).set_value(date(2026, 1, 3))
         other = A.edit_saved_action(
-            self.path, original, "Other manager saved", "Other", "In progress", DAY, DAY)
+            self.path, original, "Other manager saved", "Other", "In progress", DAY, DAY,
+            session=self.session)
         next(b for b in app.button if b.label == "Save updates").click().run()
         self.assertEqual(list(app.exception), [])
         self.assertTrue(any("Your changes were not saved" in e.value for e in app.error))
@@ -246,13 +276,15 @@ class ConcurrentActionTests(unittest.TestCase):
                          ["Other manager saved", "Check handoffs."])
         self.assertEqual(list(text_changes["After"]),
                          ["Reviewed latest and saved", "Other manager saved"])
+        self.assertEqual(set(history["Saved by"]), {"test-manager"})
 
     def test_kept_reference_survives_reload_and_never_overwrites_newer_saves(self):
         original, app = self.open_app()
         next(t for t in app.text_area if t.key and t.key.startswith("update_text_")).set_value(
             "Keep this draft\nFor manual comparison")
         other = A.edit_saved_action(
-            self.path, original, "Other saved", "Other", "In progress", DAY, DAY)
+            self.path, original, "Other saved", "Other", "In progress", DAY, DAY,
+            session=self.session)
         next(b for b in app.button if b.label == "Save updates").click().run()
         before = Path(self.path).read_bytes()
         # Keep must submit the form too, including changes made after the
@@ -270,7 +302,8 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertFalse(self.comparison(app).iloc[-1]["Different"])
         # A further intervening edit must be shown, never overwritten by Keep.
         latest = A.edit_saved_action(
-            self.path, other, "Third saved", "", "Done", DAY, DAY)
+            self.path, other, "Third saved", "", "Done", DAY, DAY,
+            session=self.session)
         app.run()
         self.assertEqual(self.comparison(app).iloc[0]["Latest saved"], "Third saved")
         self.assertEqual(A.load_actions(self.path), [latest])
@@ -302,7 +335,8 @@ class ConcurrentActionTests(unittest.TestCase):
         real_edit = A.edit_saved_action
 
         def concurrent_edit(*args, **kwargs):
-            real_edit(self.path, original, "Race winner", "", "Planned", DAY, DAY)
+            real_edit(self.path, original, "Race winner", "", "Planned", DAY, DAY,
+                      session=self.session)
             return real_edit(*args, **kwargs)
 
         with patch.object(A, "edit_saved_action", side_effect=concurrent_edit):

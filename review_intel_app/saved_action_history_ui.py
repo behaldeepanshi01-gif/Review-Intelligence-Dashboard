@@ -3,6 +3,7 @@ import hashlib
 import json
 
 import streamlit as st
+from action_edit_history_ui import show_action_edit_history
 
 import action_tracker as A
 import dataset_store as D
@@ -91,6 +92,7 @@ def _edit_action(action, dataset, datasets, action_log, require_access):
         return None if key in st.session_state else value
 
     with st.expander("Edit saved plan"):
+        show_action_edit_history(action)
         st.caption("Only Save updates saves changes. Drafts stay in this signed-in "
                    "session when navigating away; locking or closing clears them.")
         if conflicted:
@@ -128,8 +130,9 @@ def _edit_action(action, dataset, datasets, action_log, require_access):
                 updated = A.edit_saved_action(
                     action_log, snapshot, text, owner, status, start, due,
                     history_store=datasets, dataset_id=tag,
+                    session=st.session_state.get("_manager_report_grant"),
                     expected_history_revision=association["history_revision"])
-            except (OSError, ValueError, D.sqlite3.Error) as ex:
+            except (OSError, ValueError, PermissionError, D.sqlite3.Error) as ex:
                 st.error(f"Couldn't update the action: {ex}. Your draft is still here.")
             else:
                 st.session_state[snapshot_key] = updated

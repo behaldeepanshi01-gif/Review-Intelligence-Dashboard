@@ -119,6 +119,10 @@ class SavedActionHistoryTests(unittest.TestCase):
             self.assertEqual(saved[0][field], self.action[field], field)
         self.assertEqual(saved[1:], json.loads(self.before)[1:])
         self.assertEqual(len(saved[0]["edit_history"]), 1)
+        self.assertEqual(saved[0]["edit_history"][0]["saved_by"], "test-manager")
+        history = next(t.value for t in self.app.dataframe
+                       if "Saved at (UTC)" in t.value.columns)
+        self.assertEqual(set(history["Saved by"]), {"test-manager"})
         self.widget("radio", "Saved-history status").set_value("Active plans").run()
         self.assertFalse(self.app.text_area)
         self.widget("radio", "Saved-history status").set_value("Completed plans").run()
@@ -149,7 +153,8 @@ class SavedActionHistoryTests(unittest.TestCase):
         self.history()
         self.widget("text_area", "Manager action").set_value("Private draft").run()
         A.edit_saved_action(self.log, self.action, "Other manager save", "Other owner",
-                            "In progress", date(2026, 10, 2), date(2026, 10, 3))
+                            "In progress", date(2026, 10, 2), date(2026, 10, 3),
+                            session=self.session)
         self.widget("button", "Save updates").click().run()
         self.assertFalse(self.app.exception)
         self.assertIn("Another manager changed", self.rendered())

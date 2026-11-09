@@ -210,8 +210,11 @@ class ActionProvenanceTests(unittest.TestCase):
                 self.assertEqual(result["decision_changes"], [])
         log = str(self.root / "legacy.json")
         A.save_actions(log, [legacy])
+        session = manager_session(
+            self, self.root, {legacy["dataset_tag"]: [legacy["location"]]})
         updated = A.edit_saved_action(log, legacy, "Check handoffs.", "Manager", "Done",
-                                      date(2026, 1, 2), date(2026, 1, 20))
+                                      date(2026, 1, 2), date(2026, 1, 20),
+                                      session=session)
         self.assertEqual(updated["baseline_provenance"], original["baseline_provenance"])
         self.assertEqual(legacy, original)
 

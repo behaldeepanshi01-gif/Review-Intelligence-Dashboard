@@ -132,16 +132,19 @@ show_history_controls(store, store.get(st.session_state["id"]), st.session_state
             A.edit_saved_action(
                 self.log, self.legacy, "Stale", "", "Done", DAY, DAY,
                 history_store=self.store, dataset_id=D.SAMPLE_ID,
+                session=self.app.session_state["_manager_report_grant"],
                 expected_history_revision=self.source["history_revision"])
         saved = A.edit_saved_action(
             self.log, self.native, "Native okay", "", "Done", DAY, DAY,
             history_store=self.store, dataset_id=D.SAMPLE_ID,
+            session=self.app.session_state["_manager_report_grant"],
             expected_history_revision=self.source["history_revision"])
         self.assertEqual(saved["action_text"], "Native okay")
         fresh = self.store.get(D.SAMPLE_ID)
         saved = A.edit_saved_action(
             self.log, self.legacy, "Reviewed current ownership", "", "Done", DAY, DAY,
             history_store=self.store, dataset_id=D.SAMPLE_ID,
+            session=self.app.session_state["_manager_report_grant"],
             expected_history_revision=fresh["history_revision"])
         self.assertEqual(saved["action_text"], "Reviewed current ownership")
 

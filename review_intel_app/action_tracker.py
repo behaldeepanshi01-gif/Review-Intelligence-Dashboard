@@ -14,6 +14,7 @@ import tempfile
 import uuid
 from dataset_store import source_cohort, source_cohort_difference
 import action_tag_effects
+import manager_identity as identity
 
 
 MIN_FOLLOWUP_REVIEWS = 5
@@ -196,6 +197,7 @@ def edit_saved_action(
     path: str, expected: dict, action_text: str, owner: str, status: str,
     start_date: date, due_date: date,
     *, history_store=None, dataset_id=None, expected_history_revision=None,
+    session=None,
 ) -> dict:
     """Compare the displayed snapshot, then update only manager-editable fields."""
     if history_store is not None and not dataset_id:
@@ -219,6 +221,15 @@ def edit_saved_action(
             raise ActionConflictError(
                 "Another manager changed this action. Your changes were not saved. "
                 "Reload the latest action before editing again.")
+        # Resolve the actor from the existing server-side login, never from an
+        # editable owner/username field. Recheck scope while holding the save lock.
+        account = identity.current_account(session)
+        scope = dataset_id if dataset_id is not None else actions[index]["dataset_tag"]
+        if not account or actions[index].get("location") not in account["grants"].get(scope, []):
+            raise PermissionError(
+                "Action access expired or was removed. Sign in with an assigned manager account.")
+        if scope != actions[index]["dataset_tag"] and history_store is None:
+            raise PermissionError("Linked action history must be verified before saving.")
         updated = update_action(
             actions[index], action_text, owner, status, start_date, due_date)
         history = actions[index].get("edit_history", [])
@@ -228,6 +239,7 @@ def edit_saved_action(
         # Never infer earlier edits for legacy actions or include alert baselines.
         updated["edit_history"] = history + [{
             "saved_at": datetime.now(timezone.utc).isoformat(),
+            "saved_by": account["username"],
             "changes": {
                 field: {"before": actions[index].get(field), "after": updated[field]}
                 for field in EDITABLE_FIELDS

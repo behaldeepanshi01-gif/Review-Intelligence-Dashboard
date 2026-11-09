@@ -8,6 +8,8 @@ import unittest
 from unittest.mock import patch
 
 import action_tracker as A
+import manager_identity as identity
+from calendar_test_support import manager_session
 
 
 DAY = date(2026, 1, 1)
@@ -18,6 +20,7 @@ class ActionEditHistoryTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.path = str(Path(temp.name) / "actions.json")
+        self.session = manager_session(self, temp.name, {"synthetic": ["Synthetic Cafe"]})
         self.original = A.create_action(
             "synthetic", {"location": "Synthetic Cafe", "theme": "Service speed",
                           "recent_share": 60, "recent_mentions": 6},
@@ -33,7 +36,7 @@ class ActionEditHistoryTests(unittest.TestCase):
                       start_date=A.parse_date(snapshot["start_date"]),
                       due_date=A.parse_date(snapshot["due_date"]))
         values.update(overrides)
-        return A.edit_saved_action(self.path, snapshot, **values)
+        return A.edit_saved_action(self.path, snapshot, session=self.session, **values)
 
     def test_all_editable_fields_and_utc_time_persist_without_changing_baselines(self):
         snapshot = deepcopy(self.original)
@@ -42,6 +45,9 @@ class ActionEditHistoryTests(unittest.TestCase):
             status="Done", start_date=DAY + timedelta(days=1),
             due_date=DAY + timedelta(days=3))
         entry = saved["edit_history"][0]
+        self.assertEqual(entry["saved_by"], "test-manager")
+        self.assertNotIn("revision", entry)
+        self.assertNotIn("expires", entry)
         self.assertEqual(set(entry["changes"]), set(A.EDITABLE_FIELDS))
         for field in A.EDITABLE_FIELDS:
             self.assertEqual(entry["changes"][field],
@@ -90,6 +96,52 @@ class ActionEditHistoryTests(unittest.TestCase):
         self.assertEqual(len(saved["edit_history"]), 1)
         self.assertEqual(saved["edit_history"][0]["changes"], {
             "owner": {"before": "Manager", "after": ""}})
+
+    def test_different_verified_managers_are_not_plan_owners(self):
+        first = self.edit(self.original, owner="Responsible person")
+        identity.set_account("second-manager", "synthetic-second-password",
+                             {"synthetic": ["Synthetic Cafe"]})
+        self.session = identity.authenticate("second-manager", "synthetic-second-password")
+        second = self.edit(first, status="Done")
+        self.assertEqual([e["saved_by"] for e in second["edit_history"]],
+                         ["test-manager", "second-manager"])
+        self.assertEqual(second["owner"], "Responsible person")
+        identity.remove_account("test-manager")
+        self.assertEqual(A.load_actions(self.path)[0]["edit_history"][0]["saved_by"],
+                         "test-manager")
+
+    def test_missing_forged_expired_revoked_and_unassigned_sessions_cannot_save(self):
+        before = Path(self.path).read_bytes()
+        valid = dict(self.session)
+        for session in (None, {"username": "pretend-manager"},
+                        dict(valid, expires=0), dict(valid, revision="forged")):
+            self.session = session
+            with self.assertRaises(PermissionError):
+                self.edit(self.original, status="Done")
+            self.assertEqual(Path(self.path).read_bytes(), before)
+        for grants in ({"other": ["Synthetic Cafe"]}, {"synthetic": ["Other Cafe"]}):
+            identity.set_account("test-manager", "synthetic-calendar-password", grants)
+            self.session = identity.authenticate("test-manager", "synthetic-calendar-password")
+            with self.assertRaises(PermissionError):
+                self.edit(self.original, status="Done")
+            self.assertEqual(Path(self.path).read_bytes(), before)
+        self.session = valid
+        with self.assertRaises(PermissionError):
+            self.edit(self.original, status="Done")
+        identity.remove_account("test-manager")
+        with self.assertRaises(PermissionError):
+            self.edit(self.original, status="Done")
+        self.assertEqual(Path(self.path).read_bytes(), before)
+
+    def test_prior_entries_without_identity_are_not_rewritten(self):
+        legacy = dict(self.original, edit_history=[{
+            "saved_at": "2025-12-01T00:00:00+00:00", "changes": {
+                "owner": {"before": "", "after": "Manager"}}}])
+        A.save_actions(self.path, [legacy], expected_actions=[self.original])
+        saved = self.edit(legacy, status="Done")
+        self.assertEqual(saved["edit_history"][0], legacy["edit_history"][0])
+        self.assertNotIn("saved_by", saved["edit_history"][0])
+        self.assertEqual(saved["edit_history"][1]["saved_by"], "test-manager")
 
 
 if __name__ == "__main__":

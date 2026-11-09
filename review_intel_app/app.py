@@ -15,6 +15,7 @@ import plotly.express as px
 import streamlit as st
 
 import action_tracker as A
+from live_freshness import show_live_freshness
 from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
 from manager_report_access import require_manager, authorized
@@ -391,6 +392,7 @@ with st.sidebar.expander("Location calendars"):
             st.caption(f"{loc} — Action calendar: "
                        f"{A.location_today(loc, timezones_by_location).isoformat()} · "
                        f"{timezones_by_location[loc]}")
+        show_live_freshness("Restaurant calendar")
 
     show_calendar_days()
 
@@ -924,6 +926,7 @@ with tabs[5]:
             source_reviews=raw.to_dict("records"),
         )
         st.code("\n".join(lines + action_lines), language=None)
+        show_live_freshness("Owner summary")
 
     show_live_owner_summary()
 
@@ -933,6 +936,7 @@ with tabs[5]:
 @st.fragment(run_every="30s")
 def show_live_action_tracker():
     require_access(tag, pick)
+    freshness = st.container()
     st.markdown(
         "Keep a manager's action with the alert, then check later reviews for the same theme. "
         "A change in review mentions is a signal, not proof that an action caused it."
@@ -1028,6 +1032,8 @@ def show_live_action_tracker():
                 st.caption(
                     "This is a review trend only. It does not prove the action caused the change."
                 )
+    with freshness:
+        show_live_freshness("Action status")
 
 with tabs[6]:
     show_live_action_tracker()
@@ -1037,6 +1043,11 @@ with tabs[6]:
     st.caption("Unsaved action fields are retained when switching locations, dates, "
                "or datasets in this session. Only Save updates saves changes. "
                "Locking or closing the session clears drafts.")
+    st.info("After a short connection interruption, drafts can remain if this same "
+            "session survives. Wait for a new last-updated time before trusting overdue "
+            "status. If the session is lost, unsaved drafts cannot be recovered. "
+            "Copy any visible unsaved text before reloading or signing in again; "
+            "only saved changes are stored permanently.")
     for reference in st.session_state.get(f"history_drafts_{tag}", {}).values():
         st.markdown("**Kept history-link draft for reference — not saved**")
         st.caption(f"Action: {reference['action_id']} · Older history: "

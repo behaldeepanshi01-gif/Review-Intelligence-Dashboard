@@ -15,3 +15,14 @@ isolated clock-controlled app and a browser in the same environment.
 advancing the clock. Check both the overdue views and unsent inputs. If a remote
 test browser cannot reach a local harness, run browser automation beside the
 harness rather than treating connection refusal as an application error.
+
+Freshness warnings must run in the browser and measure each view's successful
+render, not an independent server heartbeat.
+
+**Why:** A disconnected server cannot send its own stale warning, and a healthy
+heartbeat does not establish that a particular overdue view finished updating.
+Browser wall time must supplement monotonic elapsed time to account for sleep.
+
+**How to apply:** Keep the watchdog independent of draft widgets; only a newly
+rendered view should clear its warning. Describe missed updates as potentially
+stale rather than claiming to know the Streamlit socket's connection state.

@@ -43,6 +43,22 @@ and inspect its stable ID before assigning it. Legacy history controls are not
 exposed on the manager dashboard because those histories have no independent
 authorization scope. Existing authorized linked histories remain usable.
 
+## Plans for locations missing from a snapshot
+
+Choose **Saved actions for absent locations** under **Dashboard view**, then a
+**Saved-action location**. This separate view uses the selected stable dataset
+identity and the signed-in manager's exact location grants, including authorized
+linked legacy plans. It works even when none of the manager's assigned locations
+has current reviews. Current-review location/date filters, charts, and exports
+are not expanded with historical locations or synthetic reviews.
+
+Saved plans, original evidence, baselines, and recorded edit history remain
+available. Managers can update plan fields with the same stale-save and history
+ownership checks used by the tracker. Missing-location plans show source-data
+warnings, not zero-valued follow-up trends or operational improvements. Saved
+calendars still determine their due-date status. Only explicit saves persist
+changes; drafts remain private to the current session.
+
 The public root animation is separate and remains synthetic. This is local
 application authorization, not encryption against someone with filesystem access.
 

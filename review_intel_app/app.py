@@ -21,6 +21,7 @@ from manager_report_ui import show_manager_report
 from manager_report_access import require_manager, authorized
 from manager_report_access import clear_private_state
 from dashboard_access import DashboardAccess
+from saved_action_history_ui import show_saved_action_history
 import manager_identity as identity
 import engine as E
 import manager_corrections as C
@@ -234,8 +235,18 @@ except Exception as ex:  # show a friendly error instead of a stack trace
     st.error(f"Couldn't read that file: {ex}")
     st.stop()
 
+history_view = st.sidebar.radio(
+    "Dashboard view", ["Current reviews", "Saved actions for absent locations"],
+    key=f"action_history_view_{tag}",
+)
+if history_view == "Saved actions for absent locations":
+    show_saved_action_history(
+        access, datasets, dataset, raw, ACTION_LOG, LOCATION_SETTINGS, require_access)
+    st.stop()
+
 if raw.empty:
     st.info("No current reviews are available for your assigned restaurants.")
+    st.info("Use Saved actions for absent locations to inspect plans with no current reviews.")
     st.stop()
 
 engine_choice = st.sidebar.radio(
@@ -355,15 +366,13 @@ try:
 except (OSError, ValueError) as ex:
     st.error(f"Couldn't read the action log: {ex}")
     st.stop()
-# A removed/renamed location cannot be selected in the current-review filters.
-# Still surface its source warning rather than silently hiding every old plan.
-for missing_action in all_actions:
-    if (A.matches_dataset(missing_action, tag, legacy_tag)
-            and missing_action.get("location") not in locations):
-        source_check = A.comparison_source(missing_action, raw.to_dict("records"), tag)
-        st.warning(f"Saved action location {missing_action.get('location', 'Location')} "
-                   f"is absent from this dataset snapshot. {source_check['source_message']}")
-        st.caption(source_check["source_details"])
+missing_locations = sorted({action["location"] for action in all_actions
+                            if action.get("location") not in locations})
+if missing_locations:
+    st.warning("Saved action locations absent from this dataset snapshot: "
+               + ", ".join(missing_locations)
+               + ". Open Saved actions for absent locations in Dashboard view "
+               "to inspect or edit their plans. Saved baselines are unchanged.")
 try:
     calendars = LocationSettings(LOCATION_SETTINGS, session=session)
     calendar_settings = calendars.load(tag)

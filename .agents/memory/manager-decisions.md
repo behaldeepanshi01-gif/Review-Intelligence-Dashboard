@@ -57,6 +57,18 @@ tags, but the application must never silently rewrite that wording.
 **How to apply:** Keep reply approval separate from tag approval, including renewed
 tag decisions. Treat missing reply-approval context conservatively as needing review.
 
+Reply wording belongs to an exact source review within a dataset, not to its
+external review ID or current tags. Keep the original approval available when
+switching datasets or replacing a source snapshot; do not transfer it to a
+changed review even if the tags match.
+
+**Why:** Uploaded sources can reuse review IDs, and unchanged tags do not prove
+that a manager approved wording for the same guest feedback.
+
+**How to apply:** Include every loaded source field in reply identity, independently
+of analyzer output. An exact source restored later may recover its own approval;
+identity changes and sign-out must still clear private session data.
+
 Keeping a conflicting tag draft is not approval to overwrite whichever decision
 happens to be newest when the manager clicks. Acknowledgment applies only to the
 revision actually shown in the comparison.

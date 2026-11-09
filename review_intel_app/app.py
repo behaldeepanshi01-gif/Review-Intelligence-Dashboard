@@ -80,7 +80,7 @@ for draft_key in list(st.session_state):
     if draft_key.startswith(("action_text_", "action_owner_", "start_date_",
                              "due_date_", "update_text_", "update_owner_",
                              "update_status_", "update_start_", "update_due_",
-                             "tag-editor-")):
+                             "tag-editor-", "d_")):
         st.session_state[draft_key] = st.session_state[draft_key]
 
 
@@ -213,9 +213,14 @@ elif source.startswith("Upload"):
 data_path, tag = dataset["path"], dataset["dataset_id"]
 require_access(tag)
 scope = (st.session_state["_manager_report_grant"]["revision"], tag)
-if st.session_state.get("_dashboard_scope") != scope:
+previous_scope = st.session_state.get("_dashboard_scope")
+if previous_scope is None or previous_scope[0] != scope[0]:
     for state_key in list(st.session_state):
         if state_key.startswith(("approved", "claude_", "reply_", "d_", "draft_revision_")):
+            del st.session_state[state_key]
+if previous_scope != scope:
+    for state_key in list(st.session_state):
+        if state_key.startswith("claude_"):
             del st.session_state[state_key]
     st.session_state["_dashboard_scope"] = scope
 legacy_tag = dataset["legacy_tag"]
@@ -274,6 +279,20 @@ if engine_choice.startswith("Claude"):
     else:
         st.sidebar.caption("Showing local rule results until you run Claude.")
 
+
+# Bind wording to the dataset and all original loaded fields, independently of
+# analyzer output or snapshot filenames. Reverting to the exact source restores
+# its approval; changing any source field requires a separate approval.
+source_reply_keys = [
+    hashlib.sha256(json.dumps([
+        tag, C.review_key(dataset["correction_path"], row),
+    ]).encode()).hexdigest()
+    for row in raw.to_dict("records")
+]
+tagged = tagged.copy()
+# Both analyzers preserve source row order. Do not join on external review IDs:
+# even an imported ID may collide with a suffix generated for a duplicate ID.
+tagged["reply_key"] = source_reply_keys
 
 is_local = tagged["engine"].eq("local_rules").all()
 provenance_by_location = {}
@@ -436,13 +455,13 @@ if "approved_reply_tags" not in st.session_state:
 def reply_tag_state(row):
     """Compare effective tags, not decision timestamps or generated wording."""
     return {
-        "review_key": getattr(row, "correction_key", None),
+        "review_key": row.reply_key,
         "positive": sorted(set(row.themes_pos)),
         "negative": sorted(set(row.themes_neg)),
     }
 
 
-reply_tags = {r.review_id: reply_tag_state(r) for r in tagged.itertuples()}
+reply_tags = {r.reply_key: reply_tag_state(r) for r in tagged.itertuples()}
 reply_rechecks = {
     review_id for review_id, state in reply_tags.items()
     if review_id in st.session_state["approved"]
@@ -450,7 +469,7 @@ reply_rechecks = {
 }
 
 high_open = view[(view["urgency"] == "High")
-                 & (~view["review_id"].isin(st.session_state["approved"].keys()))]
+                 & (~view["reply_key"].isin(st.session_state["approved"].keys()))]
 neg_share = 100 * (view["themes_neg"].str.len() > 0).mean()
 alerts = E.early_warnings(view, recent_days=window, baseline_days=window * 3)
 st.sidebar.caption("New datasets and legacy-history reassignment require the app owner. "
@@ -784,7 +803,7 @@ with tabs[4]:
     show_done = f2.toggle("Show approved", value=False)
     n_show = f3.number_input("Show", min_value=5, max_value=100, value=10, step=5)
 
-    recheck_count = int(view["review_id"].isin(reply_rechecks).sum())
+    recheck_count = int(view["reply_key"].isin(reply_rechecks).sum())
     if recheck_count:
         st.warning(
             f"{recheck_count} approved replies need a wording recheck. Their effective "
@@ -793,13 +812,14 @@ with tabs[4]:
             "regardless of urgency and Show approved filters."
         )
     inbox = view[view["urgency"].isin(urg)
-                 | view["review_id"].isin(reply_rechecks)].sort_values(
+                 | view["reply_key"].isin(reply_rechecks)].sort_values(
         ["urgency", "date"], key=lambda c: c.map({"High": 0, "Medium": 1, "Low": 2})
         if c.name == "urgency" else c, ascending=[True, False])
     if not show_done:
-        inbox = inbox[~inbox["review_id"].isin(st.session_state["approved"].keys())
-                      | inbox["review_id"].isin(reply_rechecks)]
-    st.caption(f"{len(inbox)} reviews in queue · {len(st.session_state['approved'])} approved")
+        inbox = inbox[~inbox["reply_key"].isin(st.session_state["approved"].keys())
+                      | inbox["reply_key"].isin(reply_rechecks)]
+    approved_count = int(view["reply_key"].isin(st.session_state["approved"]).sum())
+    st.caption(f"{len(inbox)} reviews in queue · {approved_count} approved")
 
     for r in inbox.head(int(n_show)).itertuples():
         with st.container(border=True):
@@ -812,7 +832,7 @@ with tabs[4]:
             tags = "".join(f'<span class="tag neg">{E.THEME_LABELS[t]}</span>' for t in r.themes_neg)
             tags += "".join(f'<span class="tag pos">{E.THEME_LABELS[t]}</span>' for t in r.themes_pos)
             st.markdown(tags, unsafe_allow_html=True)
-            needs_recheck = r.review_id in reply_rechecks
+            needs_recheck = r.reply_key in reply_rechecks
             if needs_recheck:
                 st.warning(
                     "Approved reply needs recheck: tags changed since approval, or "
@@ -820,9 +840,9 @@ with tabs[4]:
                     "and wording, edit if needed, then click Recheck and approve reply. "
                     "The previously approved wording is preserved until you approve again."
                 )
-            draft = st.session_state["approved"].get(r.review_id, r.reply_draft)
-            draft_key = f"d_{r.review_id}"
-            revision_key = f"draft_revision_{r.review_id}"
+            draft = st.session_state["approved"].get(r.reply_key, r.reply_draft)
+            draft_key = f"d_{r.reply_key}"
+            revision_key = f"draft_revision_{r.reply_key}"
             revision = json.dumps([
                 getattr(r, "correction_key", None), r.engine, r.themes_pos,
                 r.themes_neg, r.reply_draft,
@@ -832,16 +852,16 @@ with tabs[4]:
             # unapproved wording when tags change, including an undo, but leave
             # manager-approved replies and edits under unchanged tags alone.
             if (draft_key not in st.session_state
-                    or (r.review_id not in st.session_state["approved"]
+                    or (r.reply_key not in st.session_state["approved"]
                         and st.session_state.get(revision_key) != revision)):
                 st.session_state[draft_key] = draft
             st.session_state[revision_key] = revision
             text = st.text_area("Reply draft", key=draft_key, height=150)
             if st.button("Recheck and approve reply" if needs_recheck else "Approve reply",
-                         key=f"a_{r.review_id}"):
+                         key=f"a_{r.reply_key}"):
                 require_access(tag, [r.location])
-                st.session_state["approved"][r.review_id] = text
-                st.session_state["approved_reply_tags"][r.review_id] = reply_tags[r.review_id]
+                st.session_state["approved"][r.reply_key] = text
+                st.session_state["approved_reply_tags"][r.reply_key] = reply_tags[r.reply_key]
                 st.toast("Approved")
                 st.rerun()
 
@@ -862,9 +882,10 @@ with tabs[5]:
         if c in out:
             out[c] = out[c].apply(lambda value: json.dumps(value, ensure_ascii=False))
     out["approved_reply"] = (
-        out["review_id"].map(st.session_state["approved"]).astype("object").fillna("")
+        out["reply_key"].map(st.session_state["approved"]).astype("object").fillna("")
     )
-    out["approved_reply_needs_recheck"] = out["review_id"].isin(reply_rechecks)
+    out["approved_reply_needs_recheck"] = out["reply_key"].isin(reply_rechecks)
+    out = out.drop(columns=["reply_key"])
     buf = io.StringIO()
     out.to_csv(buf, index=False)
     st.download_button("Download analyzed reviews (CSV)", buf.getvalue(),

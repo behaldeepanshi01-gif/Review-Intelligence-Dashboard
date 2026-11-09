@@ -1,6 +1,7 @@
 """Synthetic-only checks of persistence, isolation, reports and the manager UI."""
 
 import copy
+import io
 from contextlib import closing
 from pathlib import Path
 import tempfile
@@ -12,6 +13,7 @@ from streamlit.testing.v1 import AppTest
 
 import engine as E
 import manager_corrections as C
+import dataset_store as D
 from correction_test_support import save_fixture, undo_fixture
 
 
@@ -30,6 +32,10 @@ def reviews():
 
 
 class ManagerCorrectionTests(unittest.TestCase):
+    @staticmethod
+    def reply_widget(app):
+        return next(w for w in app.text_area if w.label == "Reply draft")
+
     def open_app(self, source):
         session = manager_session(self, self.temp.name, {SAMPLE_ID: ["Demo Cafe"]})
         return sample_app(AppTest.from_string(source, default_timeout=30), session)
@@ -538,7 +544,7 @@ class ManagerCorrectionTests(unittest.TestCase):
                 return next(w for w in app.multiselect
                             if w.label == "Confirmed complaint themes")
             def reply():
-                return app.text_area(key="d_demo-2")
+                return self.reply_widget(app)
             self.assertIn("the wait you had", reply().value)
             reply().input("Unapproved manual edit").run()
             # Ordinary reruns must preserve unsaved edits under unchanged tags.
@@ -553,6 +559,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertIn("the wait you had", reply().value)
             self.assertNotIn("the cleanliness issue", reply().value)
             reply().input("Previously approved manager wording").run()
+            approval_key = reply().key.removeprefix("d_")
             button("Approve reply").click().run()
             approved_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
             self.assertFalse(any(w.label == "Reply draft" for w in app.text_area))
@@ -560,7 +567,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             button("Save manager decision").click().run()
             self.assertEqual(len(app.exception), 0)
             self.assertEqual(reply().value, "Previously approved manager wording")
-            self.assertEqual(app.session_state["approved"]["demo-2"],
+            self.assertEqual(app.session_state["approved"][approval_key],
                              "Previously approved manager wording")
             self.assertEqual(app.session_state["approved_reply_tags"], approved_tags)
             self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
@@ -579,7 +586,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             button("Recheck and approve reply").click().run()
             self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
             self.assertNotEqual(app.session_state["approved_reply_tags"], approved_tags)
-            self.assertEqual(app.session_state["approved"]["demo-2"],
+            self.assertEqual(app.session_state["approved"][approval_key],
                              "Previously approved manager wording")
             # Undo after reapproval now differs from the new snapshot.
             button("Undo manager decision").click().run()
@@ -587,7 +594,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertEqual(reply().value, "Previously approved manager wording")
             reply().input("Manager checked and revised wording").run()
             button("Recheck and approve reply").click().run()
-            self.assertEqual(app.session_state["approved"]["demo-2"],
+            self.assertEqual(app.session_state["approved"][approval_key],
                              "Manager checked and revised wording")
             self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
 
@@ -607,13 +614,14 @@ class ManagerCorrectionTests(unittest.TestCase):
             def button(label):
                 return next(b for b in app.button if b.label == label)
 
-            app.text_area(key="d_demo-2").input("Approved wait apology").run()
+            self.reply_widget(app).input("Approved wait apology").run()
+            approval_key = self.reply_widget(app).key.removeprefix("d_")
             button("Approve reply").click().run()
             original_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
             button("Approve earlier tags for current rules").click().run()
             self.assertEqual(len(app.exception), 0)
             self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
-            self.assertEqual(app.text_area(key="d_demo-2").value, "Approved wait apology")
+            self.assertEqual(self.reply_widget(app).value, "Approved wait apology")
             self.assertEqual(app.session_state["approved_reply_tags"], original_tags)
             button("Recheck and approve reply").click().run()
             checked_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
@@ -624,12 +632,176 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertEqual(len(app.exception), 0)
             self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
             self.assertEqual(app.session_state["approved_reply_tags"], checked_tags)
-            self.assertEqual(app.session_state["approved"]["demo-2"], "Approved wait apology")
+            self.assertEqual(app.session_state["approved"][approval_key], "Approved wait apology")
             # Pre-existing approvals without a snapshot must be explicitly rechecked.
             app.session_state["approved_reply_tags"] = {}
             app.run()
             self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
-            self.assertEqual(app.text_area(key="d_demo-2").value, "Approved wait apology")
+            self.assertEqual(self.reply_widget(app).value, "Approved wait apology")
+
+    def reply_isolation_fixture(self):
+        """Real saved datasets and exports, isolated from workspace private data."""
+        sample = Path(self.temp.name) / "sample.csv"
+        self.raw.to_csv(sample, index=False)
+        store = D.DatasetStore(Path(self.temp.name) / "uploads", sample)
+        source = APP.read_text().replace(
+            'CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")',
+            f"CORRECTIONS_LOG = {self.db!r}").replace(
+            'LOCATION_SETTINGS = os.path.join(BASE_DIR, "data", "location_settings.sqlite")',
+            f"LOCATION_SETTINGS = {str(Path(self.temp.name) / 'calendars.sqlite')!r}")
+        # AppTest otherwise retains an old formatted-label mapping when source
+        # keys change under identical display labels. Keep this unrelated
+        # tag-inspection selector raw in these reply-focused checks.
+        source = source.replace(
+            '''format_func=lambda key: (
+                f"{inspection.loc[inspection['correction_key'] == key, 'review_id'].iloc[0]} | "
+                f"{inspection.loc[inspection['correction_key'] == key, 'location'].iloc[0]}"),''',
+            "format_func=str,")
+        return store, source
+
+    def assert_reply_export(self, downloads, expected):
+        exports = [call.args[1] for call in downloads.call_args_list
+                   if call.args[0] == "Download analyzed reviews (CSV)"]
+        frame = pd.read_csv(io.StringIO(exports[-1]), keep_default_na=False)
+        row = frame.set_index("review_id").loc["demo-2"]
+        self.assertEqual(row["approved_reply"], expected)
+        self.assertFalse(row["approved_reply_needs_recheck"])
+
+    def test_reply_approvals_and_drafts_isolate_colliding_dataset_ids(self):
+        store, source = self.reply_isolation_fixture()
+        # Even byte-identical reviews must not share approval across datasets.
+        other = store.save_snapshot("other.csv", self.raw.to_csv(index=False).encode())
+        session = manager_session(self, self.temp.name, {
+            SAMPLE_ID: ["Demo Cafe"], other["dataset_id"]: ["Demo Cafe"]})
+        with patch.object(D, "DatasetStore", return_value=store), patch(
+                "streamlit.download_button") as downloads:
+            app = sample_app(AppTest.from_string(source, default_timeout=30), session)
+            next(w for w in app.toggle if w.label == "Show approved").set_value(True).run()
+            first_widget = self.reply_widget(app).key
+            self.reply_widget(app).input("Original dataset approval").run()
+            next(b for b in app.button if b.label == "Approve reply").click().run()
+            first_approvals = copy.deepcopy(app.session_state["approved"])
+            first_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
+            self.assert_reply_export(downloads, "Original dataset approval")
+            next(w for w in app.radio if w.label == "Data").set_value("Saved file").run()
+            self.assertFalse(app.exception)
+            self.assertNotEqual(self.reply_widget(app).key, first_widget)
+            self.assertNotEqual(self.reply_widget(app).value, "Original dataset approval")
+            self.assertEqual(app.session_state["approved"], first_approvals)
+            self.assertEqual(app.session_state["approved_reply_tags"], first_tags)
+            self.assert_reply_export(downloads, "")
+            self.assertTrue(any("1 reviews in queue · 0 approved" in w.value
+                                for w in app.caption))
+            self.reply_widget(app).input("Other dataset unsaved edit").run()
+            next(w for w in app.radio if w.label == "Data").set_value(
+                "Sample data (synthetic)").run()
+            self.assertEqual(self.reply_widget(app).value, "Original dataset approval")
+            self.assert_reply_export(downloads, "Original dataset approval")
+            next(w for w in app.radio if w.label == "Data").set_value("Saved file").run()
+            self.assertEqual(self.reply_widget(app).value, "Other dataset unsaved edit")
+            next(b for b in app.button if b.label == "Approve reply").click().run()
+            self.assertEqual(len(app.session_state["approved"]), 2)
+            self.assert_reply_export(downloads, "Other dataset unsaved edit")
+            next(w for w in app.radio if w.label == "Data").set_value(
+                "Sample data (synthetic)").run()
+            self.assertFalse(app.exception)
+            self.assertEqual(self.reply_widget(app).key, first_widget)
+            self.assertEqual(self.reply_widget(app).value, "Original dataset approval")
+            for key, value in first_tags.items():
+                self.assertEqual(app.session_state["approved_reply_tags"][key], value)
+
+    def test_reply_approval_isolates_replaced_text_and_restores_original(self):
+        store, source = self.reply_isolation_fixture()
+        content = self.raw.to_csv(index=False).encode()
+        saved = store.save_snapshot("reviews.csv", content)
+        session = manager_session(self, self.temp.name, {
+            SAMPLE_ID: ["Demo Cafe"], saved["dataset_id"]: ["Demo Cafe"]})
+        with patch.object(D, "DatasetStore", return_value=store), patch(
+                "streamlit.download_button") as downloads:
+            app = sample_app(AppTest.from_string(source, default_timeout=30), session)
+            next(w for w in app.radio if w.label == "Data").set_value("Saved file").run()
+            next(w for w in app.toggle if w.label == "Show approved").set_value(True).run()
+            original_widget = self.reply_widget(app).key
+            self.reply_widget(app).input("Approval for original text").run()
+            next(b for b in app.button if b.label == "Approve reply").click().run()
+            original_approvals = copy.deepcopy(app.session_state["approved"])
+            original_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
+            changed = self.raw.copy()
+            # Same ID, urgency and themes: a tag-only comparison cannot detect it.
+            changed.loc[1, "text"] = "The service was slow. We visited on Tuesday."
+            store.save_snapshot("reviews.csv", changed.to_csv(index=False).encode(),
+                                saved["dataset_id"])
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertNotEqual(self.reply_widget(app).key, original_widget)
+            self.assertNotEqual(self.reply_widget(app).value, "Approval for original text")
+            self.assertEqual(app.session_state["approved"], original_approvals)
+            self.assertEqual(app.session_state["approved_reply_tags"], original_tags)
+            self.assert_reply_export(downloads, "")
+            self.reply_widget(app).input("Approval for replacement text").run()
+            next(b for b in app.button if b.label == "Approve reply").click().run()
+            self.assertEqual(len(app.session_state["approved"]), 2)
+            self.assert_reply_export(downloads, "Approval for replacement text")
+            store.save_snapshot("reviews.csv", content, saved["dataset_id"])
+            app.run()
+            self.assertFalse(app.exception)
+            self.assertEqual(self.reply_widget(app).key, original_widget)
+            self.assertEqual(self.reply_widget(app).value, "Approval for original text")
+            self.assert_reply_export(downloads, "Approval for original text")
+            for key, value in original_tags.items():
+                self.assertEqual(app.session_state["approved_reply_tags"][key], value)
+
+    def test_reply_approvals_isolate_generated_suffix_id_collisions(self):
+        store, source = self.reply_isolation_fixture()
+        collision = pd.DataFrame([
+            dict(review_id=rid, location="Demo Cafe", date=f"2026-10-0{i + 1}",
+                 rating=2, reviewer="Guest",
+                 text=f"The service was slow. Synthetic visit {i}.")
+            for i, rid in enumerate(["x", "x", "x-0"])
+        ])
+        dataset = store.save_snapshot(
+            "collisions.csv", collision.to_csv(index=False).encode())
+        # The loader currently produces x-0, x-1, x-0. Reply identity must
+        # remain safe independently of that external-ID normalization.
+        loaded = E.load_reviews(dataset["path"])
+        self.assertEqual(loaded["review_id"].tolist(), ["x-0", "x-1", "x-0"])
+        session = manager_session(self, self.temp.name, {
+            dataset["dataset_id"]: ["Demo Cafe"]})
+        with patch.object(D, "DatasetStore", return_value=store), patch(
+                "streamlit.download_button") as downloads:
+            app = AppTest.from_string(source, default_timeout=30)
+            app.session_state["_manager_report_grant"] = session
+            app.run()
+            self.assertFalse(app.exception)
+            next(w for w in app.toggle if w.label == "Show approved").set_value(True).run()
+            drafts = [w for w in app.text_area if w.label == "Reply draft"]
+            self.assertEqual(len(drafts), 3)
+            self.assertEqual(len({w.key for w in drafts}), 3)
+            # All three rows have equal urgency and appear newest first.
+            newest_key, middle_key, oldest_key = [w.key for w in drafts]
+            app.text_area(key=newest_key).input("Newest guest wording").run()
+            app.button(key="a_" + newest_key.removeprefix("d_")).click().run()
+            self.assertNotIn(oldest_key.removeprefix("d_"), app.session_state["approved"])
+            app.text_area(key=oldest_key).input("Oldest guest wording").run()
+            self.assertEqual(app.text_area(key=newest_key).value, "Newest guest wording")
+            app.button(key="a_" + oldest_key.removeprefix("d_")).click().run()
+            self.assertFalse(app.exception)
+            self.assertEqual(len(app.session_state["approved"]), 2)
+            snapshots = app.session_state["approved_reply_tags"]
+            self.assertEqual(len(snapshots), 2)
+            for draft_key in [newest_key, oldest_key]:
+                key = draft_key.removeprefix("d_")
+                self.assertEqual(snapshots[key]["review_key"], key)
+            self.assertNotIn(middle_key.removeprefix("d_"), snapshots)
+            exported = [call.args[1] for call in downloads.call_args_list
+                        if call.args[0] == "Download analyzed reviews (CSV)"][-1]
+            frame = pd.read_csv(io.StringIO(exported), keep_default_na=False).set_index("text")
+            self.assertEqual(frame.loc[collision.iloc[0]["text"], "approved_reply"],
+                             "Oldest guest wording")
+            self.assertEqual(frame.loc[collision.iloc[1]["text"], "approved_reply"], "")
+            self.assertEqual(frame.loc[collision.iloc[2]["text"], "approved_reply"],
+                             "Newest guest wording")
+            self.assertFalse(frame["approved_reply_needs_recheck"].any())
 
 
 if __name__ == "__main__":

@@ -1242,6 +1242,40 @@ with tabs[6]:
                      "Kept draft": st.session_state[reference_key][field]}
                     for field in A.EDITABLE_FIELDS
                 ], hide_index=True, use_container_width=True)
+                st.caption("Download this unsaved reference before leaving the session. "
+                           "The file contains only this action's kept editable fields "
+                           "and context, not saved evidence or baselines. It cannot be "
+                           "imported or used to overwrite an action. Keep downloaded "
+                           "files private; locking the dashboard cannot recall them.")
+                reference_download = {
+                    "reference_status": "UNSAVED — kept draft for reference only",
+                    "notice": (
+                        "These fields were not saved to the action log. This is not "
+                        "an approved action or an import file. Review the latest saved "
+                        "action and reconcile manually; saved evidence and baselines "
+                        "are not included and cannot be edited through this file."
+                    ),
+                    "context": {
+                        "dataset_id": tag,
+                        "action_id": action_id,
+                        "location": action.get("location", ""),
+                        "theme": action.get("theme", ""),
+                    },
+                    "editable_fields": {
+                        field: st.session_state[reference_key][field]
+                        for field in A.EDITABLE_FIELDS
+                    },
+                }
+                download_id = hashlib.sha256(
+                    f"{tag}:{action_id}".encode("utf-8")).hexdigest()[:16]
+                st.download_button(
+                    "Download kept draft (unsaved reference)",
+                    json.dumps(reference_download, ensure_ascii=False, indent=2).encode("utf-8"),
+                    file_name=f"unsaved-action-draft-{download_id}.json",
+                    mime="application/json",
+                    key=f"{reference_key}_download",
+                    on_click="ignore",
+                )
 
             if submitted and not conflicted and not association_stale:
                 if not action_text.strip():

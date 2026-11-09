@@ -11,6 +11,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
+import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 import action_tracker as A
@@ -196,6 +197,7 @@ class ConcurrentActionTests(unittest.TestCase):
         session = manager_session(self, self.temp.name,
                                   {SAMPLE_ID: list(sample["location"].unique())})
         self.session = session
+        self.app_source = source
         app = sample_app(AppTest.from_string(source, default_timeout=30), session)
         self.assertEqual(list(app.exception), [])
         return original, app
@@ -347,6 +349,105 @@ class ConcurrentActionTests(unittest.TestCase):
         saved = A.load_actions(self.path)[0]
         self.assertEqual(saved["action_text"], "Race winner")
         self.assertEqual(len(saved["edit_history"]), 1)
+
+    def draft_download(self, app):
+        """Capture the bytes passed to the real Streamlit download widget."""
+        with patch("streamlit.download_button", wraps=st.download_button) as downloads:
+            app.run()
+        self.assertFalse(app.exception)
+        calls = [call for call in downloads.call_args_list
+                 if call.args[0] == "Download kept draft (unsaved reference)"]
+        self.assertEqual(len(calls), 1)
+        call = calls[0]
+        self.assertEqual(call.kwargs["mime"], "application/json")
+        self.assertTrue(call.kwargs["file_name"].startswith("unsaved-action-draft-"))
+        self.assertTrue(call.kwargs["file_name"].endswith(".json"))
+        self.assertEqual(call.kwargs["on_click"], "ignore")
+        self.assertEqual(sum(w.label == call.args[0]
+                             for w in app.get("download_button")), 1)
+        return json.loads(call.args[1].decode("utf-8"))
+
+    def assert_no_draft_download(self, app):
+        self.assertFalse(app.exception)
+        self.assertFalse(any(w.label == "Download kept draft (unsaved reference)"
+                             for w in app.get("download_button")))
+
+    def test_download_contains_only_kept_unsaved_fields_and_action_context(self):
+        original, app = self.open_app()
+        self.assert_no_draft_download(app)
+        draft = {
+            "action_text": "Réviser café handoffs.\nKeep exact punctuation: \"yes\", please!",
+            "owner": "", "status": "Done",
+            "start_date": "2026-01-02", "due_date": "2026-01-03",
+        }
+        for prefix, value in [
+            ("update_text_", draft["action_text"]), ("update_owner_", ""),
+            ("update_status_", "Done"), ("update_start_", date(2026, 1, 2)),
+            ("update_due_", date(2026, 1, 3)),
+        ]:
+            widgets = list(app.text_area) + list(app.text_input) + list(
+                app.selectbox) + list(app.date_input)
+            next(w for w in widgets if w.key and w.key.startswith(prefix)).set_value(value)
+        A.edit_saved_action(
+            self.path, original, "Newer saved action", "Other", "In progress", DAY, DAY,
+            session=self.session)
+        next(b for b in app.button if b.label == "Save updates").click().run()
+        self.assert_no_draft_download(app)
+        before = Path(self.path).read_bytes()
+        next(b for b in app.button if b.label == "Keep draft for reference").click().run()
+        payload = self.draft_download(app)
+        self.assertEqual(set(payload), {
+            "reference_status", "notice", "context", "editable_fields"})
+        self.assertIn("UNSAVED", payload["reference_status"])
+        self.assertIn("not saved", payload["notice"])
+        self.assertIn("not an approved action or an import file", payload["notice"])
+        self.assertEqual(payload["context"], {
+            "dataset_id": SAMPLE_ID, "action_id": original["action_id"],
+            "location": original["location"], "theme": original["theme"],
+        })
+        self.assertEqual(payload["editable_fields"], draft)
+        self.assertEqual(set(payload["editable_fields"]), set(A.EDITABLE_FIELDS))
+        self.assertNotIn("baseline_share", json.dumps(payload))
+        self.assertNotIn("baseline_provenance", json.dumps(payload))
+        self.assertEqual(Path(self.path).read_bytes(), before)
+        # Later edits and reloading the latest action must not change the kept file.
+        next(t for t in app.text_area
+             if t.key and t.key.startswith("update_text_")).set_value("Not kept").run()
+        self.assertEqual(self.draft_download(app), payload)
+        next(b for b in app.button if b.label == "Reload latest action").click().run()
+        self.assertEqual(self.draft_download(app), payload)
+        self.assertEqual(next(t.value for t in app.text_area
+                              if t.key and t.key.startswith("update_text_")),
+                         "Newer saved action")
+        self.assertEqual(Path(self.path).read_bytes(), before)
+
+    def test_kept_download_is_scoped_to_visible_action_and_current_session(self):
+        original, app = self.open_app()
+        next(t for t in app.text_area if t.key and t.key.startswith("update_text_")).set_value(
+            "Private kept reference for the first action")
+        A.edit_saved_action(
+            self.path, original, "Other saved", "", "Planned", DAY, DAY,
+            session=self.session)
+        next(b for b in app.button if b.label == "Save updates").click().run()
+        next(b for b in app.button if b.label == "Keep draft for reference").click().run()
+        payload = self.draft_download(app)
+        locations = next(w for w in app.multiselect if w.label == "Locations")
+        second = plan("Cleanliness")
+        second["location"] = next(loc for loc in locations.options
+                                  if loc != original["location"])
+        A.append_action(self.path, second)
+        before = Path(self.path).read_bytes()
+        locations.set_value([second["location"]]).run()
+        self.assert_no_draft_download(app)
+        next(w for w in app.multiselect if w.label == "Locations").set_value(
+            [original["location"]]).run()
+        self.assertEqual(self.draft_download(app), payload)
+        # Even a fresh session for the same signed-in account has no kept reference.
+        fresh = sample_app(
+            AppTest.from_string(self.app_source, default_timeout=30), self.session)
+        self.assert_no_draft_download(fresh)
+        self.assertFalse(any("Kept draft" in t.value.columns for t in fresh.dataframe))
+        self.assertEqual(Path(self.path).read_bytes(), before)
 
 
 if __name__ == "__main__":

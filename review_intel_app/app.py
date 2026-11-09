@@ -69,6 +69,21 @@ if not require_manager(purpose="restaurant dashboard"):
     st.stop()
 access = DashboardAccess(st.session_state.get("_manager_report_grant"))
 
+# Action inputs send changes on blur instead of buffering them in forms. Detach
+# their keys from Streamlit's widget cleanup so hidden editors survive navigation
+# (including upload previews which stop execution before the editors render).
+# Authentication above clears all private state before another manager can use it.
+for draft_key in list(st.session_state):
+    if draft_key.startswith(("action_text_", "action_owner_", "start_date_",
+                             "due_date_", "update_text_", "update_owner_",
+                             "update_status_", "update_start_", "update_due_")):
+        st.session_state[draft_key] = st.session_state[draft_key]
+
+
+def draft_default(key, initial):
+    """Avoid supplying both a retained session value and a widget default."""
+    return None if key in st.session_state else initial
+
 
 def require_access(dataset_id, locations=None):
     try:
@@ -196,9 +211,7 @@ require_access(tag)
 scope = (st.session_state["_manager_report_grant"]["revision"], tag)
 if st.session_state.get("_dashboard_scope") != scope:
     for state_key in list(st.session_state):
-        if state_key.startswith(("approved", "claude_", "history_editors_",
-                                 "history_drafts_", "action_draft_", "action_snapshot_",
-                                 "reply_", "d_", "draft_revision_")):
+        if state_key.startswith(("approved", "claude_", "reply_", "d_", "draft_revision_")):
             del st.session_state[state_key]
     st.session_state["_dashboard_scope"] = scope
 legacy_tag = dataset["legacy_tag"]
@@ -680,7 +693,10 @@ with tabs[2]:
         st.success("No rising issues right now.")
     for index, alert in enumerate(alerts.to_dict("records")):
         action_today = A.location_today(alert["location"], timezones_by_location)
-        key = f"{tag}_{index}"
+        # Alert ordering changes with filters. Never attach a draft to its index.
+        alert_identity = hashlib.sha256(json.dumps(
+            [alert["location"], alert["theme"]]).encode()).hexdigest()
+        key = f"{tag}_{alert_identity}"
         with st.container(border=True):
             st.markdown(f"**{alert['location']}: {alert['theme']}**")
             st.write(
@@ -701,17 +717,22 @@ with tabs[2]:
                     "Open the Action tracker tab to update it."
                 )
             else:
-                with st.form(f"new_action_{key}"):
+                with st.container():
+                    st.caption("Unsaved draft retained while switching filters or datasets "
+                               "in this session. Only Save action plan saves it. "
+                               "Locking or closing the session clears drafts.")
                     action_text = st.text_area(
-                        "Action to try", value=suggestion, key=f"action_text_{key}")
+                        "Action to try", value=draft_default(f"action_text_{key}", suggestion),
+                        key=f"action_text_{key}")
                     owner = st.text_input(
                         "Owner (optional)", key=f"action_owner_{key}")
                     start_date = st.date_input(
-                        "Action start date", value=action_today, key=f"start_date_{key}")
+                        "Action start date", value=draft_default(f"start_date_{key}", action_today),
+                        key=f"start_date_{key}")
                     due_date = st.date_input(
-                        "Due date", value=action_today + timedelta(days=7),
+                        "Due date", value=draft_default(f"due_date_{key}", action_today + timedelta(days=7)),
                         key=f"due_date_{key}")
-                    submitted = st.form_submit_button("Save action plan")
+                    submitted = st.button("Save action plan", key=f"new_action_{key}")
 
                 if submitted:
                     require_access(tag, [alert["location"]])
@@ -1013,6 +1034,9 @@ with tabs[6]:
     st.subheader("Edit action plans")
     st.caption("Editors stay available regardless of the status filter above, so "
                "a calendar update cannot remove an unsaved draft.")
+    st.caption("Unsaved action fields are retained when switching locations, dates, "
+               "or datasets in this session. Only Save updates saves changes. "
+               "Locking or closing the session clears drafts.")
     for reference in st.session_state.get(f"history_drafts_{tag}", {}).values():
         st.markdown("**Kept history-link draft for reference — not saved**")
         st.caption(f"Action: {reference['action_id']} · Older history: "
@@ -1090,39 +1114,47 @@ with tabs[6]:
                          "before editing again; there is no force-overwrite option.")
             form_version = hashlib.sha256(
                 json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
-            form_key = f"{action_id}_{form_version}"
-            with st.form(f"update_action_{form_key}"):
+            form_key = f"{action_id}_{tag}_{form_version}"
+            with st.container():
                 action_text = st.text_area(
-                    "Manager action", value=snapshot.get("action_text", ""),
+                    "Manager action", value=draft_default(
+                        f"update_text_{form_key}", snapshot.get("action_text", "")),
                     key=f"update_text_{form_key}")
                 cols = st.columns(2)
                 owner = cols[0].text_input(
-                    "Owner (optional)", value=snapshot.get("owner", ""),
+                    "Owner (optional)", value=draft_default(
+                        f"update_owner_{form_key}", snapshot.get("owner", "")),
                     key=f"update_owner_{form_key}")
                 status = cols[1].selectbox(
                     "Status", A.STATUS_OPTIONS,
-                    index=A.STATUS_OPTIONS.index(snapshot.get("status", "Planned"))
-                    if snapshot.get("status", "Planned") in A.STATUS_OPTIONS else 0,
+                    index=draft_default(
+                        f"update_status_{form_key}",
+                        A.STATUS_OPTIONS.index(snapshot.get("status", "Planned"))
+                        if snapshot.get("status", "Planned") in A.STATUS_OPTIONS else 0),
                     key=f"update_status_{form_key}")
                 start_date = st.date_input(
                     "Action start date",
-                    value=A.parse_date(snapshot.get("start_date"), action_today),
+                    value=draft_default(f"update_start_{form_key}",
+                                       A.parse_date(snapshot.get("start_date"), action_today)),
                     key=f"update_start_{form_key}")
                 due_date = st.date_input(
                     "Due date",
-                    value=A.parse_date(snapshot.get("due_date"), action_today),
+                    value=draft_default(f"update_due_{form_key}",
+                                       A.parse_date(snapshot.get("due_date"), action_today)),
                     key=f"update_due_{form_key}")
-                submitted = st.form_submit_button(
-                    "Save updates", disabled=conflicted or association_stale)
+                submitted = st.button(
+                    "Save updates", key=f"update_action_{form_key}_save",
+                    disabled=conflicted or association_stale)
                 refresh_editor = False
                 if association_stale:
-                    refresh_editor = st.form_submit_button("Keep draft and refresh editor")
+                    refresh_editor = st.button("Keep draft and refresh editor",
+                                               key=f"update_action_{form_key}_refresh")
                 keep_draft = reload_latest = False
                 if conflicted:
-                    # Submit these choices with the form so even newer,
-                    # browser-buffered draft changes are available to Keep.
-                    keep_draft = st.form_submit_button("Keep draft for reference")
-                    reload_latest = st.form_submit_button("Reload latest action")
+                    keep_draft = st.button("Keep draft for reference",
+                                           key=f"update_action_{form_key}_keep")
+                    reload_latest = st.button("Reload latest action",
+                                              key=f"update_action_{form_key}_reload")
 
             if refresh_editor or (submitted and association_stale):
                 references = st.session_state.setdefault(f"history_drafts_{tag}", {})

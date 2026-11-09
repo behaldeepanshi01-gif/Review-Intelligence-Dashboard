@@ -165,7 +165,7 @@ class LocalAppTests(unittest.TestCase):
             self.assertEqual(shown(), {"late", "progress"})
             # Editors are deliberately independent of the live status filter.
             self.assertEqual(
-                {item.key.removeprefix("update_text_").rsplit("_", 1)[0]
+                {item.key.removeprefix("update_text_").rsplit("_", 2)[0]
                  for item in app.text_area
                  if item.key and item.key.startswith("update_text_")},
                 {"late", "progress", "done", "today", "future", "missing", "invalid"},

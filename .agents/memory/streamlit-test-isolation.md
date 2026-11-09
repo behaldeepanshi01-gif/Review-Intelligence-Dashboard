@@ -14,6 +14,8 @@ including during simultaneous browser testing.
 **How to apply:** Keep multiprocessing and browser-free Streamlit checks isolated
 when running the full suite. Give each protected UI fixture a temporary account
 and explicit dataset selection rather than relying on the current workspace.
+Use a file-backed, import-safe entry point for spawned-process checks, not a
+stdin runner: spawned workers must be able to import the parent's main module.
 
 AppTest can retain a stale formatted-selectbox mapping when switching between
 datasets with identical review display labels but different internal review keys.

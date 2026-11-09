@@ -206,6 +206,201 @@ class ConcurrentActionTests(unittest.TestCase):
         return next(table.value for table in app.dataframe
                     if "Your unsaved draft" in table.value.columns)
 
+    def action_widget(self, app, action, prefix):
+        widgets = (list(app.text_area) + list(app.text_input)
+                   + list(app.selectbox) + list(app.date_input))
+        return next(w for w in widgets
+                    if w.key and w.key.startswith(f"{prefix}{action['action_id']}_"))
+
+    def action_button(self, app, action, label):
+        return next(b for b in app.button
+                    if b.label == label and b.key
+                    and b.key.startswith(f"update_action_{action['action_id']}_"))
+
+    def action_table(self, app, action, column):
+        editor = next(e for e in app.expander
+                      if e.label.startswith(
+                          f"Edit {action['location']}: {action['theme']} ·"))
+        return next(t.value for t in editor.dataframe if column in t.value.columns)
+
+    def set_action_fields(self, app, action, values):
+        for field, prefix in [
+            ("action_text", "update_text_"), ("owner", "update_owner_"),
+            ("status", "update_status_"), ("start_date", "update_start_"),
+            ("due_date", "update_due_"),
+        ]:
+            value = values[field]
+            if field in ("start_date", "due_date"):
+                value = date.fromisoformat(value)
+            self.action_widget(app, action, prefix).set_value(value)
+
+    def test_two_conflicts_keep_reload_and_save_are_action_and_manager_isolated(self):
+        # Resolve in both orders: a rerun must not reset an earlier or later
+        # editor, nor borrow the other action's snapshot/reference.
+        for resolved_index in (0, 1):
+            with self.subTest(resolved_first=resolved_index):
+                self.check_two_conflicts_isolated(resolved_index)
+
+    def check_two_conflicts_isolated(self, resolved_index):
+        # Each subcase gets a new log; no workspace action history is touched.
+        self.path = str(Path(self.temp.name) / f"multi-{resolved_index}.json")
+        first, app = self.open_app()
+        second = plan("Cleanliness")
+        second["location"] = first["location"]
+        untouched = {
+            "action_id": "untouched-legacy", "dataset_tag": "synthetic-old.csv",
+            "location": "Synthetic archived cafe", "theme": "Historical theme",
+            "baseline_share": 12, "baseline_mentions": 3,
+            "unknown_historical_field": {"keep": ["exactly", 42]},
+        }
+        A.append_action(self.path, second)
+        A.append_action(self.path, untouched)
+        app.run()
+        self.assertFalse(app.exception)
+        originals = [deepcopy(first), deepcopy(second)]
+
+        other_id = f"other-manager-{resolved_index}"
+        password = "synthetic-other-manager-password"
+        identity.set_account(other_id, password, identity.current_account(
+            self.session)["grants"])
+        other_session = identity.authenticate(other_id, password)
+        self.assertIsNotNone(other_session)
+        other_app = sample_app(
+            AppTest.from_string(self.app_source, default_timeout=30), other_session)
+        self.assertFalse(other_app.exception)
+        drafts = [
+            {"action_text": "Private handoff draft\nDo not share",
+             "owner": "", "status": "Done",
+             "start_date": "2026-02-02", "due_date": "2026-02-04"},
+            {"action_text": "Private cleaning draft\nKeep separate",
+             "owner": "Draft cleaning owner", "status": "In progress",
+             "start_date": "2026-03-03", "due_date": "2026-03-06"},
+        ]
+        winners = [
+            {"action_text": "Other manager handoff", "owner": "Handoff lead",
+             "status": "In progress",
+             "start_date": "2026-01-05", "due_date": "2026-01-07"},
+            {"action_text": "Other manager cleaning", "owner": "Cleaning lead",
+             "status": "Done",
+             "start_date": "2026-01-08", "due_date": "2026-01-09"},
+        ]
+        for action, draft in zip(originals, drafts):
+            self.set_action_fields(app, action, draft)
+
+        # Both sessions opened the same versions. The second manager saves via
+        # separate AppTest editors while the first has two unsaved drafts.
+        expected = [deepcopy(first), deepcopy(second), deepcopy(untouched)]
+        for index, action in enumerate(originals):
+            self.set_action_fields(other_app, action, winners[index])
+            self.action_button(other_app, action, "Save updates").click().run()
+            self.assertFalse(other_app.exception)
+            saved = A.load_actions(self.path)
+            self.assertEqual(saved[index]["edit_history"][-1]["saved_by"], other_id)
+            self.assertEqual(
+                {field: saved[index][field] for field in A.EDITABLE_FIELDS},
+                winners[index])
+            for field in action.keys() - set(A.EDITABLE_FIELDS):
+                self.assertEqual(saved[index][field], action[field])
+            expected[index] = deepcopy(saved[index])
+            self.assertEqual(saved, expected)
+
+        before = Path(self.path).read_bytes()
+        app.run()
+        self.assertFalse(app.exception)
+
+        def assert_conflict(index):
+            action = originals[index]
+            table = self.action_table(app, action, "Your unsaved draft")
+            self.assertEqual(list(table["Your unsaved draft"]),
+                             [drafts[index][f] for f in A.EDITABLE_FIELDS])
+            self.assertEqual(list(table["Latest saved"]),
+                             [winners[index][f] for f in A.EDITABLE_FIELDS])
+            self.assertTrue(table["Different"].all())
+            self.assertTrue(self.action_button(app, action, "Save updates").disabled)
+
+        assert_conflict(0)
+        assert_conflict(1)
+        resolved = originals[resolved_index]
+        pending_index = 1 - resolved_index
+        pending = originals[pending_index]
+        self.action_button(app, resolved, "Keep draft for reference").click().run()
+        self.assertFalse(app.exception)
+        assert_conflict(pending_index)
+        kept = self.action_table(app, resolved, "Kept draft").copy(deep=True)
+        self.assertEqual(list(kept["Kept draft"]),
+                         [drafts[resolved_index][f] for f in A.EDITABLE_FIELDS])
+        reference = self.draft_download(app)
+        self.assertEqual(reference["context"]["action_id"], resolved["action_id"])
+        self.assertEqual(reference["editable_fields"], drafts[resolved_index])
+        self.assertEqual(sum("Kept draft" in t.value.columns for t in app.dataframe), 1)
+        self.action_button(app, resolved, "Reload latest action").click().run()
+        self.assertFalse(app.exception)
+        assert_conflict(pending_index)
+        self.assertFalse(self.action_button(app, resolved, "Save updates").disabled)
+        self.assertEqual(self.action_widget(app, resolved, "update_text_").value,
+                         winners[resolved_index]["action_text"])
+        self.assertTrue(kept.equals(self.action_table(app, resolved, "Kept draft")))
+        self.assertEqual(self.draft_download(app), reference)
+        self.assertEqual(Path(self.path).read_bytes(), before)
+
+        # The other signed-in manager, and even a fresh session for the first
+        # account, must see neither private reference tables nor download bytes.
+        fresh = sample_app(
+            AppTest.from_string(self.app_source, default_timeout=30), self.session)
+        for isolated_app in (other_app, fresh):
+            isolated_app.run()
+            self.assert_no_draft_download(isolated_app)
+            self.assertFalse(any("Kept draft" in t.value.columns
+                                 for t in isolated_app.dataframe))
+            self.assertFalse(any(key.startswith("action_draft_reference_")
+                                 for key in isolated_app.session_state))
+        self.assertEqual(Path(self.path).read_bytes(), before)
+
+        # Reconcile only the reloaded editor. A successful save must leave the
+        # second conflict, its full draft, and every other log record unchanged.
+        reconciled = dict(winners[resolved_index],
+                          action_text="Manually reconciled intended action")
+        self.set_action_fields(app, resolved, reconciled)
+        self.action_button(app, resolved, "Save updates").click().run()
+        self.assertFalse(app.exception)
+        assert_conflict(pending_index)
+        saved = A.load_actions(self.path)
+        edited = saved[resolved_index]
+        self.assertEqual({field: edited[field] for field in A.EDITABLE_FIELDS}, reconciled)
+        self.assertEqual(edited["edit_history"][:-1],
+                         expected[resolved_index]["edit_history"])
+        self.assertEqual(edited["edit_history"][-1]["saved_by"], "test-manager")
+        self.assertEqual(edited["edit_history"][-1]["changes"], {
+            "action_text": {"before": winners[resolved_index]["action_text"],
+                            "after": reconciled["action_text"]}})
+        for field in resolved.keys() - set(A.EDITABLE_FIELDS):
+            self.assertEqual(edited[field], resolved[field])
+        expected[resolved_index] = deepcopy(edited)
+        self.assertEqual(saved, expected)
+        self.assertEqual(self.draft_download(app), reference)
+
+        # Keeping the remaining conflict must create a second, distinct
+        # reference, not replace the one already retained.
+        before = Path(self.path).read_bytes()
+        self.action_button(app, pending, "Keep draft for reference").click().run()
+        self.action_button(app, pending, "Reload latest action").click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(Path(self.path).read_bytes(), before)
+        self.assertEqual(sum("Kept draft" in t.value.columns for t in app.dataframe), 2)
+        for index, action in enumerate(originals):
+            self.assertEqual(list(self.action_table(app, action, "Kept draft")["Kept draft"]),
+                             [drafts[index][f] for f in A.EDITABLE_FIELDS])
+            self.assertFalse(self.action_button(app, action, "Save updates").disabled)
+        self.assertFalse(any("Your unsaved draft" in t.value.columns for t in app.dataframe))
+        for isolated_app in (other_app, fresh):
+            isolated_app.run()
+            self.assert_no_draft_download(isolated_app)
+            self.assertFalse(any("Kept draft" in t.value.columns
+                                 for t in isolated_app.dataframe))
+            self.assertFalse(any(key.startswith("action_draft_reference_")
+                                 for key in isolated_app.session_state))
+        self.assertEqual(A.load_actions(self.path), expected)
+
     def test_history_shows_unknown_legacy_actor_and_verified_unchanged_save(self):
         legacy_entry = {
             "saved_at": "2025-12-01T00:00:00+00:00",

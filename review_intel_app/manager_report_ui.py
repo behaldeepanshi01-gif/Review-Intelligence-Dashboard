@@ -3,6 +3,7 @@ import hashlib
 import streamlit as st
 import action_report as AR
 import action_tracker as A
+import report_downloads
 from manager_report_access import require_manager, authorized
 
 
@@ -29,8 +30,18 @@ def show_manager_report(actions, tag, pick, tagged, legacy_tag, provenance, time
     if not has_actions:
         st.info("No action plans for this file and selected locations. Save a plan in Early warnings.")
     if authorized(tag, pick):
-        st.download_button(
-            "Download manager action report (TXT)", report_text,
-            file_name="manager_action_report.txt", mime="text/plain",
+        if st.button(
+            "Prepare secure report download",
             disabled=not (checked and has_actions),
-            key=f"manager_report_download_{fingerprint}")
+            key=f"manager_report_download_{fingerprint}"):
+            try:
+                token = report_downloads.issue(
+                    st.session_state["_manager_report_grant"], tag, pick, report_text,
+                    acknowledged=checked)
+                st.link_button("Download manager action report (TXT)",
+                               f"/dashboard/report-download/{token}")
+                st.caption("Single-use link expires in two minutes. Confirm your manager ID "
+                           "and password to download. Locking the dashboard invalidates the link. "
+                           "Files already downloaded cannot be recalled.")
+            except (PermissionError, ValueError) as ex:
+                st.warning(str(ex))

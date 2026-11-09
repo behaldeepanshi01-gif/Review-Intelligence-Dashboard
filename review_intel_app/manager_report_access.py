@@ -3,6 +3,7 @@ import threading
 import time
 import streamlit as st
 import manager_identity as identity
+import report_downloads
 
 _lock = threading.Lock()
 _attempts = []
@@ -26,7 +27,7 @@ def authorized(dataset_id=None, locations=None):
 def _try_login():
     password = st.session_state.pop("_manager_report_password", "")
     username = st.session_state.get("_manager_username", "").strip()
-    st.session_state.pop("_manager_report_grant", None)
+    report_downloads.revoke(st.session_state.pop("_manager_report_grant", None))
     clear_private_state()
     # Clear privacy acknowledgments on every identity change.
     for key in list(st.session_state):
@@ -51,7 +52,7 @@ def require_manager(*, purpose="manager report"):
     if authorized():
         st.caption("Signed in as " + st.session_state["_manager_report_grant"]["username"])
         if st.button("Lock " + purpose, key=f"lock_{purpose}"):
-            st.session_state.pop("_manager_report_grant", None)
+            report_downloads.revoke(st.session_state.pop("_manager_report_grant", None))
             clear_private_state()
             for key in list(st.session_state):
                 if key.startswith("manager_report_checked_"):

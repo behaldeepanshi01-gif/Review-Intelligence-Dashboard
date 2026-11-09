@@ -12,6 +12,19 @@ be recalled.
 
 **How to apply:** Reuse the local identity service for future protected features. Explicitly scope grants to stable dataset IDs and exact locations, never filenames. Do not silently retain shared-password access as a fallback or create a second identity store for timezone permissions.
 
+Report-file retrieval requires fresh credential confirmation by the issuing
+manager, in addition to the original dashboard login still being valid.
+
+**Why:** The local dashboard identity lives in Streamlit session state, not an
+authenticated HTTP browser cookie. A random download URL alone must not become
+authority to read a report. Reauthentication avoids adding a second cookie-based
+login system. Reports are temporary, single-process deliveries, not durable assets.
+
+**How to apply:** Preserve the privacy acknowledgment and filtered report builder
+when adding formats. Never switch reports back to public Streamlit media links.
+Keep explicit logout invalidation and retrieval-time permission checks; do not
+promise recall of bytes already delivered.
+
 Dataset creation and unassigned legacy-history recovery are trusted local-owner
 operations, not implied by a location grant. Snapshot replacement needs grants
 for all old and new locations, including rejected CSV rows.

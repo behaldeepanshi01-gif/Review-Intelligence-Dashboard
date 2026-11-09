@@ -22,7 +22,7 @@ Built by Deepanshi Behal.
 
 ```bash
 python -m pip install -r requirements.txt
-python -m streamlit run app.py
+python serve_dashboard.py
 ```
 
 It opens in your browser with 930 synthetic reviews across four sample locations.

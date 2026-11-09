@@ -5,7 +5,9 @@
 1. Select the saved dataset and locations in the sidebar.
 2. Open **Export**, then **Manager action report**.
 3. Sign in using your individual manager ID and password, then check the preview for private guest details.
-4. Tick the privacy-check box and choose **Download manager action report (TXT)**.
+4. Tick the privacy-check box and choose **Prepare secure report download**.
+5. Open **Download manager action report (TXT)** and confirm the same manager ID
+   and password. The link is single-use and expires in two minutes.
 
 The download is disabled when there are no matching actions. Save an action in
 Early warnings first, or select a file/location with saved actions.
@@ -36,18 +38,30 @@ Early warnings first, or select a file/location with saved actions.
   complete access control for dataset management, ordinary exports, or all Action
   tracker operations. Do not share the full app with untrusted users.
   Downloaded files cannot be revoked; previously rendered content cannot be recalled.
-  Streamlit download links already issued are not a separately authenticated API.
+  Report downloads are served through an authenticated endpoint, not Streamlit media.
+  Each retrieval checks the original login's expiry, current account revision and
+  every selected location grant, then checks the confirming manager's credentials.
+  Locking either the dashboard or report, or signing in again, invalidates its links.
+  Copied links alone cannot retrieve files, and a different manager is refused even
+  if they have the same location grants.
   Downloaded copies must stay private.
 - When the date range has no reviews, the report panel remains below the warning.
 - Trends are not proof that an action caused a change.
 
 ## Verification
 
+Launch with `python serve_dashboard.py` (Streamlit 1.66.x). Running `streamlit run
+app.py` directly does not mount the protected endpoint and must not be used.
+Reports are kept only in bounded process memory; restart discards all pending links.
+Use one server process. This local mechanism is not designed for multiple workers.
+Old public Streamlit media URLs from before this change are removed by restarting
+the dashboard; neither cached browser content nor downloaded files can be recalled.
+
 Run from the workspace:
 
 ```sh
 cd review_intel_app
-python -B -m unittest test_manager_identity test_action_report test_action_tracker test_action_timezone -v
+python -B -m unittest test_report_downloads test_manager_identity test_action_report -v
 ```
 
 The UI test uses Streamlit AppTest in a temporary copy with synthetic reviews

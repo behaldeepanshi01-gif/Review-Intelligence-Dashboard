@@ -123,26 +123,30 @@ class ActionReportAppTests(unittest.TestCase):
                 password = next(x for x in app_test.text_input if x.label == "Manager report password")
                 next(x for x in app_test.text_input if x.label == "Manager ID").set_value("test-manager")
                 password.set_value("wrong")
-                next(x for x in app_test.button if x.label == "Unlock restaurant calendars").click().run()
+                next(x for x in app_test.button if x.label == "Unlock restaurant dashboard").click().run()
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))
                 next(x for x in app_test.text_input if x.label == "Manager report password").set_value(
                     "synthetic-test-passphrase-only")
                 next(x for x in app_test.text_input if x.label == "Manager ID").set_value("test-manager")
-                next(x for x in app_test.button if x.label == "Unlock restaurant calendars").click().run()
+                next(x for x in app_test.button if x.label == "Unlock restaurant dashboard").click().run()
                 self.assertFalse(app_test.exception)
                 preview = next(x for x in app_test.text_area if x.label == "Manager report preview")
                 self.assertIn("Check kitchen handoffs", preview.value)
                 self.assertNotIn("Guestperson", preview.value)
-                button = next(x for x in app_test.get("download_button")
-                              if x.proto.label == "Download manager action report (TXT)")
+                button = next(x for x in app_test.button
+                              if x.label == "Prepare secure report download")
                 self.assertTrue(button.proto.disabled)
                 check = next(x for x in app_test.checkbox
                              if x.label.startswith("I checked the report"))
                 check.check().run()
                 self.assertFalse(app_test.exception)
-                button = next(x for x in app_test.get("download_button")
-                              if x.proto.label == "Download manager action report (TXT)")
+                button = next(x for x in app_test.button
+                              if x.label == "Prepare secure report download")
                 self.assertFalse(button.proto.disabled)
+                button.click().run()
+                self.assertTrue(app_test.get("link_button"))
+                self.assertFalse(any(x.proto.label == "Download manager action report (TXT)"
+                                     for x in app_test.get("download_button")))
                 # No review on Jan 3, but the report and its full-dataset counts remain available.
                 next(x for x in app_test.slider if x.label == "Date range").set_value(
                     (date(2026, 1, 3), date(2026, 1, 3))).run()
@@ -153,8 +157,8 @@ class ActionReportAppTests(unittest.TestCase):
                     MI, "DB_PATH", root / "accounts.sqlite"):
                 app_test.run()
                 self.assertFalse(app_test.exception)
-                button = next(x for x in app_test.get("download_button")
-                              if x.proto.label == "Download manager action report (TXT)")
+                button = next(x for x in app_test.button
+                              if x.label == "Prepare secure report download")
                 self.assertTrue(button.proto.disabled)
                 self.assertTrue(any("No action plans for this file" in i.value for i in app_test.info))
                 next(x for x in app_test.button if x.label == "Lock manager report").click().run()
@@ -163,7 +167,7 @@ class ActionReportAppTests(unittest.TestCase):
                 app_test.run()
                 self.assertFalse(app_test.exception)
                 self.assertFalse(any(x.label == "Manager report preview" for x in app_test.text_area))
-                self.assertTrue(any("Restaurant calendars locked" in x.value for x in app_test.warning))
+                self.assertTrue(any("Restaurant dashboard locked" in x.value for x in app_test.warning))
 
 
 if __name__ == "__main__":

@@ -111,8 +111,21 @@ previously approved reply text. Check those manually before using them again.
 deleting any reviews, caches, or actions. Corrections apply only to the local
 analyzer, never to optional Claude results.
 
+An open tag form is tied to the saved revision it displayed. If another session
+saves, renews, or removes that decision, stale saves and undo attempts are blocked.
+The conflict view shows the latest saved tags and keeps your unsaved selections.
+Choose **Review latest and keep my draft** to acknowledge the displayed revision
+without saving, or **Discard my draft and load latest tags** to replace your
+selections. You must then save explicitly; another intervening edit will conflict
+again. Drafts are private to the signed-in session, not durable recovery copies.
+
+Programmatic callers of `save_correction` and `undo_correction` must pass the
+displayed `expected_revision` (`saved_at`, or `None` for no decision). The check
+and write share one SQLite transaction; do not reload the revision immediately
+before saving an already-open draft, which would bypass stale-edit protection.
+
 ```bash
-python -m unittest -v test_manager_corrections
+python -m unittest -v test_correction_concurrency test_manager_corrections
 ```
 
 ### Rule cache and saved baselines

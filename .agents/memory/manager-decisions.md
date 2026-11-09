@@ -56,3 +56,14 @@ tags, but the application must never silently rewrite that wording.
 
 **How to apply:** Keep reply approval separate from tag approval, including renewed
 tag decisions. Treat missing reply-approval context conservatively as needing review.
+
+Keeping a conflicting tag draft is not approval to overwrite whichever decision
+happens to be newest when the manager clicks. Acknowledgment applies only to the
+revision actually shown in the comparison.
+
+**Why:** Another manager can change the decision between rendering a comparison
+and receiving acknowledgment. Silently refreshing the expected revision would
+turn the conflict safeguard back into last-writer-wins.
+
+**How to apply:** Bind reconciliation to the displayed comparison, retain draft
+selections, and require another comparison if the saved decision changes again.

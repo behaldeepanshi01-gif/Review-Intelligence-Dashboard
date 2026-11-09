@@ -9,6 +9,20 @@ import sqlite3
 import engine as E
 
 
+class CorrectionConflictError(ValueError):
+    """The decision displayed by the editor is no longer current."""
+
+
+def _check_revision(db, key, version, expected_revision):
+    row = db.execute(
+        "SELECT saved_at FROM corrections WHERE review_key=? AND rules_version=?",
+        (key, version)).fetchone()
+    if (row[0] if row else None) != expected_revision:
+        raise CorrectionConflictError(
+            "Another manager changed or removed this decision. "
+            "Your draft has not been saved. Review the latest decision first.")
+
+
 def review_key(file_path, row):
     """Hash all loaded source fields, not tags, so edits invalidate a decision."""
     identity = {
@@ -109,12 +123,14 @@ def _archive_current(db, key, version):
     """, (key, version))
 
 
-def save_correction(path, key, positive, negative, version):
+def save_correction(path, key, positive, negative, version, *, expected_revision):
+    """Save only against the displayed revision (None means no saved decision)."""
     positive, negative = _validate(positive, negative)
     db = _connect(path)
     try:
         with db:
             db.execute("BEGIN IMMEDIATE")
+            _check_revision(db, key, version, expected_revision)
             _archive_current(db, key, version)
             revision = _next_revision(db, key, version)
             db.execute(
@@ -129,11 +145,13 @@ def save_correction(path, key, positive, negative, version):
         db.close()
 
 
-def undo_correction(path, key, version):
+def undo_correction(path, key, version, *, expected_revision):
+    """Remove only the displayed decision, never another manager's replacement."""
     db = _connect(path)
     try:
         with db:
             db.execute("BEGIN IMMEDIATE")
+            _check_revision(db, key, version, expected_revision)
             _archive_current(db, key, version)
             db.execute("DELETE FROM corrections WHERE review_key=? AND rules_version=?",
                        (key, version))

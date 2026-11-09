@@ -17,6 +17,7 @@ import action_tracker as A
 import dataset_store as D
 import engine as E
 import manager_corrections as C
+from correction_test_support import save_fixture, undo_fixture
 from dataset_store import DatasetStore, SAMPLE_ID
 from calendar_test_support import manager_session, sample_app
 
@@ -72,25 +73,25 @@ class ActionProvenanceTests(unittest.TestCase):
         self.assertEqual(self.compare(action, self.provenance())["provenance_status"],
                          "unchanged")
         key = C.review_key(self.path, self.raw.iloc[3])
-        C.save_correction(self.db, key, [], [], self.version)
+        save_fixture(self.db, key, [], [], self.version)
         corrected = self.compare(action, self.provenance())
         self.assertTrue(corrected["ready"])
         self.assertEqual(corrected["mentions"], 5)
         self.assertEqual(corrected["provenance_status"], "changed")
         self.assertIn("manager decisions changed", corrected["provenance_message"])
-        C.undo_correction(self.db, key, self.version)
+        undo_fixture(self.db, key, self.version)
         self.assertEqual(self.compare(action, self.provenance())["provenance_status"],
                          "unchanged")
 
-        C.save_correction(self.db, key, [], [], self.version)
+        save_fixture(self.db, key, [], [], self.version)
         corrected_action = self.action(self.provenance())
-        C.save_correction(self.db, key, [], ["service_speed"], self.version)
+        save_fixture(self.db, key, [], ["service_speed"], self.version)
         self.assertEqual(self.compare(corrected_action, self.provenance())[
             "provenance_status"], "changed")
-        C.save_correction(self.db, key, [], [], self.version)
+        save_fixture(self.db, key, [], [], self.version)
         self.assertEqual(self.compare(corrected_action, self.provenance())[
             "provenance_status"], "unchanged")
-        C.undo_correction(self.db, key, self.version)
+        undo_fixture(self.db, key, self.version)
         self.assertEqual(self.compare(corrected_action, self.provenance())[
             "provenance_status"], "changed")
         with patch.object(E, "LOCAL_ANALYZER_VERSION", "synthetic-upgrade"):
@@ -102,17 +103,17 @@ class ActionProvenanceTests(unittest.TestCase):
 
     def test_fingerprint_ignores_timestamps_order_and_unrelated_decisions(self):
         key = C.review_key(self.path, self.raw.iloc[0])
-        C.save_correction(self.db, key, ["service_speed", "price"], [], self.version)
+        save_fixture(self.db, key, ["service_speed", "price"], [], self.version)
         first = self.provenance()
-        C.save_correction(self.db, key, ["price", "service_speed", "price"], [], self.version)
+        save_fixture(self.db, key, ["price", "service_speed", "price"], [], self.version)
         self.assertEqual(self.provenance(), first)
         self.assertEqual(self.provenance(raw=self.raw.iloc[::-1]), first)
         unrelated = self.raw.iloc[0].copy()
         unrelated["location"] = "Other Cafe"
-        C.save_correction(self.db, C.review_key(self.path, unrelated), [], [], self.version)
-        C.save_correction(self.db, C.review_key(self.root / "other.csv", self.raw.iloc[0]),
+        save_fixture(self.db, C.review_key(self.path, unrelated), [], [], self.version)
+        save_fixture(self.db, C.review_key(self.root / "other.csv", self.raw.iloc[0]),
                           [], [], self.version)
-        C.save_correction(self.db, key, [], [], "older-version")
+        save_fixture(self.db, key, [], [], "older-version")
         self.assertEqual(self.provenance(), first)
         appended = pd.concat([self.raw, self.raw.iloc[[0]].assign(review_id="new")])
         self.assertEqual(self.provenance(raw=appended), first)
@@ -139,13 +140,13 @@ class ActionProvenanceTests(unittest.TestCase):
 
     def test_decision_breakdown_added_changed_removed_and_restored(self):
         keys = [C.review_key(self.path, self.raw.iloc[i]) for i in range(3)]
-        C.save_correction(self.db, keys[0], [], ["service_speed"], self.version)
-        C.save_correction(self.db, keys[1], [], ["price"], self.version)
+        save_fixture(self.db, keys[0], [], ["service_speed"], self.version)
+        save_fixture(self.db, keys[1], [], ["price"], self.version)
         action = self.action(self.provenance())
         original = copy.deepcopy(action)
-        C.save_correction(self.db, keys[0], ["service_speed"], [], self.version)
-        C.undo_correction(self.db, keys[1], self.version)
-        C.save_correction(self.db, keys[2], [], [], self.version)
+        save_fixture(self.db, keys[0], ["service_speed"], [], self.version)
+        undo_fixture(self.db, keys[1], self.version)
+        save_fixture(self.db, keys[2], [], [], self.version)
         result = self.compare(action, self.provenance())
         self.assertEqual(result["decisions_status"], "changed")
         self.assertIn("1 added, 1 changed, 1 removed", result["decisions_message"])
@@ -165,18 +166,18 @@ class ActionProvenanceTests(unittest.TestCase):
         # The returned detail cannot mutate either historical or current records.
         rows[keys[0]]["before"]["negative"].clear()
         self.assertEqual(action, original)
-        C.save_correction(self.db, keys[0], [], ["service_speed"], self.version)
-        C.save_correction(self.db, keys[1], [], ["price"], self.version)
-        C.undo_correction(self.db, keys[2], self.version)
+        save_fixture(self.db, keys[0], [], ["service_speed"], self.version)
+        save_fixture(self.db, keys[1], [], ["price"], self.version)
+        undo_fixture(self.db, keys[2], self.version)
         restored = self.compare(action, self.provenance())
         self.assertEqual(restored["decisions_status"], "unchanged")
         self.assertEqual(restored["decision_changes"], [])
 
     def test_unrelated_theme_and_rules_changes_are_not_proven_action_effects(self):
         key = C.review_key(self.path, self.raw.iloc[0])
-        C.save_correction(self.db, key, [], ["price"], self.version)
+        save_fixture(self.db, key, [], ["price"], self.version)
         action = self.action(self.provenance())
-        C.save_correction(self.db, key, ["price"], [], self.version)
+        save_fixture(self.db, key, ["price"], [], self.version)
         result = self.compare(action, self.provenance())
         self.assertIn("Location-wide change only",
                       result["decision_changes"][0]["theme_evidence"])
@@ -218,7 +219,7 @@ class ActionProvenanceTests(unittest.TestCase):
         raw = self.raw.copy()
         raw["reviewer"] = "SYNTHETIC PRIVATE GUEST"
         key = C.review_key(self.path, raw.iloc[0])
-        C.save_correction(self.db, key, ["price"], ["service_speed"], self.version)
+        save_fixture(self.db, key, ["price"], ["service_speed"], self.version)
         provenance = self.provenance(raw=raw)
         provenance["raw_text"] = "SYNTHETIC PRIVATE GUEST Service was slow."
         action = self.action(provenance)
@@ -245,7 +246,7 @@ class ActionProvenanceTests(unittest.TestCase):
         import action_decisions_ui as UI
         key = C.review_key(self.path, self.raw.iloc[0])
         action = self.action(self.provenance())
-        C.save_correction(self.db, key, [], ["price"], self.version)
+        save_fixture(self.db, key, [], ["price"], self.version)
         result = self.compare(action, self.provenance())
         script = f'''
 import streamlit as st

@@ -12,6 +12,7 @@ from streamlit.testing.v1 import AppTest
 
 import engine as E
 import manager_corrections as C
+from correction_test_support import save_fixture, undo_fixture
 
 
 APP = Path(__file__).with_name("app.py")
@@ -43,7 +44,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.key = C.review_key(self.file, self.raw.iloc[0])
 
     def save(self, positive=None, negative=None):
-        C.save_correction(self.db, self.key, positive or [], negative or [],
+        save_fixture(self.db, self.key, positive or [], negative or [],
                           E.LOCAL_ANALYZER_VERSION)
 
     def effective(self, raw=None, file=None, version=None):
@@ -74,9 +75,9 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.assertEqual(table.loc[table["theme"] == "Cleanliness", "negative"].iloc[0], 1)
         # Undo only the selected decision. All other decisions remain.
         second_key = C.review_key(self.file, self.raw.iloc[1])
-        C.save_correction(self.db, second_key, ["staff"], [], E.LOCAL_ANALYZER_VERSION)
-        C.undo_correction(self.db, self.key, E.LOCAL_ANALYZER_VERSION)
-        C.undo_correction(self.db, self.key, E.LOCAL_ANALYZER_VERSION)
+        save_fixture(self.db, second_key, ["staff"], [], E.LOCAL_ANALYZER_VERSION)
+        undo_fixture(self.db, self.key, E.LOCAL_ANALYZER_VERSION)
+        undo_fixture(self.db, self.key, E.LOCAL_ANALYZER_VERSION)
         self.assertEqual(set(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)),
                          {second_key})
         restored = self.effective().iloc[0]
@@ -133,8 +134,8 @@ class ManagerCorrectionTests(unittest.TestCase):
 
     def test_renewal_history_is_exact_scoped_and_never_applied_automatically(self):
         self.assertEqual(C.load_prior_corrections(self.db, "current"), {})
-        C.save_correction(self.db, self.key, ["staff"], ["cleanliness"], "old-a")
-        C.save_correction(self.db, self.key, [], [], "old-b")
+        save_fixture(self.db, self.key, ["staff"], ["cleanliness"], "old-a")
+        save_fixture(self.db, self.key, [], [], "old-b")
         history = C.load_prior_corrections(self.db, E.LOCAL_ANALYZER_VERSION)
         self.assertEqual([d["rules_version"] for d in history[self.key]],
                          ["old-b", "old-a"])
@@ -168,7 +169,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
                                        history[self.key][0], E.LOCAL_ANALYZER_VERSION)
-        C.undo_correction(self.db, self.key, E.LOCAL_ANALYZER_VERSION)
+        undo_fixture(self.db, self.key, E.LOCAL_ANALYZER_VERSION)
         self.assertEqual(set(C.renewal_queue(self.raw, self.file, {}, history)), {self.key})
         # Empty historical tags are still an explicit, valid approval.
         C.approve_prior_correction(self.db, self.file, self.raw.iloc[0],
@@ -177,13 +178,13 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.assertEqual(self.effective().iloc[0]["themes_neg"], [])
 
     def test_stale_history_cannot_be_approved(self):
-        C.save_correction(self.db, self.key, [], ["staff"], "old")
+        save_fixture(self.db, self.key, [], ["staff"], "old")
         earlier = C.load_prior_corrections(self.db, E.LOCAL_ANALYZER_VERSION)[self.key][0]
-        C.save_correction(self.db, self.key, [], ["cleanliness"], "old")
+        save_fixture(self.db, self.key, [], ["cleanliness"], "old")
         with self.assertRaisesRegex(ValueError, "changed"):
             C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], earlier,
                                        E.LOCAL_ANALYZER_VERSION)
-        C.undo_correction(self.db, self.key, "old")
+        undo_fixture(self.db, self.key, "old")
         with self.assertRaisesRegex(ValueError, "changed"):
             C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], earlier,
                                        E.LOCAL_ANALYZER_VERSION)
@@ -214,7 +215,7 @@ class ManagerCorrectionTests(unittest.TestCase):
                 "FROM corrections WHERE rules_version='old'").fetchone(), original)
 
     def test_renewal_links_selected_revision_across_reload_chain_edit_and_undo(self):
-        C.save_correction(self.db, self.key, ["staff"], [], "first")
+        save_fixture(self.db, self.key, ["staff"], [], "first")
         first = C.load_corrections(self.db, "first")[self.key]
         C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], first, "second")
         second = C.load_corrections(self.db, "second")[self.key]
@@ -229,19 +230,19 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.assertIn(second, history)
         self.assertIn(first, history)
         # A separate manual save is not attributed to a renewal, even with identical tags.
-        C.save_correction(self.db, self.key, ["staff"], [], "third")
+        save_fixture(self.db, self.key, ["staff"], [], "third")
         edited = C.load_corrections(self.db, "third")[self.key]
         self.assertEqual(edited["decision_origin"], "correction")
         self.assertIsNone(edited["source_rules_version"])
         self.assertIsNone(edited["source_decision_revision"])
-        C.undo_correction(self.db, self.key, "third")
+        undo_fixture(self.db, self.key, "third")
         self.assertEqual(C.load_prior_corrections(self.db, "third")[self.key], history)
         # Removing the source cannot erase an already-recorded renewal origin.
-        C.undo_correction(self.db, self.key, "first")
+        undo_fixture(self.db, self.key, "first")
         self.assertEqual(C.load_corrections(self.db, "second")[self.key], second)
 
     def test_same_tags_but_changed_source_revision_cannot_be_renewed(self):
-        C.save_correction(self.db, self.key, [], [], "old")
+        save_fixture(self.db, self.key, [], [], "old")
         earlier = C.load_corrections(self.db, "old")[self.key]
         with closing(C.sqlite3.connect(self.db)) as db, db:
             db.execute("UPDATE corrections SET saved_at=?", ("different-revision",))
@@ -251,7 +252,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.assertEqual(C.load_corrections(self.db, "current"), {})
 
     def test_revision_archive_preserves_edits_undo_and_exact_renewal_chain(self):
-        C.save_correction(self.db, self.key, ["staff"], [], "first")
+        save_fixture(self.db, self.key, ["staff"], [], "first")
         first = C.load_corrections(self.db, "first")[self.key]
         C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], first, "second")
         second = C.load_corrections(self.db, "second")[self.key]
@@ -259,9 +260,9 @@ class ManagerCorrectionTests(unittest.TestCase):
         third = C.load_corrections(self.db, "third")[self.key]
         # Each referenced source can be replaced and then undone without losing it.
         for version in ("first", "second", "third"):
-            C.save_correction(self.db, self.key, [], ["cleanliness"], version)
-            C.undo_correction(self.db, self.key, version)
-            C.undo_correction(self.db, self.key, version)
+            save_fixture(self.db, self.key, [], ["cleanliness"], version)
+            undo_fixture(self.db, self.key, version)
+            undo_fixture(self.db, self.key, version)
             self.assertEqual(C.load_corrections(self.db, version), {})
         revisions = C.load_correction_revisions(self.db, self.key)
         self.assertEqual(len(revisions), 6)
@@ -291,7 +292,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         before = C.load_correction_revisions(self.db, self.key)
         self.assertEqual(before[0]["themes_pos"], ["retired_theme"])
         self.assertEqual(before[0]["decision_origin"], "legacy")
-        C.undo_correction(self.db, self.key, "old")
+        undo_fixture(self.db, self.key, "old")
         self.assertEqual(C.load_correction_revisions(self.db, self.key), before)
         with closing(C.sqlite3.connect(self.db)) as db:
             self.assertEqual(db.execute(
@@ -308,14 +309,14 @@ class ManagerCorrectionTests(unittest.TestCase):
         with patch.object(C, "datetime", wraps=C.datetime) as clock:
             clock.now.return_value = instant
             for _ in range(3):
-                C.save_correction(self.db, self.key, [], [], "same")
-                C.undo_correction(self.db, self.key, "same")
+                save_fixture(self.db, self.key, [], [], "same")
+                undo_fixture(self.db, self.key, "same")
         revisions = C.load_correction_revisions(self.db, self.key)
         self.assertEqual(len(revisions), 3)
         self.assertEqual(len({r["saved_at"] for r in revisions}), 3)
 
     def test_archive_failure_rolls_back_manual_save_and_renewal(self):
-        C.save_correction(self.db, self.key, ["staff"], [], "old")
+        save_fixture(self.db, self.key, ["staff"], [], "old")
         earlier = C.load_corrections(self.db, "old")[self.key]
         with closing(C.sqlite3.connect(self.db)) as db, db:
             db.execute("""
@@ -328,7 +329,7 @@ class ManagerCorrectionTests(unittest.TestCase):
                 BEGIN SELECT RAISE(ABORT, 'synthetic archive failure'); END
             """)
         with self.assertRaisesRegex(C.sqlite3.IntegrityError, "synthetic archive"):
-            C.save_correction(self.db, self.key, [], ["cleanliness"], "old")
+            save_fixture(self.db, self.key, [], ["cleanliness"], "old")
         self.assertEqual(C.load_corrections(self.db, "old")[self.key], earlier)
         with self.assertRaisesRegex(C.sqlite3.IntegrityError, "synthetic archive"):
             C.approve_prior_correction(
@@ -337,15 +338,15 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.assertEqual(C.load_correction_revisions(self.db, self.key), [earlier])
 
     def test_streamlit_archive_inspects_chain_after_edit_and_undo_read_only(self):
-        C.save_correction(self.db, self.key, ["staff"], [], "first")
+        save_fixture(self.db, self.key, ["staff"], [], "first")
         first = C.load_corrections(self.db, "first")[self.key]
         C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], first, "second")
         second = C.load_corrections(self.db, "second")[self.key]
         C.approve_prior_correction(self.db, self.file, self.raw.iloc[0], second, "third")
         third = C.load_corrections(self.db, "third")[self.key]
-        C.save_correction(self.db, self.key, [], ["cleanliness"], "first")
+        save_fixture(self.db, self.key, [], ["cleanliness"], "first")
         for version in ("first", "second", "third"):
-            C.undo_correction(self.db, self.key, version)
+            undo_fixture(self.db, self.key, version)
         source = (
             "import manager_correction_history as H\n"
             f"H.render({self.db!r}, {self.key!r}, context='test')\n")
@@ -366,7 +367,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.assertEqual(len(fresh.selectbox[0].options), 4)
 
     def test_streamlit_unrecoverable_legacy_reference_is_explicit(self):
-        C.save_correction(self.db, self.key, [], [], "old")
+        save_fixture(self.db, self.key, [], [], "old")
         with closing(C.sqlite3.connect(self.db)) as db, db:
             db.execute(
                 "UPDATE corrections SET decision_origin='renewal', "
@@ -383,7 +384,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         self.assertEqual(len(app.json), 1)
 
     def test_obsolete_history_is_visible_but_cannot_be_reapproved(self):
-        C.save_correction(self.db, self.key, [], ["staff"], "old")
+        save_fixture(self.db, self.key, [], ["staff"], "old")
         # Simulate a theme that was valid when the old rules were active.
         with closing(C.sqlite3.connect(self.db)) as db, db:
             db.execute("UPDATE corrections SET negative=?", ('["retired_theme"]',))
@@ -407,7 +408,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         key = C.review_key(sample, self.raw.iloc[1])
         other_key = C.review_key(self.file.with_name("unrelated.csv"), self.raw.iloc[0])
         for stored_key in (key, other_key):
-            C.save_correction(self.db, stored_key, [], ["staff"], "old")
+            save_fixture(self.db, stored_key, [], ["staff"], "old")
         with closing(C.sqlite3.connect(self.db)) as db, db:
             db.execute("UPDATE corrections SET negative=?", ('["retired_theme"]',))
         with patch.object(E, "load_reviews", return_value=self.raw):
@@ -445,11 +446,11 @@ class ManagerCorrectionTests(unittest.TestCase):
         # Built-in sample identity, but only synthetic in-memory reviews are loaded.
         sample = APP.parent / "data" / "sample_reviews.csv"
         key = C.review_key(sample, self.raw.iloc[1])
-        C.save_correction(self.db, key, ["staff"], ["cleanliness"], "old-rules")
+        save_fixture(self.db, key, ["staff"], ["cleanliness"], "old-rules")
         earlier = C.load_corrections(self.db, "old-rules")[key]
         changed = self.raw.iloc[0].copy()
         changed["text"] = "No longer the same review."
-        C.save_correction(self.db, C.review_key(sample, changed), [], ["staff"], "old-rules")
+        save_fixture(self.db, C.review_key(sample, changed), [], ["staff"], "old-rules")
         with patch.object(E, "load_reviews", return_value=self.raw):
             app = self.open_app(source)
             self.assertEqual(len(app.exception), 0)
@@ -599,7 +600,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             'UPLOAD_DIR = os.path.join(BASE_DIR, "data", "uploads")',
             f"UPLOAD_DIR = {str(Path(self.temp.name) / 'uploads')!r}")
         key = C.review_key(APP.parent / "data" / "sample_reviews.csv", self.raw.iloc[1])
-        C.save_correction(self.db, key, [], ["cleanliness"], "old-rules")
+        save_fixture(self.db, key, [], ["cleanliness"], "old-rules")
         with patch.object(E, "load_reviews", return_value=self.raw):
             app = self.open_app(source)
 
@@ -617,6 +618,8 @@ class ManagerCorrectionTests(unittest.TestCase):
             button("Recheck and approve reply").click().run()
             checked_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
             # A new decision with identical effective tags must not invalidate approval.
+            # Renewal changed the revision underneath the already-open manual form.
+            button("Discard my draft and load latest tags").click().run()
             button("Save manager decision").click().run()
             self.assertEqual(len(app.exception), 0)
             self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))

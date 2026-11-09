@@ -25,6 +25,7 @@ import manager_identity as identity
 import engine as E
 import manager_corrections as C
 import manager_correction_history as correction_history
+import manager_correction_editor as correction_editor
 import dataset_store as D
 from location_settings import LocationSettings
 from calendar_rename_ui import show_calendar_rename
@@ -78,7 +79,8 @@ access = DashboardAccess(st.session_state.get("_manager_report_grant"))
 for draft_key in list(st.session_state):
     if draft_key.startswith(("action_text_", "action_owner_", "start_date_",
                              "due_date_", "update_text_", "update_owner_",
-                             "update_status_", "update_start_", "update_due_")):
+                             "update_status_", "update_start_", "update_due_",
+                             "tag-editor-")):
         st.session_state[draft_key] = st.session_state[draft_key]
 
 
@@ -659,34 +661,8 @@ with tabs[1]:
         st.json(r["rule_output"])
         st.write("Original rule evidence")
         st.json(r["tag_evidence"])
-        # A decision revision resets defaults after save/undo, not just review changes.
-        revision = (r["manager_correction"] or {}).get("saved_at", "rules")
-        with st.form(f"correction-{selected}-{revision}"):
-            positive = st.multiselect(
-                "Confirmed praise themes", list(E.THEMES),
-                default=r["themes_pos"], format_func=E.THEME_LABELS.get)
-            negative = st.multiselect(
-                "Confirmed complaint themes", list(E.THEMES),
-                default=r["themes_neg"], format_func=E.THEME_LABELS.get)
-            save = st.form_submit_button("Save manager decision")
-        if save:
-            require_access(tag, [r["location"]])
-            try:
-                C.save_correction(CORRECTIONS_LOG, selected, positive, negative,
-                                  E.LOCAL_ANALYZER_VERSION)
-            except (OSError, ValueError, C.sqlite3.Error) as ex:
-                st.error(f"Couldn't save the manager decision: {ex}")
-            else:
-                st.rerun()
-        if r["manager_correction"] and st.button(
-                "Undo manager decision", key=f"undo-{selected}"):
-            require_access(tag, [r["location"]])
-            try:
-                C.undo_correction(CORRECTIONS_LOG, selected, E.LOCAL_ANALYZER_VERSION)
-            except (OSError, ValueError, C.sqlite3.Error) as ex:
-                st.error(f"Couldn't undo the manager decision: {ex}")
-            else:
-                st.rerun()
+        correction_editor.render(
+            CORRECTIONS_LOG, selected, r, lambda: require_access(tag, [r["location"]]))
 
 # ----------------------------------------------------------------------------
 # Early warnings

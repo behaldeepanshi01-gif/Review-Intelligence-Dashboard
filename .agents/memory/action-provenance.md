@@ -41,15 +41,28 @@ separately from manager-decision differences; include the cutoff date and count
 duplicate occurrences. Missing historical source cohorts mean unknown counts,
 not zero.
 
-Decision explanations describe net changes in applicable approvals, not an audit
-trail of every save or undo. Added or removed approvals do not establish a change
-to effective theme tags because the rule fallback was not captured. A rules
-upgrade can remove an applicable approval without any manager undo.
+Location-wide decision explanations describe net changes in applicable approvals,
+not an audit trail of every save or undo. Without cohort and rule-fallback
+evidence, added or removed approvals do not establish effective tag-count changes.
+A rules upgrade can remove an applicable approval without any manager undo.
 
 **Why:** Sparse, private provenance cannot prove historical rule outputs or review
 cohort impact; presenting those inferences as facts would mislead managers.
 
-**How to apply:** Keep legacy decision detail unknown even when its fingerprint
+**How to apply:** Keep legacy count effects unknown even when its fingerprint
 matches. Distinguish recorded theme-tag changes from proven count effects, and
 reuse the report identity's exact dataset/location checks for private details
 without suggesting the rest of the dashboard is protected by that gate.
+
+For future captures, isolate manager-decision effects using the same rules on
+fixed cohorts. New follow-up reviews use rule fallback under the saved approval
+state; this is a counterfactual, not a claim those reviews existed at capture.
+Show added and removed mentions separately even when their net change is zero.
+
+**Why:** A count can stay equal while different reviews gain and lose complaint
+tags. Mixing changed rules or changing cohort membership into an approval effect
+would falsely attribute those differences to manager decisions.
+
+**How to apply:** Require complete cohort and fallback evidence before claiming
+count effects. Preserve source/rules warnings and numeric baselines independently;
+never use a proven tagging effect as evidence an operational action worked.

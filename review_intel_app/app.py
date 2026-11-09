@@ -788,6 +788,14 @@ with tabs[2]:
                                 tagging_provenance=provenance_by_location.get(
                                     alert["location"]),
                                 source_reviews=raw.to_dict("records"),
+                                tagging_reviews=tagged.to_dict("records") if is_local else None,
+                                alert_review_keys=(
+                                    view.loc[
+                                        (view["location"] == alert["location"])
+                                        & (view["date"] > view["date"].max()
+                                           - timedelta(days=window)),
+                                        "correction_key",
+                                    ].tolist() if is_local else None),
                             )
                             try:
                                 require_access(tag, [action["location"]])

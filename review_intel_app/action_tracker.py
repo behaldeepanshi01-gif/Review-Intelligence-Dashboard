@@ -13,6 +13,7 @@ import os
 import tempfile
 import uuid
 from dataset_store import source_cohort, source_cohort_difference
+import action_tag_effects
 
 
 MIN_FOLLOWUP_REVIEWS = 5
@@ -251,11 +252,13 @@ def create_action(
     timezone_name: str = DEFAULT_RESTAURANT_TIMEZONE,
     tagging_provenance: dict | None = None,
     source_reviews: list[dict] | None = None,
+    tagging_reviews: list[dict] | None = None,
+    alert_review_keys: list[str] | None = None,
     timezones_by_location: dict | None = None,
     now: datetime | None = None,
 ) -> dict:
     """Create one manager-owned action using the warning as its baseline."""
-    return {
+    action = {
         "action_id": uuid.uuid4().hex,
         "dataset_tag": dataset_tag,
         "location": alert["location"],
@@ -277,6 +280,9 @@ def create_action(
             source_reviews, dataset_tag, alert["location"], alert_end_date
         ) if source_reviews is not None else None,
     }
+    action["baseline_action_tags"] = action_tag_effects.capture(
+        action, tagging_reviews, alert_review_keys)
+    return action
 
 
 def update_action(
@@ -365,10 +371,11 @@ def comparison_decisions(action: dict, current: dict | None) -> dict:
     before = _decision_snapshot(baseline)
     after = _decision_snapshot(current)
     scope = (
-        "Location-wide decisions, independent of dashboard date filters. These changes "
+        "Location-wide approval records, independent of dashboard date filters. These changes alone "
         "are potentially relevant, not proof that this action theme's counts changed "
         "or that the action caused an operational result. Added or removed decisions "
-        "do not record the local-rule fallback tags; their effective theme impact is unknown."
+        "in this approval breakdown do not record local-rule fallback tags. "
+        "The separate private cohort calculation, when available, establishes tagging-count effects."
     )
     if before is None or after is None:
         missing = "Baseline" if before is None else "Current"
@@ -528,6 +535,10 @@ def follow_up(
         "unknown" if "unknown" in statuses else "unchanged")
     return {**_follow_up_counts(action, reviews), **provenance, **source,
             **comparison_decisions(action, current_provenance),
+            **action_tag_effects.compare(
+                action, reviews, current_provenance, current_dataset_tag,
+                _decision_snapshot(action.get("baseline_provenance")) is not None
+                and _decision_snapshot(current_provenance) is not None),
             "comparability_status": comparable}
 
 

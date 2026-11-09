@@ -312,6 +312,153 @@ show_decision_changes({action!r}, "synthetic", {result!r},
                             for w in unknown.warning))
         self.assertFalse(unknown.dataframe)
 
+    def captured_action(self):
+        tagged = C.apply_corrections(
+            self.raw, E.analyze_offline(self.raw), self.path,
+            C.load_corrections(self.db, self.version))
+        recent = tagged.iloc[:3]
+        action = A.create_action(
+            "synthetic", {"location": "Demo Cafe", "theme": "Service speed",
+                          "recent_share": 100 * recent.themes_neg.apply(
+                              lambda tags: "service_speed" in tags).mean(),
+                          "recent_mentions": recent.themes_neg.apply(
+                              lambda tags: "service_speed" in tags).sum()},
+            "service_speed", "Check handoffs.", "Manager",
+            date(2026, 1, 2), date(2026, 1, 20), date(2026, 1, 3),
+            tagging_provenance=self.provenance(),
+            tagging_reviews=tagged.to_dict("records"),
+            alert_review_keys=recent.correction_key.tolist())
+        action["status"] = "In progress"
+        return action
+
+    def cohort_result(self, action, raw=None, version=None):
+        raw = self.raw if raw is None else raw
+        tagged = C.apply_corrections(
+            raw, E.analyze_offline(raw), self.path,
+            C.load_corrections(self.db, version or self.version))
+        return A.follow_up(
+            action, tagged.to_dict("records"),
+            current_provenance=self.provenance(raw=raw, version=version),
+            current_dataset_tag="synthetic")
+
+    def test_cohort_effects_add_remove_change_and_restore_with_rule_fallback(self):
+        keys = [C.review_key(self.path, row) for row in self.raw.to_dict("records")]
+        # Suppress a rule complaint at capture. Undo must restore its rule tag.
+        save_fixture(self.db, keys[0], [], [], self.version)
+        action = self.captured_action()
+        original = copy.deepcopy(action)
+        save_fixture(self.db, keys[1], [], [], self.version)  # added approval removes complaint
+        undo_fixture(self.db, keys[0], self.version)         # removal restores complaint
+        save_fixture(self.db, keys[3], [], [], self.version)  # follow-up only
+        result = self.cohort_result(action)
+        self.assertEqual(result["tag_effect_status"], "changed")
+        alert, followup = result["tag_effect_cohorts"]
+        self.assertEqual((alert["before_mentions"], alert["after_mentions"]), (2, 2))
+        self.assertEqual((alert["added_mentions"], alert["removed_mentions"],
+                          alert["net_mentions"]), (1, 1, 0))
+        self.assertEqual((followup["before_mentions"], followup["after_mentions"]), (6, 5))
+        self.assertIn("not operational outcomes", result["tag_effect_message"])
+        self.assertEqual(action, original)
+        save_fixture(self.db, keys[1], ["service_speed"], [], self.version)
+        self.assertEqual(self.cohort_result(action)["tag_effect_cohorts"][0][
+            "removed_mentions"], 1)  # Positive is not a negative mention.
+        save_fixture(self.db, keys[0], [], [], self.version)
+        undo_fixture(self.db, keys[1], self.version)
+        undo_fixture(self.db, keys[3], self.version)
+        restored = self.cohort_result(action)
+        self.assertEqual(restored["tag_effect_status"], "unchanged")
+        self.assertTrue(all(r["net_mentions"] == 0 for r in restored["tag_effect_cohorts"]))
+
+    def test_new_followup_reviews_use_before_rule_fallback_and_other_themes_do_not_count(self):
+        action = self.captured_action()
+        extra = self.raw.iloc[[0]].assign(review_id="later", date=pd.Timestamp("2026-02-01"))
+        raw = pd.concat([self.raw, extra], ignore_index=True)
+        save_fixture(self.db, C.review_key(self.path, extra.iloc[0]), [], [], self.version)
+        save_fixture(self.db, C.review_key(self.path, self.raw.iloc[0]),
+                     ["price"], ["service_speed"], self.version)
+        result = self.cohort_result(action, raw)
+        alert, followup = result["tag_effect_cohorts"]
+        self.assertEqual(alert["net_mentions"], 0)
+        self.assertEqual((followup["review_count"], followup["before_mentions"],
+                          followup["after_mentions"]), (7, 7, 6))
+        # Cohort membership follows an explicitly edited action start date.
+        edited = A.update_action(action, "Check", "Manager", "In progress",
+                                 date(2026, 1, 8), date(2026, 2, 2))
+        self.assertEqual(self.cohort_result(edited, raw)["tag_effect_cohorts"][1][
+            "review_count"], 1)
+        self.assertEqual(edited["baseline_action_tags"], action["baseline_action_tags"])
+
+    def test_cohort_capture_unknown_for_legacy_missing_changed_rules_or_source(self):
+        action = self.captured_action()
+        self.assertIsNotNone(action["baseline_action_tags"])
+        cases = []
+        legacy = copy.deepcopy(action)
+        legacy.pop("baseline_action_tags")
+        cases.append((legacy, self.raw, None))
+        partial = copy.deepcopy(action)
+        next(iter(partial["baseline_action_tags"]["reviews"].values())).pop("rule_negative")
+        cases.append((partial, self.raw, None))
+        cases.append((action, self.raw.iloc[1:], None))  # saved alert member missing
+        cases.append((action, self.raw.assign(text="Changed source."), None))
+        cases.append((action, self.raw, "upgraded-rules"))
+        no_decisions = copy.deepcopy(action)
+        no_decisions["baseline_provenance"].pop("decisions")
+        cases.append((no_decisions, self.raw, None))
+        for saved, raw, version in cases:
+            with self.subTest(version=version, rows=len(raw)):
+                result = self.cohort_result(saved, raw, version)
+                self.assertEqual(result["tag_effect_status"], "unknown")
+                self.assertEqual(result["tag_effect_cohorts"], [])
+        tagged = C.apply_corrections(
+            self.raw, E.analyze_offline(self.raw), self.path, {})
+        wrong = A.follow_up(action, tagged.to_dict("records"),
+                            current_provenance=self.provenance(), current_dataset_tag="other")
+        self.assertEqual(wrong["tag_effect_status"], "unknown")
+        with patch.object(E, "LOCAL_ANALYZER_VERSION", "upgraded-rules"):
+            self.assertEqual(self.cohort_result(action, version="upgraded-rules")[
+                "tag_effect_status"], "unknown")
+
+    def test_cohort_duplicates_persist_privately_without_baseline_rewrites(self):
+        self.raw = pd.concat([self.raw.iloc[[0]], self.raw], ignore_index=True)
+        self.raw["reviewer"] = "PRIVATE SYNTHETIC GUEST"
+        action = self.captured_action()
+        key = C.review_key(self.path, self.raw.iloc[0])
+        self.assertEqual(action["baseline_action_tags"]["reviews"][key]["count"], 2)
+        log = self.root / "cohorts.json"
+        A.save_actions(str(log), [action])
+        original = log.read_bytes()
+        restored = A.load_actions(str(log))[0]
+        save_fixture(self.db, key, [], [], self.version)
+        result = self.cohort_result(restored)
+        self.assertEqual(result["tag_effect_cohorts"][0]["removed_mentions"], 2)
+        self.assertEqual(log.read_bytes(), original)
+        for private in ("PRIVATE SYNTHETIC GUEST", "Service was slow.", str(self.path),
+                        "rule_output", "reviewer"):
+            self.assertNotIn(private, original.decode())
+        summary = "\n".join(A.weekly_action_summary(
+            [restored], "synthetic", ["Demo Cafe"], [],
+            provenance_by_location={"Demo Cafe": self.provenance()}))
+        self.assertNotIn(key, summary)
+
+    def test_proven_cohort_counts_render_only_after_exact_private_access_check(self):
+        import action_decisions_ui as UI
+        action = self.captured_action()
+        key = C.review_key(self.path, self.raw.iloc[0])
+        save_fixture(self.db, key, [], [], self.version)
+        result = self.cohort_result(action)
+        script = ("from action_decisions_ui import show_decision_changes\n"
+                  f"show_decision_changes({action!r}, 'synthetic', {result!r})")
+        with patch.object(UI, "authorized", return_value=True):
+            app = AppTest.from_string(script).run()
+        self.assertFalse(app.exception)
+        self.assertTrue(any("not operational outcomes" in item.value for item in app.markdown))
+        counts = app.dataframe[0].value
+        self.assertEqual(counts.iloc[0]["Removed mentions"], 1)
+        with patch.object(UI, "authorized", return_value=False):
+            app.run()
+        self.assertFalse(app.dataframe)
+        self.assertFalse(any("Proven net" in item.value for item in app.markdown))
+
     def test_private_review_source_requires_exact_current_row_and_location(self):
         import action_decisions_ui as UI
         action = self.action(self.provenance())
@@ -464,6 +611,9 @@ show_decision_changes({action!r}, "synthetic", {result!r},
         self.assertEqual(action["baseline_provenance"], expected)
         self.assertEqual(action["baseline_source"], D.source_cohort(
             raw.to_dict("records"), SAMPLE_ID, action["location"], action["alert_end_date"]))
+        self.assertIsNotNone(action["baseline_action_tags"])
+        self.assertTrue(any("Proven net manager-decision" in item.value
+                            for item in app.markdown))
         self.assertTrue(any("Tagging provenance unchanged" in item.value
                             for item in app.caption))
         self.assertTrue(any("Source cohort unchanged" in item.value for item in app.caption))

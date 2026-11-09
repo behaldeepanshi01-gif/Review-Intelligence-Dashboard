@@ -30,6 +30,20 @@ def show_decision_changes(action, dataset_id, result, *, current_reviews=None,
         else:
             st.write(result["decisions_message"])
         st.caption(result["decisions_scope"])
+        if result.get("tag_effect_status", "unknown") == "unknown":
+            st.warning(result.get("tag_effect_message",
+                                 "Action-cohort tagging-count effects unknown."))
+        else:
+            st.write(result["tag_effect_message"])
+            st.dataframe([
+                {"Cohort": row["cohort"], "Reviews": row["review_count"],
+                 "Negative mentions before": row["before_mentions"],
+                 "Negative mentions now": row["after_mentions"],
+                 "Added mentions": row["added_mentions"],
+                 "Removed mentions": row["removed_mentions"],
+                 "Net mention change": row["net_mentions"]}
+                for row in result["tag_effect_cohorts"]
+            ], hide_index=True, use_container_width=True)
         if result["decision_changes"]:
             st.dataframe([
                 {"Decision reference": row["decision_ref"],

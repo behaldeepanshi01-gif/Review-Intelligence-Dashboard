@@ -42,6 +42,20 @@ def source_cohort(reviews, dataset_id, location, through_date):
             "through_date": cutoff.isoformat(), "counts": dict(sorted(counts.items()))}
 
 
+def source_cohort_difference(baseline, current):
+    """Return aggregate multiset differences, never review identities or hashes.
+
+    One edited review can contribute to both counts. These are unmatched content
+    occurrences, not evidence of particular edits, deletions, or backfills.
+    """
+    before = Counter(baseline["counts"])
+    after = Counter(current["counts"])
+    return {
+        "source_missing_count": sum((before - after).values()),
+        "source_added_older_count": sum((after - before).values()),
+    }
+
+
 class DatasetStore:
     def __init__(self, uploads, sample):
         self.uploads = Path(uploads)

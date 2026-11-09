@@ -348,6 +348,11 @@ show_decision_changes({action!r}, "synthetic", {result!r})
         self.assertTrue(any("Baseline tagging provenance unknown" in item.value
                             for item in app.warning))
         self.assertTrue(any("Source cohort unchanged" in item.value for item in app.caption))
+        self.assertTrue(any("Missing baseline reviews: 1; added older reviews: 0"
+                            in item.value for item in app.caption))
+        self.assertTrue(any("Missing baseline reviews: 0; added older reviews: 0"
+                            in item.value for item in app.caption))
+        self.assertTrue(any("cannot be counted" in item.value for item in app.caption))
         self.assertTrue(any("Source data changed" in item.value for item in app.warning))
         self.assertTrue(any("Source-data comparability unknown" in item.value
                             for item in app.warning))
@@ -474,25 +479,33 @@ class SourceComparabilityTests(unittest.TestCase):
                 result, _ = self.compare_csv(content)
                 self.assertEqual(result["source_status"], "unchanged")
                 self.assertEqual(result["comparability_status"], "unchanged")
+                self.assertEqual(result["source_missing_count"], 0)
+                self.assertEqual(result["source_added_older_count"], 0)
         self.assertTrue(result["ready"])
         self.assertEqual(result["review_count"], 5)
 
     def test_edits_removals_and_backfills_warn_without_decisions(self):
         variants = [
-            self.content.replace(b"Service was slow.", b"Quick service."),
-            self.content.replace(b"2026-01-01,1", b"2026-01-01,5"),
-            self.content.replace(b"2026-01-01", b"2026-01-03"),
-            self.content.replace(b"Demo Cafe,2026-01-01", b"Other Cafe,2026-01-01"),
-            self.content.replace(b"Demo Cafe,2026-01-01,1,Service was slow.\n", b""),
-            self.content + b"Demo Cafe,2026-01-01,5,Friendly staff.\n",
-            self.content + b"Demo Cafe,2026-01-01,1,Service was slow.\n",
+            (self.content.replace(b"Service was slow.", b"Quick service."), 1, 1),
+            (self.content.replace(b"2026-01-01,1", b"2026-01-01,5"), 1, 1),
+            (self.content.replace(b"2026-01-01", b"2026-01-03"), 1, 0),
+            (self.content.replace(b"Demo Cafe,2026-01-01", b"Other Cafe,2026-01-01"), 1, 0),
+            (self.content.replace(b"Demo Cafe,2026-01-01,1,Service was slow.\n", b""), 1, 0),
+            (self.content + b"Demo Cafe,2026-01-01,5,Friendly staff.\n", 0, 1),
+            (self.content + b"Demo Cafe,2026-01-01,1,Service was slow.\n", 0, 1),
+            # Cutoff day is included; two indistinguishable copies count twice.
+            (self.content + b"Demo Cafe,2026-01-02,2,Long wait.\n" * 2, 0, 2),
         ]
-        for content in variants:
+        for content, missing, added in variants:
             with self.subTest(content=content):
                 result, _ = self.compare_csv(content)
                 self.assertEqual(result["provenance_status"], "unchanged")
                 self.assertEqual(result["source_status"], "changed")
                 self.assertEqual(result["comparability_status"], "changed")
+                self.assertEqual(result["source_missing_count"], missing)
+                self.assertEqual(result["source_added_older_count"], added)
+                self.assertIn("An edited review can appear in both counts",
+                              result["source_details"])
                 self.assertIn("saved baseline is unchanged", result["source_message"])
                 self.assertFalse(result["ready"])
         # Restoring identical analysis inputs restores comparability.
@@ -522,12 +535,18 @@ class SourceComparabilityTests(unittest.TestCase):
         action = copy.deepcopy(self.action)
         action["baseline_source"] = D.source_cohort(
             duplicate, action["dataset_tag"], "Demo Cafe", action["alert_end_date"])
-        self.assertEqual(A.comparison_source(action, rows)["source_status"], "changed")
+        difference = A.comparison_source(action, rows)
+        self.assertEqual(difference["source_status"], "changed")
+        self.assertEqual(difference["source_missing_count"], 1)
+        self.assertEqual(difference["source_added_older_count"], 0)
         for baseline in (None, {}, {"version": 999}):
             older = copy.deepcopy(self.action)
             older["baseline_source"] = baseline
             original = copy.deepcopy(older)
-            self.assertEqual(A.comparison_source(older, rows)["source_status"], "unknown")
+            result = A.comparison_source(older, rows)
+            self.assertEqual(result["source_status"], "unknown")
+            self.assertIsNone(result["source_missing_count"])
+            self.assertIsNone(result["source_added_older_count"])
             edited = A.update_action(older, "New step", "Manager", "Done",
                                     date(2026, 1, 2), date(2026, 1, 20))
             self.assertEqual(edited["baseline_source"], baseline)
@@ -545,6 +564,19 @@ class SourceComparabilityTests(unittest.TestCase):
             source_reviews=changed.to_dict("records")))
         self.assertIn("Tagging provenance unchanged", text)
         self.assertIn("Source data changed", text)
+        self.assertIn("Missing baseline reviews: 1; added older reviews: 1", text)
+        self.assertIn("hash differences cannot distinguish", text)
+        report = __import__("action_report").build_report(
+            [self.action], self.action["dataset_tag"], ["Demo Cafe"],
+            changed.to_dict("records"),
+            provenance_by_location={"Demo Cafe": self.provenance})
+        self.assertIn("Missing baseline reviews: 1; added older reviews: 1", report)
+        self.assertIn("hash differences cannot distinguish", report)
+        for output in (text, report):
+            for private in ("Long wait.", "Quick service.",
+                            *self.action["baseline_source"]["counts"]):
+                self.assertNotIn(private, output)
+        self.assertEqual(Path(self.log).read_bytes(), self.saved_bytes)
 
 
 class ReviewActionFlowTests(unittest.TestCase):

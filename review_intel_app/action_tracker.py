@@ -12,7 +12,7 @@ import json
 import os
 import tempfile
 import uuid
-from dataset_store import source_cohort
+from dataset_store import source_cohort, source_cohort_difference
 
 
 MIN_FOLLOWUP_REVIEWS = 5
@@ -463,6 +463,10 @@ def comparison_source(action: dict, reviews: list[dict] | None,
     baseline = action.get("baseline_source")
     unknown = {
         "source_status": "unknown",
+        "source_missing_count": None,
+        "source_added_older_count": None,
+        "source_details": "Missing baseline reviews and added older reviews cannot "
+        "be counted without matching saved and current source cohorts.",
         "source_message": "Source-data comparability unknown — the saved source cohort "
         "or complete current source data is unavailable. The saved baseline is unchanged.",
     }
@@ -481,15 +485,30 @@ def comparison_source(action: dict, reviews: list[dict] | None,
             reviews, baseline["dataset_id"], baseline["location"], baseline["through_date"])
     except (KeyError, TypeError, ValueError):
         return unknown
-    if baseline["counts"] != current["counts"]:
+    difference = source_cohort_difference(baseline, current)
+    details = (
+        f"Missing baseline reviews: {difference['source_missing_count']}; "
+        f"added older reviews: {difference['source_added_older_count']} "
+        f"(dated on or before {baseline['through_date']}, at this location). "
+        "Counts include duplicate occurrences and describe unmatched analysis content, "
+        "not identified reviews. An edited review can appear in both counts; hash "
+        "differences cannot distinguish edits, removals, duplicate changes, or backfills. "
+        "These source counts are separate from manager-decision differences and do not "
+        "show that the action's theme counts or operational outcomes changed."
+    )
+    if any(difference.values()):
         return {
+            **difference,
+            "source_details": details,
             "source_status": "changed",
             "source_message": "Source data changed — reviews through the saved alert date "
-            "were edited, removed, or added. This follow-up may not be comparable with "
+            "no longer match the saved source cohort. This follow-up may not be comparable with "
             "its saved baseline, even if tagging rules and manager decisions match. "
             "The saved baseline is unchanged; do not interpret this as an operational result.",
         }
     return {
+        **difference,
+        "source_details": details,
         "source_status": "unchanged",
         "source_message": "Source cohort unchanged — reviews through the saved alert date "
         "match. Newer follow-up reviews do not invalidate this source-data check.",
@@ -603,6 +622,7 @@ def weekly_action_summary(
         )
         lines.append("  " + result["provenance_message"])
         lines.append("  " + result["source_message"])
+        lines.append("  " + result["source_details"])
         if result["ready"]:
             lines.append(
                 f"  Follow-up: {result['mentions']} of {result['review_count']} "

@@ -363,6 +363,7 @@ for missing_action in all_actions:
         source_check = A.comparison_source(missing_action, raw.to_dict("records"), tag)
         st.warning(f"Saved action location {missing_action.get('location', 'Location')} "
                    f"is absent from this dataset snapshot. {source_check['source_message']}")
+        st.caption(source_check["source_details"])
 try:
     calendars = LocationSettings(LOCATION_SETTINGS, session=session)
     calendar_settings = calendars.load(tag)
@@ -1040,6 +1041,7 @@ def show_live_action_tracker():
                 st.caption(result["source_message"])
             else:
                 st.warning(result["source_message"])
+            st.caption(result["source_details"])
             if result.get("reason") == "not_started":
                 st.info("Mark the action In progress when it starts to begin follow-up.")
             elif not result["ready"]:

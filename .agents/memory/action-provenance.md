@@ -29,6 +29,18 @@ new paths even when the earlier reviews remain identical.
 snapshots. Treat missing source history as unknown. Compare normalized analysis
 content with duplicate multiplicity, not a whole-file checksum or generated IDs.
 
+Source-difference counts describe unmatched content occurrences, not proven
+deletions or backfills. A single edit can count once on each side; never pair
+those differences to identify a particular edited review.
+
+**Why:** Content hashes deliberately omit source identity, so differences cannot
+establish which event occurred or whether the action's theme counts changed.
+
+**How to apply:** Report aggregate missing-baseline and added-older counts
+separately from manager-decision differences; include the cutoff date and count
+duplicate occurrences. Missing historical source cohorts mean unknown counts,
+not zero.
+
 Decision explanations describe net changes in applicable approvals, not an audit
 trail of every save or undo. Added or removed approvals do not establish a change
 to effective theme tags because the rule fallback was not captured. A rules

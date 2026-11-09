@@ -76,6 +76,7 @@ def build_report(actions, dataset_tag, locations, reviews, *, legacy_tag=None,
                 current_source_reviews=reviews, current_dataset_tag=dataset_tag)
             lines.append("Comparability: " + clean(result["provenance_message"]))
             lines.append("Source data: " + clean(result["source_message"]))
+            lines.append("Source comparison details: " + clean(result["source_details"]))
             if not result["ready"]:
                 if result["reason"] == "not_started":
                     lines.append("Follow-up pending: action has not started or has no start date.")

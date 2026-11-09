@@ -107,6 +107,25 @@ manager review again. A rules-version change requires renewed manager approval.
 Saving or undoing a decision recalculates current theme counts, warnings, staff
 lists, reply templates and exports. It does not rewrite saved action baselines or
 previously approved reply text. Check those manually before using them again.
+
+Reply approvals are saved separately in
+`data/manager_corrections_reply_approvals.sqlite`. Approved wording is preserved
+verbatim with the exact source review, dataset identity, positive/negative tag
+snapshot, analysis context, approving manager, and approval time. Reopening the
+dashboard restores it; changing effective tags brings the unchanged wording back
+into the queue until a manager explicitly chooses **Recheck and approve reply**.
+Saving or undoing a tag decision never approves wording. If the original tags are
+restored, the original reply approval matches again.
+
+Approvals are shared restaurant work: managers with current access to the same
+dataset and restaurant can see them. They use the existing local manager accounts,
+not another login. Unsaved wording edits remain session-only. A changed source
+review or another dataset cannot inherit an approval, even with the same review
+ID and tags; restoring the exact original source can restore its own approval.
+Keep this private SQLite file with the other local history when backing up or
+moving the dashboard. It is not included in Git or public deployment assets.
+Storage errors are shown explicitly rather than reporting an unsaved approval as
+successful.
 **Undo manager decision** restores that review's current rule result without
 deleting any reviews, caches, or actions. Corrections apply only to the local
 analyzer, never to optional Claude results.

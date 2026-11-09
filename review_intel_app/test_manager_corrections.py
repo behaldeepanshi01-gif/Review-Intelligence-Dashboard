@@ -13,6 +13,8 @@ from streamlit.testing.v1 import AppTest
 
 import engine as E
 import manager_corrections as C
+import reply_approvals as R
+import manager_identity as identity
 import dataset_store as D
 from correction_test_support import save_fixture, undo_fixture
 
@@ -634,10 +636,117 @@ class ManagerCorrectionTests(unittest.TestCase):
             self.assertEqual(app.session_state["approved_reply_tags"], checked_tags)
             self.assertEqual(app.session_state["approved"][approval_key], "Approved wait apology")
             # Pre-existing approvals without a snapshot must be explicitly rechecked.
-            app.session_state["approved_reply_tags"] = {}
+            with closing(R.sqlite3.connect(
+                    str(Path(self.db).with_suffix("")) + "_reply_approvals.sqlite")) as db, db:
+                db.execute("UPDATE reply_approvals SET tag_snapshot=NULL")
             app.run()
             self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
             self.assertEqual(self.reply_widget(app).value, "Approved wait apology")
+
+    def test_reply_wording_stale_warning_and_explicit_recheck_survive_fresh_sessions(self):
+        store, source = self.reply_isolation_fixture()
+        session = manager_session(self, self.temp.name, {SAMPLE_ID: ["Demo Cafe"]})
+
+        def reopen():
+            app = sample_app(AppTest.from_string(source, default_timeout=30), session)
+            self.assertFalse(app.exception)
+            return app
+
+        def button(app, label):
+            return next(b for b in app.button if b.label == label)
+
+        with patch.object(D, "DatasetStore", return_value=store), patch(
+                "streamlit.download_button") as downloads:
+            app = reopen()
+            wording = "Manager-approved wording.\nKeep this exact punctuation: café!"
+            self.reply_widget(app).input(wording).run()
+            key = self.reply_widget(app).key.removeprefix("d_")
+            button(app, "Approve reply").click().run()
+            original_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
+            self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION), {})
+
+            app = reopen()
+            self.assertEqual(app.session_state["approved"][key], wording)
+            self.assertEqual(app.session_state["approved_reply_tags"], original_tags)
+            self.assert_reply_export(downloads, wording)
+            self.assertFalse(any("Reply draft" == w.label for w in app.text_area))
+            next(w for w in app.toggle if w.label == "Show approved").set_value(True).run()
+            self.assertEqual(self.reply_widget(app).value, wording)
+
+            # A tag decision does not approve or regenerate reply wording.
+            next(w for w in app.multiselect if w.label ==
+                 "Confirmed complaint themes").set_value(["cleanliness"])
+            button(app, "Save manager decision").click().run()
+            app = reopen()
+            self.assertEqual(self.reply_widget(app).value, wording)
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assertEqual(app.session_state["approved_reply_tags"], original_tags)
+            app.run()
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+
+            # Approval after an explicit wording recheck is itself durable.
+            decisions = C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION)
+            revised = "Explicitly checked wording, with a manager edit."
+            self.reply_widget(app).input(revised).run()
+            button(app, "Recheck and approve reply").click().run()
+            checked_tags = copy.deepcopy(app.session_state["approved_reply_tags"])
+            self.assertNotEqual(checked_tags, original_tags)
+            self.assertEqual(C.load_corrections(self.db, E.LOCAL_ANALYZER_VERSION), decisions)
+            app = reopen()
+            self.assertEqual(app.session_state["approved"][key], revised)
+            self.assertEqual(app.session_state["approved_reply_tags"], checked_tags)
+            self.assertFalse(any("Approved reply needs recheck" in w.value for w in app.warning))
+            self.assert_reply_export(downloads, revised)
+
+            # Undo changes only tags; the checked wording still survives reopening.
+            button(app, "Undo manager decision").click().run()
+            app = reopen()
+            self.assertEqual(self.reply_widget(app).value, revised)
+            self.assertTrue(any("Approved reply needs recheck" in w.value for w in app.warning))
+
+    def test_saved_replies_use_current_manager_permissions_and_preserve_exact_context(self):
+        path = Path(self.temp.name) / "replies.sqlite"
+        session = manager_session(self, self.temp.name, {SAMPLE_ID: ["Demo Cafe"]})
+        source = self.raw.iloc[1].to_dict()
+        tags = {"review_key": self.key, "positive": [], "negative": ["service_speed"]}
+        R.save(path, session, SAMPLE_ID, self.key, source, "Exact approved text", tags,
+               {"engine": "local_rules", "rules_version": E.LOCAL_ANALYZER_VERSION})
+        self.assertEqual(R.load(path, session, SAMPLE_ID)[self.key],
+                         {"wording": "Exact approved text", "tags": tags})
+        with closing(R.sqlite3.connect(path)) as db:
+            saved = db.execute(
+                "SELECT source, approved_by, analysis_context FROM reply_approvals").fetchone()
+        import json
+        self.assertEqual(json.loads(saved[0]), {k: str(v) for k, v in source.items()})
+        self.assertEqual(saved[1], session["username"])
+        self.assertEqual(json.loads(saved[2])["rules_version"], E.LOCAL_ANALYZER_VERSION)
+        identity.set_account("other", "synthetic-other-password", {SAMPLE_ID: ["Other Cafe"]})
+        other = identity.authenticate("other", "synthetic-other-password")
+        self.assertEqual(R.load(path, other, SAMPLE_ID), {})
+        with self.assertRaises(PermissionError):
+            R.save(path, other, SAMPLE_ID, self.key, source, "Not allowed", tags, {})
+        with self.assertRaises(PermissionError):
+            R.load(path, session, "different-dataset")
+        identity.remove_account(session["username"])
+        with self.assertRaises(PermissionError):
+            R.load(path, session, SAMPLE_ID)
+        with self.assertRaises(PermissionError):
+            R.save(path, session, SAMPLE_ID, self.key, source, "Revoked", tags, {})
+
+    def test_failed_reply_save_keeps_draft_without_approving(self):
+        store, source = self.reply_isolation_fixture()
+        session = manager_session(self, self.temp.name, {SAMPLE_ID: ["Demo Cafe"]})
+        with patch.object(D, "DatasetStore", return_value=store):
+            app = sample_app(AppTest.from_string(source, default_timeout=30), session)
+            self.reply_widget(app).input("Keep my unsaved wording").run()
+            with patch.object(R, "save", side_effect=R.sqlite3.OperationalError("disk unavailable")):
+                next(b for b in app.button if b.label == "Approve reply").click().run()
+            self.assertFalse(app.exception)
+            self.assertTrue(any("Couldn't save reply approval" in e.value for e in app.error))
+            self.assertEqual(self.reply_widget(app).value, "Keep my unsaved wording")
+            self.assertEqual(app.session_state["approved"], {})
+            app = sample_app(AppTest.from_string(source, default_timeout=30), session)
+            self.assertEqual(app.session_state["approved"], {})
 
     def reply_isolation_fixture(self):
         """Real saved datasets and exports, isolated from workspace private data."""

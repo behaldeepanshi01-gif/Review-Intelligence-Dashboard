@@ -69,6 +69,17 @@ that a manager approved wording for the same guest feedback.
 of analyzer output. An exact source restored later may recover its own approval;
 identity changes and sign-out must still clear private session data.
 
+Persisted reply approvals are shared restaurant work, not private manager drafts.
+Use current dataset/location grants to restore them for authorized managers;
+unsaved wording is still private session state.
+
+**Why:** Approval is a restaurant decision that must survive reopening and remain
+available to the team, while access follows the existing dashboard identity boundary.
+
+**How to apply:** Keep approved wording and its source/tag context separate from
+tag decisions. Never treat restoration, renewed tag approval, or another manager's
+login as an explicit wording recheck.
+
 Keeping a conflicting tag draft is not approval to overwrite whichever decision
 happens to be newest when the manager clicks. Acknowledgment applies only to the
 revision actually shown in the comparison.

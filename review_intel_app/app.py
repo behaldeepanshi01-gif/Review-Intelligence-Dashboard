@@ -24,6 +24,7 @@ from dashboard_access import DashboardAccess
 import manager_identity as identity
 import engine as E
 import manager_corrections as C
+import reply_approvals as R
 import manager_correction_history as correction_history
 import manager_correction_editor as correction_editor
 import dataset_store as D
@@ -57,6 +58,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLE = os.path.join(BASE_DIR, "data", "sample_reviews.csv")
 ACTION_LOG = os.path.join(BASE_DIR, "data", "action_log.json")
 CORRECTIONS_LOG = os.path.join(BASE_DIR, "data", "manager_corrections.sqlite")
+REPLY_APPROVALS_LOG = os.path.splitext(CORRECTIONS_LOG)[0] + "_reply_approvals.sqlite"
 LOCATION_SETTINGS = os.path.join(BASE_DIR, "data", "location_settings.sqlite")
 
 
@@ -293,6 +295,7 @@ tagged = tagged.copy()
 # Both analyzers preserve source row order. Do not join on external review IDs:
 # even an imported ID may collide with a suffix generated for a duplicate ID.
 tagged["reply_key"] = source_reply_keys
+reply_sources = dict(zip(source_reply_keys, raw.to_dict("records")))
 
 is_local = tagged["engine"].eq("local_rules").all()
 provenance_by_location = {}
@@ -450,6 +453,19 @@ if "approved" not in st.session_state:
     st.session_state["approved"] = {}
 if "approved_reply_tags" not in st.session_state:
     st.session_state["approved_reply_tags"] = {}
+
+try:
+    saved_replies = R.load(REPLY_APPROVALS_LOG, access.session, tag)
+except PermissionError as ex:
+    clear_private_state()
+    st.warning(str(ex))
+    st.stop()
+except (OSError, ValueError, R.sqlite3.Error) as ex:
+    st.error(f"Couldn't load saved reply approvals. Reports were stopped: {ex}")
+    st.stop()
+for reply_key, approval in saved_replies.items():
+    st.session_state["approved"][reply_key] = approval["wording"]
+    st.session_state["approved_reply_tags"][reply_key] = approval["tags"]
 
 
 def reply_tag_state(row):
@@ -860,10 +876,23 @@ with tabs[4]:
             if st.button("Recheck and approve reply" if needs_recheck else "Approve reply",
                          key=f"a_{r.reply_key}"):
                 require_access(tag, [r.location])
-                st.session_state["approved"][r.reply_key] = text
-                st.session_state["approved_reply_tags"][r.reply_key] = reply_tags[r.reply_key]
-                st.toast("Approved")
-                st.rerun()
+                try:
+                    R.save(
+                        REPLY_APPROVALS_LOG, access.session, tag, r.reply_key,
+                        reply_sources[r.reply_key], text, reply_tags[r.reply_key],
+                        {"engine": r.engine,
+                         "rules_version": E.LOCAL_ANALYZER_VERSION if is_local else None,
+                         "manager_correction": getattr(r, "manager_correction", None)},
+                    )
+                except PermissionError as ex:
+                    clear_private_state()
+                    st.warning(str(ex))
+                    st.stop()
+                except (OSError, ValueError, R.sqlite3.Error) as ex:
+                    st.error(f"Couldn't save reply approval. Your wording is still a draft: {ex}")
+                else:
+                    st.toast("Approved and saved")
+                    st.rerun()
 
 # ----------------------------------------------------------------------------
 # Export

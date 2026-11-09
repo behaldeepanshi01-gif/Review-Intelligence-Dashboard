@@ -250,8 +250,11 @@ class ActionProvenanceTests(unittest.TestCase):
         result = self.compare(action, self.provenance())
         script = f'''
 import streamlit as st
+from pandas import DataFrame, Timestamp
 from action_decisions_ui import show_decision_changes
-show_decision_changes({action!r}, "synthetic", {result!r})
+raw = DataFrame({self.raw.to_dict("records")!r})
+show_decision_changes({action!r}, "synthetic", {result!r},
+    current_reviews=raw, correction_path={str(self.path)!r})
 '''
         with patch.object(identity, "DB_PATH", self.root / "accounts.sqlite"):
             identity.set_account("demo-manager", "synthetic-long-password",
@@ -260,30 +263,42 @@ show_decision_changes({action!r}, "synthetic", {result!r})
             app = AppTest.from_string(script).run()
             self.assertFalse(app.exception)
             self.assertFalse(app.dataframe)
+            self.assertFalse(app.selectbox)
+            self.assertFalse(app.text)
             self.assertTrue(any("locked" in item.value for item in app.info))
             app.session_state["_manager_report_grant"] = grant
             app.run()
             self.assertFalse(app.exception)
             self.assertEqual(app.dataframe[0].value.iloc[0]["Change"], "Added")
             self.assertEqual(app.dataframe[0].value.iloc[0]["Decision reference"], key)
+            app.selectbox[0].select(key).run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.text[0].value, self.raw.iloc[0]["text"])
             # Same identity, wrong dataset or restaurant: no detail reaches the UI.
             for dataset, location in (("other-dataset", "Demo Cafe"),
                                       ("synthetic", "Other Cafe")):
                 denied_script = (
+                    "from pandas import DataFrame, Timestamp\n"
                     "from action_decisions_ui import show_decision_changes\n"
                     f"show_decision_changes({dict(action, location=location)!r}, "
-                    f"{dataset!r}, {result!r})")
+                    f"{dataset!r}, {result!r}, "
+                    f"current_reviews=DataFrame({self.raw.to_dict('records')!r}), "
+                    f"correction_path={str(self.path)!r})")
                 denied = AppTest.from_string(denied_script)
                 denied.session_state["_manager_report_grant"] = grant
                 denied.run()
                 self.assertFalse(denied.exception)
                 self.assertFalse(denied.dataframe)
+                self.assertFalse(denied.selectbox)
+                self.assertFalse(denied.text)
             with patch.object(identity.time, "time", return_value=grant["expires"]):
                 app.run()
                 self.assertFalse(app.dataframe)
+                self.assertFalse(app.text)
             identity.remove_account("demo-manager")
             app.run()
             self.assertFalse(app.dataframe)
+            self.assertFalse(app.text)
             self.assertFalse(app.exception)
         # Authorized older histories remain visibly unknown, not a zero-change claim.
         legacy = copy.deepcopy(action)
@@ -296,6 +311,68 @@ show_decision_changes({action!r}, "synthetic", {result!r})
         self.assertTrue(any("Baseline decision detail unknown" in w.value
                             for w in unknown.warning))
         self.assertFalse(unknown.dataframe)
+
+    def test_private_review_source_requires_exact_current_row_and_location(self):
+        import action_decisions_ui as UI
+        action = self.action(self.provenance())
+        key = C.review_key(self.path, self.raw.iloc[0])
+        save_fixture(self.db, key, [], ["price"], self.version)
+        result = self.compare(action, self.provenance())
+        changed = self.raw.copy()
+        changed.loc[0, "text"] = "A different review with the same review ID."
+        other_location = self.raw.copy()
+        other_location.loc[0, "location"] = "Other Cafe"
+        cases = (
+            ("removed", self.raw.iloc[1:], self.path),
+            ("edited", changed, self.path),
+            ("other location", other_location, self.path),
+            ("other source", self.raw, self.root / "other.csv"),
+            ("unavailable", None, self.path),
+        )
+        for name, raw, path in cases:
+            with self.subTest(name=name), patch.object(UI, "authorized", return_value=True):
+                case_result = copy.deepcopy(result)
+                # Even an exact hash for a different restaurant must not open.
+                reference = (C.review_key(path, raw.iloc[0])
+                             if name == "other location" else key)
+                case_result["decision_changes"][0]["decision_ref"] = reference
+                # Inject the actual in-memory frame, preserving source types exactly.
+                with patch.object(UI, "_test_current_reviews", raw, create=True):
+                    app = AppTest.from_string(
+                        "import action_decisions_ui as UI\n"
+                        f"UI.show_decision_changes({action!r}, 'synthetic', {case_result!r}, "
+                        f"current_reviews=UI._test_current_reviews, "
+                        f"correction_path={str(path)!r})").run()
+                    app.selectbox[0].select(reference).run()
+            self.assertFalse(app.exception)
+            self.assertFalse(app.text)
+            self.assertTrue(any("Source cannot be opened" in item.value
+                                for item in app.info))
+
+    def test_removed_approval_can_open_review_without_changing_action_log(self):
+        import action_decisions_ui as UI
+        key = C.review_key(self.path, self.raw.iloc[0])
+        save_fixture(self.db, key, [], ["price"], self.version)
+        action = self.action(self.provenance())
+        log = self.root / "actions.json"
+        A.save_actions(str(log), [action])
+        original = log.read_bytes()
+        undo_fixture(self.db, key, self.version)
+        result = self.compare(action, self.provenance())
+        self.assertEqual(result["decision_changes"][0]["change"], "removed")
+        with patch.object(UI, "authorized", return_value=True), \
+                patch.object(UI, "_test_current_reviews", self.raw, create=True):
+            app = AppTest.from_string(
+                "import action_decisions_ui as UI\n"
+                f"UI.show_decision_changes({action!r}, 'synthetic', {result!r}, "
+                f"current_reviews=UI._test_current_reviews, "
+                f"correction_path={str(self.path)!r})").run()
+            self.assertFalse(app.text)
+            app.selectbox[0].select(key).run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.text[0].value, self.raw.iloc[0]["text"])
+        self.assertEqual(log.read_bytes(), original)
+        self.assertNotIn(self.raw.iloc[0]["text"], log.read_text())
 
     def test_weekly_summary_labels_each_comparison(self):
         known = self.action(self.provenance())
@@ -356,8 +433,9 @@ show_decision_changes({action!r}, "synthetic", {result!r})
         self.assertTrue(any("Source data changed" in item.value for item in app.warning))
         self.assertTrue(any("Source-data comparability unknown" in item.value
                             for item in app.warning))
-        self.assertTrue(any("Removed Cafe is absent" in item.value
-                            and "Source data changed" in item.value for item in app.warning))
+        self.assertTrue(any("Removed Cafe" in item.value
+                            and "Open Saved actions for absent locations" in item.value
+                            for item in app.warning))
 
     def test_saving_action_from_warning_captures_location_provenance(self):
         actions = []
@@ -409,12 +487,17 @@ show_decision_changes({action!r}, "synthetic", {result!r})
             app = AppTest.from_file(str(SAMPLE.parent.parent / "app.py"),
                                    default_timeout=30)
             sample_app(app, session)
+            source_selector = next(
+                widget for widget in app.selectbox
+                if widget.label == "Open current review for decision reference")
+            source_selector.select(key).run()
         self.assertFalse(app.exception)
         details = [frame.value for frame in app.dataframe
                    if "Decision reference" in frame.value.columns]
         self.assertEqual(len(details), 1)
         self.assertEqual(details[0].iloc[0]["Decision reference"], key)
         self.assertEqual(details[0].iloc[0]["Change"], "Added")
+        self.assertTrue(any(item.value == scoped.iloc[0]["text"] for item in app.text))
         self.assertTrue(any("1 added, 0 changed, 0 removed" in text.value
                             for text in app.markdown))
 

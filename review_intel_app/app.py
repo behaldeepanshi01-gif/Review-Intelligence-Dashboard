@@ -1045,7 +1045,9 @@ def show_live_action_tracker():
                 st.caption(result["provenance_message"])
             else:
                 st.warning(result["provenance_message"])
-            show_decision_changes(action, tag, result)
+            show_decision_changes(
+                action, tag, result, current_reviews=raw,
+                correction_path=dataset["correction_path"])
             if result["source_status"] == "unchanged":
                 st.caption(result["source_message"])
             else:

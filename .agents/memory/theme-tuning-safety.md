@@ -43,3 +43,17 @@ labeling are different properties.
 **How to apply:** Record explicit batch-specific chat approval separately from
 blank CSV checkboxes; report provenance limitations and coverage gaps with any
 scores. Never convert an AI-draft evaluation into an independent accuracy claim.
+
+On 2026-11-10 the user approved conditional preparation under the human-only
+protocol in `review_intel_app/INDEPENDENT_LABELING_PROTOCOL.md`, not scoring or
+rule changes. Missing original private evaluation and prior-use records are a
+stop condition: recover and verify them before certifying eligibility or
+preparing a new batch. Do not reconstruct the completed evaluation.
+
+**Why:** The user approved a protocol that separates source availability,
+human-only independence, and scoring authorization; approval is not evidence
+that any of those prerequisites have already been satisfied.
+
+**How to apply:** Keep any candidate counts provisional until exposure history
+is verified. Use blank, prediction-blind human labeling without AI screening;
+request separate scoring permission only after reporting human-labeled support.

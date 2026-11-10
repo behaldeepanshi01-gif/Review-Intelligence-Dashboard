@@ -41,3 +41,42 @@ The utility's narrative is specific to this audit and its known source context;
 it is not a generic source-authentication service.
 
 No trend UI changes are authorized by this audit.
+
+## Reconcile an existing source workbook
+
+When the user supplies the original Outscraper workbook, compare it with the
+existing CSV rather than requesting another CSV or collecting new reviews:
+
+```sh
+python -B review_intel_app/reconcile_source_workbook.py \
+  --workbook 'attached_assets/0_Outscraper-20261103033201s3ccf_(1)_1794330514022.xlsx' \
+  --export attached_assets/mumbai_central_reviews_1793677255749.csv
+
+cd review_intel_app
+python -B -m unittest test_source_workbook_reconciliation test_source_coverage -v
+```
+
+The standalone standard-library utility reads a single-sheet OOXML export,
+rejects formulas and unexpected sheet layouts, and never imports the analyzer.
+It compares the nonblank-text subset using date/rating/text multisets and row
+order; only HTML line-break tags and whitespace are normalized for comparison.
+Original records, IDs and dates remain untouched. Aggregate output and its
+SHA-256 manifest go to a new private source-readiness directory. No review text,
+author identity, per-review IDs or pagination markers are emitted.
+
+A private companion `collection_scope_reconciliation_PRIVATE.md` records the
+source-specific conclusion, public business-identity corroboration, provider
+field documentation and the unresolved job controls. Findings belong only in
+that private directory, not public demos or this guide. It supersedes the initial
+blocked reconciliation, which is retained as earlier evidence. Generated evidence
+is not merged; repeat the command and retain the narrative privately in the
+destination workspace using the already available originals.
+
+Interpret a successful content match narrowly: it establishes a relationship
+between supplied files, not independent source authentication. Workbook creation
+properties are not authenticated extraction times; per-record pagination markers
+do not prove page completion; place totals are not necessarily expected job
+counts. Query wording and observed ordering are not saved limit/filter settings.
+Preserve UTC versus restaurant-local calendar distinctions without changing the
+analyzer. Resolve missing settings only with an original, redacted provider job
+receipt/settings/log linked to the workbook—not another review upload or scrape.

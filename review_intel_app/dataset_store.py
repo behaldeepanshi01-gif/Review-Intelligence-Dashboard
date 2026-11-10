@@ -9,8 +9,11 @@ from pathlib import Path
 import sqlite3
 import uuid
 
+import manager_identity as identity
+
 
 SAMPLE_ID = "builtin:synthetic-sample"
+_LOCAL_OWNER = object()
 
 
 class HistoryAssociationError(ValueError):
@@ -95,6 +98,11 @@ class DatasetStore:
                     occurred_at TEXT NOT NULL
                 )
             """)
+            if "changed_by" not in {
+                row["name"] for row in db.execute("PRAGMA table_info(history_link_events)")
+            }:
+                # Earlier events have no known actor; never infer one from ownership.
+                db.execute("ALTER TABLE history_link_events ADD COLUMN changed_by TEXT")
             db.execute(
                 "INSERT OR IGNORE INTO datasets "
                 "(dataset_id, label, path, legacy_tag, correction_path) VALUES (?, ?, ?, NULL, ?)",
@@ -256,17 +264,32 @@ class DatasetStore:
             ]
 
     @staticmethod
-    def _record_history_link(db, operation, legacy_tag, source_id, destination_id):
-        """Use the caller's transaction so neither half can commit alone."""
+    def _record_history_link(db, operation, legacy_tag, source_id, destination_id,
+                             *, session=_LOCAL_OWNER):
+        """Commit attribution and ownership together, without storing credentials.
+
+        Omitting session is reserved for trusted local-owner maintenance, which
+        has no authenticated manager to attribute. An explicitly supplied session
+        (including None) must still be valid when the event is written.
+        """
+        changed_by = None
+        if session is not _LOCAL_OWNER:
+            account = identity.current_account(session)
+            if not account:
+                raise PermissionError(
+                    "Manager access expired or was removed. Sign in again before "
+                    "changing the history link.")
+            changed_by = account["username"]
         db.execute(
             "INSERT INTO history_link_events "
-            "(source_dataset_id, destination_dataset_id, legacy_tag, operation, occurred_at) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "(source_dataset_id, destination_dataset_id, legacy_tag, operation, occurred_at, "
+            "changed_by) VALUES (?, ?, ?, ?, ?, ?)",
             (source_id, destination_id, legacy_tag, operation,
-             datetime.now(timezone.utc).isoformat()),
+             datetime.now(timezone.utc).isoformat(), changed_by),
         )
 
-    def claim_legacy_history(self, dataset_id, legacy_tag, actions, *, expected_revision=None):
+    def claim_legacy_history(self, dataset_id, legacy_tag, actions, *, expected_revision=None,
+                             session=_LOCAL_OWNER):
         """Link an old filename-scoped history once, without rewriting its log."""
         if (not isinstance(legacy_tag, str)
                 or legacy_tag.startswith(("upload:", "builtin:"))
@@ -293,12 +316,13 @@ class DatasetStore:
             )
             if result.rowcount != 1:
                 raise ValueError("This dataset already has a linked history.")
-            self._record_history_link(db, "claim", legacy_tag, None, dataset_id)
+            self._record_history_link(
+                db, "claim", legacy_tag, None, dataset_id, session=session)
         return self.get(dataset_id)
 
     def correct_legacy_history(
         self, source_id, legacy_tag, *, expected_source_revision,
-        target_id=None, expected_target_revision=None,
+        target_id=None, expected_target_revision=None, session=_LOCAL_OWNER,
     ):
         """Atomically detach or transfer only the association, never action records.
 
@@ -338,5 +362,5 @@ class DatasetStore:
                 )
             self._record_history_link(
                 db, "transfer" if target_id is not None else "unlink",
-                legacy_tag, source_id, target_id,
+                legacy_tag, source_id, target_id, session=session,
             )

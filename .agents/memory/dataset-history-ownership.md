@@ -35,3 +35,15 @@ correction.
 **How to apply:** Explain that earlier changes are unavailable, keep association
 events separate from action-edit history, and record only actual successful
 association changes atomically with their ownership updates.
+
+Manager attribution does not grant permission to recover or transfer histories.
+Trusted local-owner maintenance without a manager session stays unattributed;
+explicit manager sessions must be revalidated when recording a change.
+
+**Why:** The local-owner recovery boundary remains in force. Recording a manager
+ID must not reopen dashboard recovery controls or guess an identity for offline
+maintenance.
+
+**How to apply:** Keep the dashboard's association log read-only, derive actors
+from the existing identity service, and reject invalid explicit sessions without
+committing either the ownership change or its audit event.

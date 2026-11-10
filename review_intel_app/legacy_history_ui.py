@@ -56,7 +56,9 @@ def show_history_link_log(store, dataset_id):
             "Read-only record of older-history claims, unlinks, and transfers "
             "involving this dataset, newest first. This is not action-edit history. "
             "Original actions and baselines are unchanged. Changes made before "
-            "recording began are not available."
+            "recording began are not available. Changed by is the authenticated "
+            "manager ID, not an action's assigned owner. Unknown means no manager "
+            "identity was recorded, including trusted local-owner maintenance."
         )
         try:
             events = store.history_link_events(dataset_id)
@@ -70,6 +72,7 @@ def show_history_link_log(store, dataset_id):
             {
                 "Time (UTC)": event["occurred_at"],
                 "Operation": event["operation"].capitalize(),
+                "Changed by": event.get("changed_by") or "Unknown",
                 "Legacy tag": event["legacy_tag"],
                 "Source dataset ID": event["source_dataset_id"] or "Unlinked",
                 "Destination dataset ID": event["destination_dataset_id"] or "Unlinked",
@@ -106,11 +109,12 @@ def show_history_controls(store, dataset, actions):
                 try:
                     store.claim_legacy_history(
                         dataset_id, old_tag, actions, expected_revision=revision,
+                        session=st.session_state.get("_manager_report_grant"),
                     )
                     st.session_state.pop(key, None)
                     st.session_state["history_link_notice"] = "Older history linked."
                     st.rerun()
-                except (ValueError, sqlite3.Error) as ex:
+                except (ValueError, PermissionError, sqlite3.Error) as ex:
                     st.error(f"Couldn't link that history: {ex}")
         return
 
@@ -162,6 +166,7 @@ def show_history_controls(store, dataset, actions):
                     dataset_id, legacy_tag, expected_source_revision=revision,
                     target_id=target["dataset_id"] if target else None,
                     expected_target_revision=target["history_revision"] if target else None,
+                    session=st.session_state.get("_manager_report_grant"),
                 )
                 st.session_state.pop(key, None)
                 st.session_state["history_link_notice"] = (
@@ -169,7 +174,7 @@ def show_history_controls(store, dataset, actions):
                     if target else "Older history unlinked. All saved actions are preserved."
                 )
                 st.rerun()
-            except (ValueError, sqlite3.Error) as ex:
+            except (ValueError, PermissionError, sqlite3.Error) as ex:
                 st.error(f"Couldn't correct that history: {ex}")
         if st.button("Cancel history correction"):
             st.session_state.pop(key, None)

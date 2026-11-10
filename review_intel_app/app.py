@@ -33,7 +33,7 @@ import dataset_store as D
 from location_settings import LocationSettings
 from calendar_rename_ui import show_calendar_rename
 from legacy_history_ui import (
-    history_changed, action_editors,
+    history_changed, action_editors, show_history_link_log,
 )
 
 st.set_page_config(page_title="Review Intelligence", page_icon="🍛", layout="wide")
@@ -501,6 +501,7 @@ neg_share = 100 * (view["themes_neg"].str.len() > 0).mean()
 alerts = E.early_warnings(view, recent_days=window, baseline_days=window * 3)
 st.sidebar.caption("New datasets and legacy-history reassignment require the app owner. "
                    "Existing private histories are preserved.")
+show_history_link_log(datasets, tag)
 
 k1, k2, k3, k4 = st.columns(4)
 for col, val, label in [

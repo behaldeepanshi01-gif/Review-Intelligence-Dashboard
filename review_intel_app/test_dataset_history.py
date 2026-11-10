@@ -12,6 +12,8 @@ import unittest
 from streamlit.testing.v1 import AppTest
 
 import action_tracker as A
+import manager_identity as identity
+from calendar_test_support import manager_session
 from dataset_store import DatasetStore
 
 
@@ -259,6 +261,90 @@ class HistoryCorrectionTests(unittest.TestCase):
             self.assertEqual(self.store.history_link_events(self.target["dataset_id"]), [])
         self.assertEqual(Path(self.log).read_bytes(), self.original_bytes)
 
+    def test_authenticated_actors_persist_for_all_operations_without_editing_actions(self):
+        first = manager_session(self, self.root, {})
+        identity.set_account("second-manager", "synthetic-second-password", {})
+        second = identity.authenticate("second-manager", "synthetic-second-password")
+        self.store.claim_legacy_history(
+            self.third["dataset_id"], "other.csv", self.actions, session=first)
+        third = self.store.get(self.third["dataset_id"])
+        self.store.correct_legacy_history(
+            third["dataset_id"], "other.csv",
+            expected_source_revision=third["history_revision"],
+            target_id=self.target["dataset_id"],
+            expected_target_revision=self.target["history_revision"], session=second)
+        target = self.store.get(self.target["dataset_id"])
+        self.store.correct_legacy_history(
+            target["dataset_id"], "other.csv",
+            expected_source_revision=target["history_revision"], session=first)
+        self.store.claim_legacy_history(
+            self.third["dataset_id"], "other.csv", self.actions, session=second)
+        restarted = DatasetStore(self.root / "uploads", self.sample)
+        events = restarted.history_link_events(third["dataset_id"])
+        self.assertEqual(
+            [(e["operation"], e["changed_by"]) for e in events],
+            [("claim", "second-manager"), ("transfer", "second-manager"),
+             ("claim", "test-manager")])
+        self.assertEqual(
+            [(e["operation"], e["changed_by"])
+             for e in restarted.history_link_events(target["dataset_id"])],
+            [("unlink", "test-manager"), ("transfer", "second-manager")])
+        self.assertIsNone(
+            restarted.history_link_events(self.source["dataset_id"])[0]["changed_by"])
+        for event in events:
+            self.assertEqual(set(event), {
+                "event_id", "source_dataset_id", "destination_dataset_id",
+                "legacy_tag", "operation", "occurred_at", "changed_by"})
+        self.assertEqual(Path(self.log).read_bytes(), self.original_bytes)
+
+    def test_old_event_schema_migrates_without_inventing_authors(self):
+        before = self.store.history_link_events(self.source["dataset_id"])[0]
+        with closing(self.store.connect()) as db, db:
+            db.execute("ALTER TABLE history_link_events DROP COLUMN changed_by")
+        migrated = DatasetStore(self.root / "uploads", self.sample)
+        self.assertEqual(
+            migrated.history_link_events(self.source["dataset_id"]), [before])
+        self.assertIsNone(before["changed_by"])
+        session = manager_session(self, self.root, {})
+        migrated.correct_legacy_history(
+            self.source["dataset_id"], "old.csv",
+            expected_source_revision=self.source["history_revision"], session=session)
+        events = DatasetStore(self.root / "uploads", self.sample).history_link_events(
+            self.source["dataset_id"])
+        self.assertEqual([e["changed_by"] for e in events], ["test-manager", None])
+        self.assertEqual(events[-1], before)
+
+    def test_invalid_expired_and_revoked_sessions_cannot_change_links_or_audit(self):
+        session = manager_session(self, self.root, {})
+        invalid_sessions = [None, {}, dict(session, expires=0),
+                            dict(session, username="not-a-manager"),
+                            dict(session, revision="forged")]
+        identity.remove_account("test-manager")
+        invalid_sessions.append(session)
+        for invalid in invalid_sessions:
+            for operation in (
+                lambda: self.store.claim_legacy_history(
+                    self.target["dataset_id"], "other.csv", self.actions, session=invalid),
+                lambda: self.store.correct_legacy_history(
+                    self.source["dataset_id"], "old.csv",
+                    expected_source_revision=self.source["history_revision"],
+                    session=invalid),
+                lambda: self.store.correct_legacy_history(
+                    self.source["dataset_id"], "old.csv",
+                    expected_source_revision=self.source["history_revision"],
+                    target_id=self.target["dataset_id"],
+                    expected_target_revision=self.target["history_revision"],
+                    session=invalid),
+            ):
+                with self.subTest(session=invalid), self.assertRaises(PermissionError):
+                    operation()
+                self.assertEqual(self.store.get(self.source["dataset_id"]), self.source)
+                self.assertEqual(self.store.get(self.target["dataset_id"]), self.target)
+                self.assertEqual(
+                    len(self.store.history_link_events(self.source["dataset_id"])), 1)
+                self.assertEqual(self.store.history_link_events(self.target["dataset_id"]), [])
+        self.assertEqual(Path(self.log).read_bytes(), self.original_bytes)
+
     def ui(self):
         app = AppTest.from_string("""
 import streamlit as st
@@ -271,6 +357,7 @@ show_history_controls(store, store.get(st.session_state["dataset_id"]),
         app.session_state["store"] = self.store
         app.session_state["dataset_id"] = self.source["dataset_id"]
         app.session_state["log"] = self.log
+        app.session_state["_manager_report_grant"] = manager_session(self, self.root, {})
         return app.run()
 
     @staticmethod
@@ -324,16 +411,50 @@ show_history_controls(store, store.get(st.session_state["dataset_id"]),
         self.assertFalse(app.exception)
         self.assertIn("History-link corrections", [item.label for item in app.expander])
         self.assertEqual(app.dataframe[0].value["Operation"].tolist(), ["Claim"])
+        self.assertEqual(app.dataframe[0].value["Changed by"].tolist(), ["Unknown"])
         self.assertTrue(any("not action-edit history" in item.value for item in app.caption))
         app.checkbox[0].check().run()
         self.button(app, "Confirm history correction").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.dataframe[0].value["Operation"].tolist(), ["Unlink", "Claim"])
+        self.assertEqual(
+            app.dataframe[0].value["Changed by"].tolist(), ["test-manager", "Unknown"])
         app.session_state["dataset_id"] = self.third["dataset_id"]
         app.run()
         self.assertFalse(app.exception)
         self.assertFalse(app.dataframe)
         self.assertTrue(any("No recorded history-link changes" in item.value for item in app.info))
+
+    def test_ui_recovery_and_transfer_forward_the_authenticated_identity(self):
+        app = self.ui()
+        app.checkbox[0].check().run()
+        self.button(app, "Confirm history correction").click().run()
+        app.selectbox[0].set_value("old.csv").run()
+        app.checkbox[0].check().run()
+        self.button(app, "Link older history").click().run()
+        app.radio[0].set_value("Reassign to another dataset").run()
+        app.selectbox[0].set_value(self.target["dataset_id"]).run()
+        app.checkbox[0].check().run()
+        self.button(app, "Confirm history correction").click().run()
+        self.assertFalse(app.exception)
+        self.assertEqual(
+            app.dataframe[0].value["Changed by"].tolist(),
+            ["test-manager", "test-manager", "test-manager", "Unknown"])
+        app.session_state["dataset_id"] = self.target["dataset_id"]
+        app.run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.dataframe[0].value["Changed by"].tolist(), ["test-manager"])
+
+    def test_ui_expired_login_does_not_publish_a_correction(self):
+        app = self.ui()
+        app.checkbox[0].check().run()
+        session = app.session_state["_manager_report_grant"]
+        app.session_state["_manager_report_grant"] = dict(session, expires=0)
+        self.button(app, "Confirm history correction").click().run()
+        self.assertFalse(app.exception)
+        self.assertTrue(any("Sign in again" in item.value for item in app.error))
+        self.assertEqual(self.store.get(self.source["dataset_id"]), self.source)
+        self.assertEqual(len(self.store.history_link_events(self.source["dataset_id"])), 1)
 
 
 if __name__ == "__main__":

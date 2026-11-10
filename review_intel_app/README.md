@@ -222,6 +222,15 @@ Keep `data/uploads/datasets.sqlite`, the upload files and snapshots, and
 `data/action_log.json` together when backing up or moving local state. The registry
 stores the stable identities and explicit legacy-history links.
 
+**History-link corrections** is a read-only sidebar log, separate from action-edit
+history. New claims, unlinks, and transfers made with a valid local manager session
+record that manager ID in **Changed by**, alongside the operation, UTC time, and
+source/destination dataset IDs. Earlier events remain **Unknown**; authors are
+never inferred from action owners or dataset grants. Trusted local-owner
+maintenance without a manager session is also **Unknown**. Supplying an expired
+or revoked session rejects the change without adding an event. Recovery controls
+remain owner-only; this log does not grant recovery or reassignment permission.
+
 Synthetic correction checks (including manager controls, cancellation, recovery,
 restart, and concurrent claims) run from the project root with:
 `python -m unittest discover -s review_intel_app -p 'test_dataset_history.py' -v`.

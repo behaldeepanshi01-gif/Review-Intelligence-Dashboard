@@ -69,6 +69,8 @@ show_history_controls(store, store.get(st.session_state["id"]), st.session_state
         other.session_state["store"] = self.store
         other.session_state["id"] = D.SAMPLE_ID
         other.session_state["actions"] = A.load_actions(self.log)
+        other.session_state["_manager_report_grant"] = self.app.session_state[
+            "_manager_report_grant"]
         other.run()
         other.radio[0].set_value("Reassign to another dataset").run()
         other.selectbox[0].set_value(self.target["dataset_id"]).run()

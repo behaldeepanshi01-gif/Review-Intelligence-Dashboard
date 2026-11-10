@@ -123,6 +123,9 @@ class DashboardAccessTests(unittest.TestCase):
             partial.save_snapshot(self.store, "race.csv", only_allowed, target)
 
     def test_dashboard_denies_before_loading_and_scopes_every_view(self):
+        self.store.claim_legacy_history(
+            D.SAMPLE_ID, "synthetic-old.csv",
+            [{"dataset_tag": "synthetic-old.csv"}], session=self.session)
         original_settings = LocationSettings
         with patch.object(D, "DatasetStore", return_value=self.store), patch.object(
             A, "load_actions", return_value=[]
@@ -140,6 +143,12 @@ class DashboardAccessTests(unittest.TestCase):
             app.text_input(key="_manager_report_password").set_value("synthetic-calendar-password")
             next(b for b in app.button if b.label == "Unlock restaurant dashboard").click().run()
             self.assertFalse(app.exception)
+            self.assertIn("History-link corrections", [e.label for e in app.expander])
+            audit = next(frame.value for frame in app.dataframe
+                         if "Changed by" in frame.value.columns)
+            self.assertEqual(audit["Changed by"].tolist(), ["test-manager"])
+            self.assertFalse(any(b.label in {"Link older history", "Confirm history correction"}
+                                 for b in app.button))
             self.assertEqual(next(s for s in app.selectbox if s.label == "Calendar location").options,
                              ["Allowed"])
             self.assertEqual(next(s for s in app.multiselect if s.label == "Locations").options,

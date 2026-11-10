@@ -5,6 +5,7 @@ import streamlit as st
 
 
 def show_calendar_rename(datasets, dataset, calendars, settings, locations):
+    show_calendar_rename_history(calendars, dataset["dataset_id"])
     show_calendar_correction(datasets, dataset, calendars, settings, locations)
     sources = sorted(set(settings) - set(locations))
     if not sources:
@@ -42,6 +43,28 @@ def show_calendar_rename(datasets, dataset, calendars, settings, locations):
                 f"Calendar linked: {old} → {new}. Timezone kept: {snapshot['timezone']}."
             )
             st.rerun()
+
+
+def show_calendar_rename_history(calendars, dataset_id):
+    with st.expander("Calendar rename history"):
+        st.caption(
+            "Successful calendar renames and ownership corrections for this dataset. "
+            "Times are recorded in UTC; timezone is the calendar timezone at that change. "
+            "Links created before history recording have no recorded change time. "
+            "This is separate from action edits and dataset-history associations. "
+            "Only records for names and current owners you can access are shown."
+        )
+        events = calendars.rename_history(dataset_id)
+        if not events:
+            st.info("No recorded calendar name changes are available for your access.")
+            return
+        st.table([{
+            "Changed at (UTC)": event["changed_at"],
+            "Change": "Ownership correction" if event["change_kind"] == "correction" else "Rename",
+            "Old name": event["old_location"],
+            "New name": event["new_location"],
+            "Timezone": event["timezone"],
+        } for event in reversed(events)])
 
 
 def show_calendar_correction(datasets, dataset, calendars, settings, locations):

@@ -2,6 +2,7 @@
 
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime, timezone
 
 from action_tracker import DEFAULT_RESTAURANT_TIMEZONE, restaurant_today
 import manager_identity as identity
@@ -24,6 +25,19 @@ class LocationSettings:
                 dataset_id TEXT NOT NULL, old_location TEXT NOT NULL,
                 new_location TEXT NOT NULL,
                 PRIMARY KEY (dataset_id, old_location))""")
+            # The mutable alias map is not evidence of when a change happened.
+            # Existing links deliberately receive no synthetic audit records.
+            db.execute("""CREATE TABLE IF NOT EXISTS calendar_rename_history (
+                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                dataset_id TEXT NOT NULL, old_location TEXT NOT NULL,
+                new_location TEXT NOT NULL, timezone TEXT NOT NULL,
+                changed_at TEXT NOT NULL, change_kind TEXT NOT NULL)""")
+            db.execute("""CREATE INDEX IF NOT EXISTS calendar_rename_history_dataset
+                ON calendar_rename_history(dataset_id, event_id)""")
+            for operation in ("UPDATE", "DELETE"):
+                db.execute(f"""CREATE TRIGGER IF NOT EXISTS calendar_history_no_{operation.lower()}
+                    BEFORE {operation} ON calendar_rename_history
+                    BEGIN SELECT RAISE(ABORT, 'Calendar rename history is append-only'); END""")
 
     @contextmanager
     def connect(self):
@@ -78,6 +92,31 @@ class LocationSettings:
             return {old: owner for old, owner in self._ownership(db, dataset_id).items()
                     if identity.permits(self.session, dataset_id, [old, owner])}
 
+    def rename_history(self, dataset_id):
+        """Read only events whose names and current owner are still accessible."""
+        self.load(dataset_id)
+        with self.connect() as db:
+            owners = self._ownership(db, dataset_id)
+            rows = db.execute(
+                "SELECT event_id, old_location, new_location, timezone, changed_at, change_kind "
+                "FROM calendar_rename_history WHERE dataset_id=? ORDER BY event_id",
+                (dataset_id,)).fetchall()
+            return [
+                dict(zip(("event_id", "old_location", "new_location", "timezone",
+                          "changed_at", "change_kind"), row))
+                for row in rows
+                if identity.permits(self.session, dataset_id,
+                                    [row[1], row[2], owners.get(row[2], row[2])])
+            ]
+
+    @staticmethod
+    def _record_rename(db, dataset_id, old, new, zone, kind):
+        db.execute(
+            "INSERT INTO calendar_rename_history "
+            "(dataset_id, old_location, new_location, timezone, changed_at, change_kind) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (dataset_id, old, new, zone, datetime.now(timezone.utc).isoformat(), kind))
+
     def correct_link(self, dataset_id, current_location, new_location, *,
                      expected_revision, confirmed=False):
         """Explicitly move an existing linked calendar, including back to an alias."""
@@ -112,6 +151,8 @@ class LocationSettings:
                        (dataset_id, current_location))
             db.execute("INSERT INTO location_calendars VALUES (?, ?, ?, ?)",
                        (dataset_id, new_location, row[0], row[1] + 1))
+            self._record_rename(db, dataset_id, current_location, new_location,
+                                row[0], "correction")
 
     @staticmethod
     def default():
@@ -177,3 +218,4 @@ class LocationSettings:
                        (dataset_id, new_location, row[0], row[1] + 1))
             db.execute("INSERT INTO calendar_renames VALUES (?, ?, ?)",
                        (dataset_id, old_location, new_location))
+            self._record_rename(db, dataset_id, old_location, new_location, row[0], "rename")

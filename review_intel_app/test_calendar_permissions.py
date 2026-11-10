@@ -93,10 +93,18 @@ class CalendarPermissionsTests(unittest.TestCase):
             session = identity.authenticate("test-manager", "synthetic-calendar-password")
             self.assertEqual(original(self.path, session=session).load(SAMPLE_ID)["Cafe"]["timezone"],
                              "UTC")
+            history_tables = [table.value for table in app.dataframe
+                              if "Previous timezone" in table.value.columns]
+            self.assertEqual(len(history_tables), 1)
+            self.assertEqual(history_tables[0].iloc[0]["Manager"], "test-manager")
+            self.assertEqual(history_tables[0].iloc[0]["New timezone"], "UTC")
+            self.assertEqual(history_tables[0].iloc[0]["Revision"], 1)
             identity.remove_account("test-manager")
             app.run()
             self.assertFalse(app.exception)
             self.assertFalse(any(t.label == "Restaurant timezone" for t in app.text_input))
+            self.assertFalse(any("Previous timezone" in table.value.columns
+                                 for table in app.dataframe))
 
 
 if __name__ == "__main__":

@@ -38,3 +38,14 @@ histories belong together.
 
 **How to apply:** Keep the restored name's calendar generation newer than all
 earlier editors, reserve the name it moved from, and do not move action history.
+
+Timezone history records successful saves, including saving an unchanged timezone,
+but does not invent events for settings that existed before auditing.
+
+**Why:** A successful save advances the existing calendar revision even if its
+value is unchanged. Recording that save explains the revision without falsely
+claiming to know who created legacy settings.
+
+**How to apply:** Keep audit events and settings updates atomic. Retain the
+restaurant name at save time; after a rename, show earlier events only to managers
+authorized for both the original name and the current owner.

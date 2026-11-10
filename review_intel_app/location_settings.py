@@ -38,6 +38,18 @@ class LocationSettings:
                 db.execute(f"""CREATE TRIGGER IF NOT EXISTS calendar_history_no_{operation.lower()}
                     BEFORE {operation} ON calendar_rename_history
                     BEGIN SELECT RAISE(ABORT, 'Calendar rename history is append-only'); END""")
+            db.execute("""CREATE TABLE IF NOT EXISTS calendar_timezone_history (
+                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                dataset_id TEXT NOT NULL, location TEXT NOT NULL,
+                manager TEXT NOT NULL, changed_at TEXT NOT NULL,
+                previous_timezone TEXT NOT NULL, new_timezone TEXT NOT NULL,
+                revision INTEGER NOT NULL)""")
+            db.execute("""CREATE INDEX IF NOT EXISTS calendar_timezone_history_dataset
+                ON calendar_timezone_history(dataset_id, event_id)""")
+            for operation in ("UPDATE", "DELETE"):
+                db.execute(f"""CREATE TRIGGER IF NOT EXISTS timezone_history_no_{operation.lower()}
+                    BEFORE {operation} ON calendar_timezone_history
+                    BEGIN SELECT RAISE(ABORT, 'Timezone history is append-only'); END""")
 
     @contextmanager
     def connect(self):
@@ -64,9 +76,38 @@ class LocationSettings:
             }
 
     def require_access(self, dataset_id, locations):
-        if not identity.permits(self.session, dataset_id, locations):
+        account = identity.current_account(self.session)
+        if not account or not locations or not set(locations).issubset(
+                set(account["grants"].get(dataset_id, []))):
             raise PermissionError("You do not have calendar access to this restaurant. "
                                   "Sign in again or ask the app owner for access.")
+        return account
+
+    def timezone_history(self, dataset_id, location):
+        """Include prior names only when both original and current names are allowed."""
+        self.require_access(dataset_id, [location])
+        with self.connect() as db:
+            owners = self._ownership(db, dataset_id)
+            owner = owners.get(location, location)
+            self.require_access(dataset_id, [owner])
+            columns = ("event_id", "location", "manager", "changed_at",
+                       "previous_timezone", "new_timezone", "revision")
+            rows = db.execute(
+                "SELECT event_id, location, manager, changed_at, previous_timezone, "
+                "new_timezone, revision FROM calendar_timezone_history "
+                "WHERE dataset_id=? ORDER BY event_id DESC", (dataset_id,)).fetchall()
+            return [dict(zip(columns, row)) for row in rows
+                    if owners.get(row[1], row[1]) == owner
+                    and identity.permits(self.session, dataset_id, [row[1], owner])]
+
+    @staticmethod
+    def _record_timezone(db, dataset_id, location, manager, previous, new, revision):
+        db.execute(
+            "INSERT INTO calendar_timezone_history "
+            "(dataset_id, location, manager, changed_at, previous_timezone, new_timezone, revision) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (dataset_id, location, manager, datetime.now(timezone.utc).isoformat(),
+             previous, new, revision))
 
     @staticmethod
     def _ownership(db, dataset_id):
@@ -166,7 +207,7 @@ class LocationSettings:
             raise ValueError("A dataset and location are required.")
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
-            self.require_access(dataset_id, [location])
+            account = self.require_access(dataset_id, [location])
             if db.execute(
                 "SELECT 1 FROM calendar_renames WHERE dataset_id=? AND old_location=?",
                 (dataset_id, location),
@@ -174,7 +215,7 @@ class LocationSettings:
                 raise SettingsConflictError(
                     "This calendar was renamed. Reload and use its current location.")
             row = db.execute(
-                "SELECT revision FROM location_calendars WHERE dataset_id=? AND location=?",
+                "SELECT revision, timezone FROM location_calendars WHERE dataset_id=? AND location=?",
                 (dataset_id, location)).fetchone()
             if (row[0] if row else 0) != expected_revision:
                 raise SettingsConflictError(
@@ -185,6 +226,10 @@ class LocationSettings:
                 "ON CONFLICT(dataset_id, location) DO UPDATE SET "
                 "timezone=excluded.timezone, revision=excluded.revision",
                 (dataset_id, location, timezone, expected_revision + 1))
+            self._record_timezone(
+                db, dataset_id, location, account["username"],
+                row[1] if row else DEFAULT_RESTAURANT_TIMEZONE,
+                timezone, expected_revision + 1)
 
     def rename(self, dataset_id, old_location, new_location, *, expected_revision,
                confirmed=False):

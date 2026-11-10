@@ -412,11 +412,27 @@ with st.sidebar.expander("Location calendars"):
         try:
             calendars.save(tag, calendar_location, zone,
                            expected_revision=calendar_snapshot["revision"])
-        except (ValueError, OSError, D.sqlite3.Error) as ex:
+        except (ValueError, PermissionError, OSError, D.sqlite3.Error) as ex:
             st.error(f"Couldn't save timezone: {ex}")
         else:
             del st.session_state[calendar_key]
             st.rerun()
+    st.markdown("**Timezone change history**")
+    st.caption("Successful saves, newest first. Times are UTC. Earlier settings "
+               "have no recorded history. Renames are recorded separately.")
+    try:
+        timezone_history = calendars.timezone_history(tag, calendar_location)
+    except (PermissionError, OSError, D.sqlite3.Error, ValueError) as ex:
+        st.error(f"Couldn't read timezone history: {ex}")
+    else:
+        if not timezone_history:
+            st.caption("No recorded timezone saves for this calendar.")
+        else:
+            st.dataframe(pd.DataFrame(timezone_history).rename(columns={
+                "location": "Restaurant at save", "manager": "Manager",
+                "changed_at": "Saved at (UTC)", "previous_timezone": "Previous timezone",
+                "new_timezone": "New timezone", "revision": "Revision",
+            }).drop(columns=["event_id"]), hide_index=True)
     st.caption("Saved calendars reload on each interaction or page refresh. "
                "Plans become overdue the day after their local due date.")
     @st.fragment(run_every="30s")

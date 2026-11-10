@@ -20,6 +20,15 @@ APP = Path(__file__).with_name("app.py")
 
 
 class LocalAppTests(unittest.TestCase):
+    def test_coverage_context_is_visible_in_dashboard(self):
+        app = self.open_app()
+        self.assertFalse(app.exception)
+        self.assertTrue(any("not complete Google review history" in w.value for w in app.warning))
+        self.assertTrue(any("No alert does not prove" in w.value for w in app.warning))
+        self.assertTrue(any(e.label == "Monthly denominators and absent-record intervals"
+                            for e in app.expander))
+        self.assertTrue(any("not today or each location" in c.value for c in app.caption))
+
     def open_app(self):
         return sample_app(AppTest.from_file(str(APP), default_timeout=30))
 

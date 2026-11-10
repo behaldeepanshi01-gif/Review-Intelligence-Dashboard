@@ -13,3 +13,4 @@
 - [Streamlit test isolation](streamlit-test-isolation.md) — run multiprocessing checks before AppTest; select sample data explicitly in dashboard fixtures.
 - [Upload publication dates](upload-date-semantics.md) — preserve source calendar dates across timezone offsets to avoid shifting trend periods.
 - [Rating normalization compatibility](rating-policy.md) — explain existing conversions rather than silently changing historical analysis semantics.
+- [Trend coverage context](trend-coverage-context.md) — approved descriptive warnings must not imply complete capture or statistical reliability.

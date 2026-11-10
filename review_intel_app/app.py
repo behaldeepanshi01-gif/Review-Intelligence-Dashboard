@@ -25,6 +25,8 @@ from saved_action_history_ui import show_saved_action_history
 from action_edit_history_ui import show_action_edit_history
 import manager_identity as identity
 import engine as E
+from trend_coverage import coverage_tables
+from trend_coverage_ui import show_monthly_coverage, show_warning_coverage
 import manager_corrections as C
 import reply_approvals as R
 import manager_correction_history as correction_history
@@ -561,6 +563,8 @@ tabs = st.tabs(["📊 Overview", "🧭 What guests say", "🚨 Early warnings",
 # Overview
 # ----------------------------------------------------------------------------
 with tabs[0]:
+    coverage = coverage_tables(tagged, view, pick, dr)
+    show_monthly_coverage(coverage, dr)
     c1, c2 = st.columns([1, 1.4])
     by_loc = (view.groupby("location")
                   .agg(avg_rating=("rating", "mean"), reviews=("rating", "size"),
@@ -572,9 +576,11 @@ with tabs[0]:
     fig.update_layout(height=320, margin=dict(l=0, r=10, t=30, b=0), title="Rating by location")
     c1.plotly_chart(fig, width="stretch")
 
-    trend = E.monthly_trend(view)
+    trend = coverage[1]
     fig2 = px.line(trend, x="month", y="avg_rating", color="location", markers=True,
+                   hover_data=["reviews", "context"],
                    labels={"avg_rating": "Average rating", "month": ""})
+    fig2.update_traces(connectgaps=False)
     fig2.update_layout(height=320, margin=dict(l=0, r=10, t=30, b=0),
                        title="Monthly rating trend", legend_title_text="")
     c2.plotly_chart(fig2, width="stretch")
@@ -754,10 +760,13 @@ with tabs[1]:
 # Early warnings
 # ----------------------------------------------------------------------------
 with tabs[2]:
-    st.markdown(f"Themes where complaints **jumped in the last {window} days** compared with the "
-                f"{window * 3} days before. These are the problems to fix before they cost regulars.")
+    show_warning_coverage(view, pick, window)
+    st.markdown(f"Themes meeting the alert rules in the recent **{window}-day window** "
+                f"compared with the {window * 3} days before, using available filtered records. "
+                "Review the denominators before deciding what needs attention.")
     if alerts.empty:
-        st.success("No rising issues right now.")
+        st.info("No themes meet the alert rules in these records. "
+                "This does not establish that complaints are absent or declining.")
     for index, alert in enumerate(alerts.to_dict("records")):
         action_today = A.location_today(alert["location"], timezones_by_location)
         # Alert ordering changes with filters. Never attach a draft to its index.

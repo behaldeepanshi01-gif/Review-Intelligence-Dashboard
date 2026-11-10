@@ -55,6 +55,65 @@ class LocationSettings:
                                   "Sign in again or ask the app owner for access.")
 
     @staticmethod
+    def _ownership(db, dataset_id):
+        """Resolve legacy chains without treating a retired name as available."""
+        links = dict(db.execute(
+            "SELECT old_location, new_location FROM calendar_renames WHERE dataset_id=?",
+            (dataset_id,)))
+        owners = {}
+        for source in links:
+            current, seen = source, set()
+            while current in links:
+                if current in seen:
+                    raise SettingsConflictError("Calendar links are inconsistent. Ask the app owner for help.")
+                seen.add(current)
+                current = links[current]
+            owners[source] = current
+        return owners
+
+    def ownership(self, dataset_id):
+        """Expose only links whose retired name and current owner are accessible."""
+        self.load(dataset_id)  # Require a live session even when there are no links.
+        with self.connect() as db:
+            return {old: owner for old, owner in self._ownership(db, dataset_id).items()
+                    if identity.permits(self.session, dataset_id, [old, owner])}
+
+    def correct_link(self, dataset_id, current_location, new_location, *,
+                     expected_revision, confirmed=False):
+        """Explicitly move an existing linked calendar, including back to an alias."""
+        self.require_access(dataset_id, [current_location, new_location])
+        if not confirmed:
+            raise ValueError("Confirm this calendar ownership correction.")
+        if not dataset_id or not new_location or current_location == new_location:
+            raise ValueError("Choose two different location names in one dataset.")
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self.require_access(dataset_id, [current_location, new_location])
+            owners = self._ownership(db, dataset_id)
+            aliases = [old for old, owner in owners.items() if owner == current_location]
+            row = db.execute(
+                "SELECT timezone, revision FROM location_calendars WHERE dataset_id=? AND location=?",
+                (dataset_id, current_location)).fetchone()
+            if not aliases or row is None or row[1] != expected_revision:
+                raise SettingsConflictError("Calendar ownership or timezone changed. Reload and review again.")
+            if (new_location in owners and owners[new_location] != current_location) or db.execute(
+                "SELECT 1 FROM location_calendars WHERE dataset_id=? AND location=?",
+                (dataset_id, new_location)).fetchone():
+                raise SettingsConflictError("The destination belongs to another calendar. Calendars cannot be merged.")
+            # Only the new active name is released. All other aliases remain
+            # reserved and point directly to the new owner (no cycles).
+            db.execute("DELETE FROM calendar_renames WHERE dataset_id=? AND old_location=?",
+                       (dataset_id, new_location))
+            for alias in set(aliases + [current_location]) - {new_location}:
+                db.execute("INSERT INTO calendar_renames VALUES (?, ?, ?) "
+                           "ON CONFLICT(dataset_id, old_location) DO UPDATE SET new_location=excluded.new_location",
+                           (dataset_id, alias, new_location))
+            db.execute("DELETE FROM location_calendars WHERE dataset_id=? AND location=?",
+                       (dataset_id, current_location))
+            db.execute("INSERT INTO location_calendars VALUES (?, ?, ?, ?)",
+                       (dataset_id, new_location, row[0], row[1] + 1))
+
+    @staticmethod
     def default():
         return {"timezone": DEFAULT_RESTAURANT_TIMEZONE, "revision": 0}
 

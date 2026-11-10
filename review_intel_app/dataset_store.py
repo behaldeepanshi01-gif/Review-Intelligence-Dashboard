@@ -235,6 +235,30 @@ class DatasetStore:
             calendars.rename(dataset_id, old_location, new_location,
                              expected_revision=expected_revision, confirmed=confirmed)
 
+    def correct_calendar_link(self, calendars, dataset_id, current_location, new_location,
+                              *, expected_path, expected_revision, confirmed=False):
+        """Serialize corrections with dataset replacement; never touch actions."""
+        import engine
+        from location_settings import SettingsConflictError
+
+        with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute("SELECT path FROM datasets WHERE dataset_id=?",
+                                 (dataset_id,)).fetchone()
+            if current is None or current["path"] != expected_path:
+                raise ValueError("The dataset snapshot changed. Reload and review the correction again.")
+            locations = set(engine.load_reviews(current["path"])["location"])
+            calendars.require_access(dataset_id, [current_location, new_location])
+            snapshot = calendars.load(dataset_id).get(current_location)
+            if snapshot is None or snapshot["revision"] != expected_revision:
+                raise SettingsConflictError("Calendar ownership or timezone changed. Reload and review again.")
+            owners = calendars.ownership(dataset_id)
+            if new_location not in locations and owners.get(new_location) != current_location:
+                raise ValueError("Choose a current review location or a previous name of this calendar.")
+            calendars.correct_link(
+                dataset_id, current_location, new_location,
+                expected_revision=expected_revision, confirmed=confirmed)
+
     def unclaimed_legacy_tags(self, actions):
         claimed = {
             row["legacy_tag"] for row in self.list_datasets(include_sample=True)

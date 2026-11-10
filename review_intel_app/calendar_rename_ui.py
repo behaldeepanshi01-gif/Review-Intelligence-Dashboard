@@ -5,6 +5,7 @@ import streamlit as st
 
 
 def show_calendar_rename(datasets, dataset, calendars, settings, locations):
+    show_calendar_correction(datasets, dataset, calendars, settings, locations)
     sources = sorted(set(settings) - set(locations))
     if not sources:
         return
@@ -33,7 +34,7 @@ def show_calendar_rename(datasets, dataset, calendars, settings, locations):
                 calendars, dataset_id, old, new, expected_path=dataset["path"],
                 expected_revision=snapshot["revision"], confirmed=confirmed,
             )
-        except (ValueError, OSError, sqlite3.Error) as ex:
+        except (ValueError, PermissionError, OSError, sqlite3.Error) as ex:
             st.error(f"Couldn't link calendar: {ex}")
         else:
             st.session_state.pop(f"calendar_{dataset_id}_{new}", None)
@@ -41,3 +42,52 @@ def show_calendar_rename(datasets, dataset, calendars, settings, locations):
                 f"Calendar linked: {old} → {new}. Timezone kept: {snapshot['timezone']}."
             )
             st.rerun()
+
+
+def show_calendar_correction(datasets, dataset, calendars, settings, locations):
+    dataset_id = dataset["dataset_id"]
+    links = calendars.ownership(dataset_id)
+    if not links:
+        return
+    with st.container(border=True):
+        st.markdown("**Inspect or correct calendar ownership**")
+        st.caption(
+            "Previous names remain reserved to block stale editors. A correction moves "
+            "only this calendar and keeps its timezone. Action histories, baselines and "
+            "due dates stay unchanged. You may restore a previous name even if it is "
+            "absent from the current reviews."
+        )
+        st.table([{"Previous name": old, "Current owner": owner}
+                  for old, owner in sorted(links.items())])
+        sources = sorted(set(links.values()) & set(settings))
+        if not sources:
+            return
+        old = st.selectbox("Calendar to correct", sources, key=f"correct_source_{dataset_id}")
+        targets = sorted((set(locations) | {alias for alias, owner in links.items()
+                                           if owner == old}) - {old})
+        if not targets:
+            st.info("No alternative calendar name is available.")
+            return
+        new = st.selectbox("Correct calendar owner", targets, key=f"correct_target_{dataset_id}")
+        snapshot = settings[old]
+        occupied = new in settings or (new in links and links[new] != old)
+        st.caption(f"Correct {old} → {new}. Keep timezone: {snapshot['timezone']}.")
+        if occupied:
+            st.warning("This name belongs to another calendar and cannot be overwritten.")
+        with st.form(f"correct_calendar_{dataset_id}_{dataset['path']}_{old}_{new}_{snapshot['revision']}"):
+            confirmed = st.checkbox("I confirm this is the correct owner of this calendar in this dataset.")
+            submitted = st.form_submit_button("Correct calendar link", disabled=occupied)
+        if submitted:
+            try:
+                datasets.correct_calendar_link(
+                    calendars, dataset_id, old, new, expected_path=dataset["path"],
+                    expected_revision=snapshot["revision"], confirmed=confirmed)
+            except (ValueError, PermissionError, OSError, sqlite3.Error) as ex:
+                st.error(f"Couldn't correct calendar: {ex}")
+            else:
+                for name in (old, new):
+                    st.session_state.pop(f"calendar_{dataset_id}_{name}", None)
+                st.session_state["calendar_rename_notice"] = (
+                    f"Calendar corrected: {old} → {new}. Timezone kept: {snapshot['timezone']}."
+                )
+                st.rerun()

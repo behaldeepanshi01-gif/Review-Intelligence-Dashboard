@@ -27,3 +27,14 @@ has not separately reviewed.
 **How to apply:** Keep rename recovery scoped to one explicitly selected dataset.
 Treat correcting mistaken links or reusing retired names as a separate, confirmed
 ownership operation rather than deleting the safeguards.
+
+A confirmed reversal may restore this calendar's own previous name even when
+that name is absent from the current review upload. Moving to an unrelated new
+name still requires it to appear in the selected dataset.
+
+**Why:** Undoing a mistaken calendar link must not require replacing review
+evidence first. This is calendar ownership recovery, not proof that two review
+histories belong together.
+
+**How to apply:** Keep the restored name's calendar generation newer than all
+earlier editors, reserve the name it moved from, and do not move action history.

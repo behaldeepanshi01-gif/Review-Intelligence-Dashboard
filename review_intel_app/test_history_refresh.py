@@ -18,6 +18,7 @@ import engine as E
 import manager_identity as identity
 from legacy_history_ui import history_changed
 from calendar_test_support import manager_session
+from process_test_support import isolated_process_test
 
 
 DAY = date(2026, 1, 1)
@@ -136,7 +137,7 @@ def _history_race_worker(config, operation, pause, start, release, channel):
 
 
 class GuardedHistoryProcessTests(unittest.TestCase):
-    """Run before AppTest: its temporary __main__ can break multiprocessing spawn."""
+    """Exercise real spawned workers independently of earlier AppTest runs."""
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -238,6 +239,7 @@ class GuardedHistoryProcessTests(unittest.TestCase):
         self.assertEqual(owners, [self.target["dataset_id"]])
         return results
 
+    @isolated_process_test
     def test_transfer_waits_for_validated_action_json_write(self):
         workers = self.run_race("save", "transfer")
         saved, _ = self.finish(workers, "completed", "completed")
@@ -252,18 +254,21 @@ class GuardedHistoryProcessTests(unittest.TestCase):
         self.assertIn(saved, A.load_actions(
             str(self.log), target["dataset_id"], legacy_tag=target["legacy_tag"]))
 
+    @isolated_process_test
     def test_transfer_first_blocks_then_rejects_former_owner_save(self):
         workers = self.run_race("transfer", "save")
         _, error = self.finish(workers, "completed", "rejected")
         self.assertIn("history link changed", error)
         self.assertEqual(self.log.read_bytes(), self.before)
 
+    @isolated_process_test
     def test_rejected_action_validation_releases_transaction_for_transfer(self):
         workers = self.run_race("invalid_save", "transfer")
         error, _ = self.finish(workers, "rejected", "completed")
         self.assertEqual(error, "Enter an action before saving.")
         self.assertEqual(self.log.read_bytes(), self.before)
 
+    @isolated_process_test
     def test_failed_json_write_releases_transaction_without_changing_baselines(self):
         workers = self.run_race("failed_save", "transfer")
         error, _ = self.finish(workers, "rejected", "completed")

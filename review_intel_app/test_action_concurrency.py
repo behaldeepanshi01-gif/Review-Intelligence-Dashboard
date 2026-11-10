@@ -19,6 +19,7 @@ import engine as E
 import manager_identity as identity
 from dataset_store import SAMPLE_ID
 from calendar_test_support import manager_session, sample_app
+from process_test_support import isolated_process_test
 
 
 DAY = date(2026, 1, 1)
@@ -74,6 +75,7 @@ class ConcurrentActionTests(unittest.TestCase):
                                        self.session, str(identity.DB_PATH), *job) for job in jobs]
             return [future.result(timeout=20) for future in futures]
 
+    @isolated_process_test
     def test_overlapping_creates_preserve_all_datasets_threads_and_processes(self):
         for processes in (False, True):
             with self.subTest(processes=processes):
@@ -86,12 +88,14 @@ class ConcurrentActionTests(unittest.TestCase):
                     self.assertIn(action, saved)
         self.assertEqual(len(A.load_actions(self.path)), 16)
 
+    @isolated_process_test
     def test_same_warning_has_only_one_active_plan(self):
         self.assertCountEqual(
             self.overlap([("create", plan(), ""), ("create", plan(), "")], True),
             ["saved", "conflict"])
         self.assertEqual(len(A.load_actions(self.path)), 1)
 
+    @isolated_process_test
     def test_overlapping_create_and_edit_preserve_legacy_and_baselines(self):
         original = plan()
         legacy = {"action_id": "legacy", "dataset_tag": "old.csv",
@@ -111,6 +115,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertEqual({k: v for k, v in edited.items() if k != "edit_history"}, expected)
         self.assertEqual(len(edited["edit_history"]), 1)
 
+    @isolated_process_test
     def test_overlapping_edits_to_distinct_actions_both_survive(self):
         first, second = plan(), plan("Cleanliness")
         A.save_actions(self.path, [first, second])
@@ -120,6 +125,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertEqual([a["action_text"] for a in A.load_actions(self.path)],
                          ["First edit", "Second edit"])
 
+    @isolated_process_test
     def test_overlapping_same_action_edits_reject_stale_snapshot(self):
         original = plan()
         A.save_actions(self.path, [original])

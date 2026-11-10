@@ -277,6 +277,13 @@ From this directory, after installing the requirements, run:
 python -m unittest discover -p 'test_*.py' -v
 ```
 
+No special test ordering is required. Spawn-based action-save and history-transfer
+checks use `process_test_support.isolated_process_test` to run the selected test
+in a fresh interpreter before launching real concurrent workers. This prevents
+Streamlit AppTest's temporary main module from becoming a worker entry point.
+Child failures and timeouts fail the parent test with captured output. Use the
+same decorator for new tests that launch spawned workers alongside AppTest.
+
 The checks load the included synthetic CSV through the existing review loader and
 confirm its columns and source file remain unchanged. They create an action from a
 generated alert, update and reload it in an isolated temporary log, and confirm that

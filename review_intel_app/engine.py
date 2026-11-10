@@ -449,6 +449,8 @@ def preview_reviews(file_or_path) -> tuple[pd.DataFrame, dict]:
 
     Reasons may overlap (a record can lack both its date and its text).
     The caller retains the original bytes, including rejected records.
+    source_row is the logical CSV row (header = 1), not a physical text line.
+    Quoted multiline fields count as one record; blank lines are skipped.
     """
     df = pd.read_csv(file_or_path)
     df.columns = [c.strip().lower() for c in df.columns]
@@ -473,14 +475,21 @@ def preview_reviews(file_or_path) -> tuple[pd.DataFrame, dict]:
     parsed_dates = pd.to_datetime(df["date"].map(publication_date), errors="coerce")
     missing_text = df["text"].isna() | df["text"].astype(str).str.strip().eq("")
     rejected = parsed_dates.isna() | missing_text
+    reason_masks = {
+        "Missing date": missing_date,
+        "Invalid date": parsed_dates.isna() & ~missing_date,
+        "Missing review text": missing_text,
+    }
     summary = {
         "total": len(df), "accepted": int((~rejected).sum()),
         "rejected": int(rejected.sum()),
-        "reasons": {
-            "Missing date": int(missing_date.sum()),
-            "Invalid date": int((parsed_dates.isna() & ~missing_date).sum()),
-            "Missing review text": int(missing_text.sum()),
-        },
+        "reasons": {reason: int(mask.sum()) for reason, mask in reason_masks.items()},
+        "rejected_rows": [
+            {"source_row": position + 2,
+             "rejection_reasons": "; ".join(
+                 reason for reason, mask in reason_masks.items() if mask.iloc[position])}
+            for position in range(len(df)) if rejected.iloc[position]
+        ],
     }
     df["date"] = parsed_dates
     df = df.loc[~rejected].copy()
@@ -491,6 +500,13 @@ def preview_reviews(file_or_path) -> tuple[pd.DataFrame, dict]:
         df.loc[dup, "review_id"] = (df.loc[dup, "review_id"] + "-"
                                     + df[dup].groupby("review_id").cumcount().astype(str))
     return df.sort_values("date").reset_index(drop=True), summary
+
+
+def validation_report_csv(validation: dict) -> bytes:
+    """Export only row locators and fixed reasons, never source review content."""
+    return pd.DataFrame(
+        validation["rejected_rows"], columns=["source_row", "rejection_reasons"],
+    ).to_csv(index=False).encode("utf-8")
 
 
 # ----------------------------------------------------------------------------

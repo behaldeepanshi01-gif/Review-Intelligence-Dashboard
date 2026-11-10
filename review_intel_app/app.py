@@ -192,6 +192,14 @@ elif source.startswith("Upload"):
                "Saving preserves the original CSV, including rejected records.")
     st.download_button("Download original CSV", content, file_name=os.path.basename(upload.name),
                        mime="text/csv")
+    st.download_button(
+        "Download validation report", E.validation_report_csv(validation),
+        file_name="upload_validation_report.csv", mime="text/csv",
+    )
+    st.caption("The validation report lists rejected rows and all their rejection reasons, "
+               "without review text. Source rows count CSV records with the header as row 1; "
+               "quoted multiline fields count as one record and blank lines are skipped. "
+               "A report with no rejected rows contains only column headers.")
     if not validation["accepted"]:
         st.warning("No reviews are eligible for analysis. Nothing will be saved or replaced. "
                    "Keep the original CSV and supply real review dates before importing.")

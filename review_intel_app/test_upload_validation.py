@@ -27,9 +27,52 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(report, {
             "total": 5, "accepted": 1, "rejected": 4,
             "reasons": {"Missing date": 2, "Invalid date": 1, "Missing review text": 2},
+            "rejected_rows": [
+                {"source_row": 3, "rejection_reasons": "Missing date"},
+                {"source_row": 4, "rejection_reasons": "Invalid date"},
+                {"source_row": 5, "rejection_reasons": "Missing review text"},
+                {"source_row": 6, "rejection_reasons": "Missing date; Missing review text"},
+            ],
         })
         self.assertEqual(accepted["text"].tolist(), ["Good"])
         pd.testing.assert_frame_equal(accepted, E.load_reviews(io.BytesIO(MIXED)))
+
+    def test_report_uses_source_record_order_with_multiline_csv(self):
+        content = (
+            b'location,date,rating,text\r\n'
+            b'Demo,2026-02-01,5,"Private first line\r\nsecond, ""quoted"" line"\r\n'
+            b'\r\n'
+            b'Demo,,4,"Private undated\r\ncontinued"\r\n'
+            b'Demo,invalid,3," \r\n "\r\n'
+            b'Demo,2026-01-01,5,Private earlier review\r\n'
+            b'Demo,,4,\r\n'
+        )
+        stream = io.BytesIO(content)
+        accepted, validation = E.preview_reviews(stream)
+        self.assertEqual(stream.getvalue(), content)
+        self.assertEqual(validation["total"], 5)
+        self.assertEqual(validation["rejected"], 3)
+        exported = E.validation_report_csv(validation)
+        report = pd.read_csv(io.BytesIO(exported))
+        self.assertEqual(report.source_row.tolist(), [3, 4, 6])
+        self.assertEqual(report.rejection_reasons.tolist(), [
+            "Missing date", "Invalid date; Missing review text",
+            "Missing date; Missing review text",
+        ])
+        self.assertNotIn(b"Private", exported)
+        self.assertNotIn(b"Demo", exported)
+        self.assertEqual(accepted.date.dt.month.tolist(), [1, 2])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.csv"
+            path.write_bytes(content)
+            self.assertEqual(E.preview_reviews(path)[1], validation)
+            self.assertEqual(path.read_bytes(), content)
+
+    def test_clean_and_header_only_reports_have_stable_headers(self):
+        for content in (VALID, VALID.splitlines()[0] + b"\n"):
+            _, validation = E.preview_reviews(io.BytesIO(content))
+            self.assertEqual(E.validation_report_csv(validation),
+                             b"source_row,rejection_reasons\n")
 
     def test_all_undated_and_empty_csv_are_empty_not_retrieval_dated(self):
         for content, total in [(UNDATED, 3), (VALID.splitlines()[0] + b"\n", 0)]:
@@ -99,6 +142,10 @@ class UploadUITests(unittest.TestCase):
     def test_preview_and_cancel_leave_existing_snapshot_unchanged(self):
         app = self.open_app()
         self.assertTrue(any("Accepted: 1 · Rejected: 4" in x.value for x in app.markdown))
+        self.assertTrue(any(b.label == "Download validation report"
+                            for b in app.get("download_button")))
+        self.assertFalse(any("Undated" in x.value or "Good" in x.value
+                             for x in app.markdown))
         self.assert_unchanged()
         next(b for b in app.button if b.label == "Cancel upload").click().run()
         self.assertFalse(app.exception)
@@ -122,6 +169,8 @@ class UploadUITests(unittest.TestCase):
         app = self.open_app()
         self.assertTrue(next(b for b in app.button if b.label == "Save CSV").disabled)
         self.assertTrue(any("No reviews are eligible" in x.value for x in app.warning))
+        self.assertTrue(any(b.label == "Download validation report"
+                            for b in app.get("download_button")))
         self.assert_unchanged()
 
     def test_invalid_schema_cannot_save(self):

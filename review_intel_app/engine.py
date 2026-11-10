@@ -9,10 +9,12 @@ Both return the same columns, so the dashboard works with either.
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
 from datetime import timedelta
+from pathlib import Path
 
 import pandas as pd
 from local_analyzer import RULES_VERSION as LOCAL_ANALYZER_VERSION, analyze_text
@@ -437,6 +439,40 @@ def load_ollama_results(df: pd.DataFrame, model: str, data_tag: str) -> pd.DataF
 # Loading and validating data
 # ----------------------------------------------------------------------------
 REQUIRED = ["location", "date", "rating", "text"]
+RATING_POLICY = (
+    "Analysis uses whole-number ratings from 1 to 5. Missing or nonnumeric ratings "
+    "become 3; numeric values below 1 or above 5 (including infinities) are clipped "
+    "to 1 or 5; remaining decimals are truncated, not rounded (4.9 becomes 4). "
+    "These changes can affect averages, trends, urgency and automatic tags. "
+    "Only accepted reviews are adjusted; the original CSV is never rewritten."
+)
+
+
+def normalize_ratings(raw: pd.Series) -> tuple[pd.Series, dict]:
+    """Apply the compatibility policy and explain changes in source-record order."""
+    numeric = pd.to_numeric(raw, errors="coerce")
+    missing = raw.isna() | raw.astype(str).str.strip().eq("")
+    clipped = numeric.fillna(3).clip(1, 5)
+    normalized = clipped.astype(int)
+    masks = {
+        "Missing rating → 3": missing,
+        "Nonnumeric rating → 3": numeric.isna() & ~missing,
+        "Below 1 → 1": numeric.lt(1),
+        "Above 5 → 5": numeric.gt(5),
+        "Fractional rating truncated": clipped.ne(normalized),
+    }
+    rows = [
+        {"source_row": int(index) + 2,
+         "original_rating": "" if pd.isna(raw.loc[index]) else str(raw.loc[index]),
+         "analysis_rating": int(normalized.loc[index]),
+         "adjustments": "; ".join(reason for reason, mask in masks.items() if mask.loc[index])}
+        for index in raw.index if any(mask.loc[index] for mask in masks.values())
+    ]
+    return normalized, {
+        "changed": len(rows),
+        "reasons": {reason: int(mask.sum()) for reason, mask in masks.items()},
+        "rows": rows,
+    }
 
 
 def load_reviews(file_or_path) -> pd.DataFrame:
@@ -452,15 +488,24 @@ def preview_reviews(file_or_path) -> tuple[pd.DataFrame, dict]:
     source_row is the logical CSV row (header = 1), not a physical text line.
     Quoted multiline fields count as one record; blank lines are skipped.
     """
-    df = pd.read_csv(file_or_path)
+    # Parse a separate raw view so pandas' NA/type inference cannot erase rating
+    # spelling; leave inference for all other columns unchanged.
+    content = (file_or_path.read() if hasattr(file_or_path, "read")
+               else Path(file_or_path).read_bytes())
+    buffer = io.StringIO if isinstance(content, str) else io.BytesIO
+    df = pd.read_csv(buffer(content))
+    raw = pd.read_csv(buffer(content), dtype=str, keep_default_na=False)
     df.columns = [c.strip().lower() for c in df.columns]
+    raw.columns = df.columns
     rename = {"stars": "rating", "review": "text", "review_text": "text",
               "restaurant": "location", "business": "location", "name": "reviewer"}
     df = df.rename(columns={k: v for k, v in rename.items() if k in df.columns and v not in df.columns})
+    raw = raw.rename(columns={k: v for k, v in rename.items() if k in raw.columns and v not in raw.columns})
     missing = [c for c in REQUIRED if c not in df.columns]
     if missing:
         raise ValueError(f"CSV is missing columns: {', '.join(missing)}. "
                          f"Needed: {', '.join(REQUIRED)} (reviewer and review_id optional).")
+    df["rating"] = raw["rating"]
     if "review_id" not in df.columns:
         df["review_id"] = [f"R{i:05d}" for i in range(len(df))]
     if "reviewer" not in df.columns:
@@ -493,7 +538,7 @@ def preview_reviews(file_or_path) -> tuple[pd.DataFrame, dict]:
     }
     df["date"] = parsed_dates
     df = df.loc[~rejected].copy()
-    df["rating"] = pd.to_numeric(df["rating"], errors="coerce").fillna(3).clip(1, 5).astype(int)
+    df["rating"], summary["ratings"] = normalize_ratings(df["rating"])
     df["review_id"] = df["review_id"].astype(str)
     dup = df["review_id"].duplicated(keep=False)
     if dup.any():  # make every ID unique so results never get mixed up

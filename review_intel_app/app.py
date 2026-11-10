@@ -190,6 +190,21 @@ elif source.startswith("Upload"):
     st.caption("Reasons can overlap. Rejected records are excluded from analysis and trends. "
                "Dates are never filled with the retrieval or upload date. "
                "Saving preserves the original CSV, including rejected records.")
+    st.markdown("**Rating policy**")
+    st.caption(E.RATING_POLICY)
+    ratings = validation["ratings"]
+    if ratings["changed"]:
+        st.warning(f"{ratings['changed']} of {validation['accepted']} accepted reviews "
+                   "will use adjusted ratings in analysis. Review these changes before Save CSV.")
+        for reason, count in ratings["reasons"].items():
+            if count:
+                st.write(f"{reason}: {count}")
+        st.dataframe(pd.DataFrame(ratings["rows"]), hide_index=True, width="stretch")
+        st.caption("Source rows count CSV records with the header as row 1; "
+                   "quoted multiline fields count as one record and blank lines are skipped. "
+                   "Rejected reviews are not included in these rating adjustments.")
+    else:
+        st.caption("No accepted reviews need rating adjustments.")
     st.download_button("Download original CSV", content, file_name=os.path.basename(upload.name),
                        mime="text/csv")
     st.download_button(

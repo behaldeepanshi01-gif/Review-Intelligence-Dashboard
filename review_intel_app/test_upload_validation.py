@@ -24,7 +24,7 @@ APP = Path(__file__).with_name("app.py")
 class ValidationTests(unittest.TestCase):
     def test_counts_overlap_without_counting_a_row_twice(self):
         accepted, report = E.preview_reviews(io.BytesIO(MIXED))
-        self.assertEqual(report, {
+        self.assertEqual({k: v for k, v in report.items() if k != "ratings"}, {
             "total": 5, "accepted": 1, "rejected": 4,
             "reasons": {"Missing date": 2, "Invalid date": 1, "Missing review text": 2},
             "rejected_rows": [

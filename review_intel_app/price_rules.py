@@ -31,6 +31,61 @@ REPORTED_MONEY = re.compile(
     r"\b(?:say|says|said|tell|told|heard|read|reported|quote|quoted|"
     r"phrase|discussed|whether|if|would|wonder|wondered)\b"
 )
+REPORTED_OPINION = re.compile(
+    r"\b(?:say|says|said|tell|tells|told|heard|read|reported|"
+    r"claims?|claimed|calls?|called|describes?|described|according to)\b",
+    re.I,
+)
+RHETORICAL = re.compile(r"\b(?:yeah\s+right|as\s+if)\b", re.I)
+QUOTATION = re.compile(
+    r'"[^"]*(?:"|$)|“[^”]*(?:”|$)|‘[^’]*(?:’|$)|'
+    r"(?<!\w)'(?:[^']|'(?=\w))*(?:'(?!\w)|$)"
+)
+CLAUSE_BREAK = re.compile(
+    r",\s*|\b(?:but|however|although|though|yet|and|while)\b", re.I
+)
+
+
+def price_clauses(text):
+    """Retain question/report scope before the existing local cue splitting.
+
+    Quotation offsets survive sentence punctuation inside a quote. A closing
+    quote alone does not mark the author's next sentence as quoted. Negation
+    and hedge handling across comma/semicolon boundaries is deliberately
+    unchanged; this is not a general sentence parser.
+    """
+    quoted = [m.span() for m in QUOTATION.finditer(text)]
+    for sentence in re.finditer(r"[^.!?;\n]+(?:[.!?;\n]+|$)", text):
+        body = sentence.group().rstrip(".!?;\n")
+        context_unclear = (
+            "?" in sentence.group()[len(body):]
+            or bool(REPORTED_OPINION.search(body))
+            or bool(RHETORICAL.search(body))
+        )
+        start = 0
+        for boundary in list(CLAUSE_BREAK.finditer(body)) + [None]:
+            end = boundary.start() if boundary else len(body)
+            raw = body[start:end]
+            left = sentence.start() + start
+            right = sentence.start() + end
+            # Sentence-final punctuation can precede its closing quote.
+            # Remove that leftover delimiter before matching anchored opinions
+            # in the next sentence (e.g. '"Fair." Do not waste your money.').
+            while raw and (raw[0].isspace() or any(
+                    left == stop - 1 and raw[0] in "\"'”’"
+                    for _, stop in quoted)):
+                raw = raw[1:]
+                left += 1
+            # Ignore quotation delimiters/space when testing overlap, so a
+            # closing quote followed by a new opinion does not suppress it.
+            content = re.search(r"\w", raw)
+            is_quoted = content is not None and any(
+                left + content.start() < stop and begin < right
+                for begin, stop in quoted
+            )
+            if raw.strip():
+                yield raw, context_unclear or is_quoted
+            start = boundary.end() if boundary else end
 
 
 def monetary_context_unclear(text):
@@ -54,10 +109,7 @@ def analyze_price(text, themes, hedging):
     other_terms = {term for theme, config in themes.items() if theme != "price"
                    for term in config["kw"]} | {"food", "meal", "server", "service",
                                                "portion", "portions", "staff", "value"}
-    clauses = re.split(
-        r"[.!?;\n]+|,\s*|\b(?:but|however|although|though|yet|and|while)\b",
-        str(text), flags=re.I)
-    for raw in clauses:
+    for raw, context_unclear in price_clauses(str(text)):
         clause = raw.strip()
         low = clause.lower().replace("’", "'")
         hits = [(m.span(), term) for term in TERMS for m in matches(term, low)]
@@ -67,7 +119,7 @@ def analyze_price(text, themes, hedging):
         hits.extend((m.span(), "well priced") for m in matches("well priced", low))
         if not hits:
             continue
-        uncertain = bool(hedging.search(low)) or bool(re.search(
+        uncertain = context_unclear or bool(hedging.search(low)) or bool(re.search(
             r"\b(?:don't|do not|didn't|cannot|can't)\s+(?:think|say|tell)\b", low))
         cues, occupied = [], []
         money_unclear = monetary_context_unclear(low)
@@ -131,7 +183,9 @@ def analyze_price(text, themes, hedging):
                 "reason": "Matched a price term and a nearby cost opinion, with local negation.",
             })
         if uncertain or not assigned:
-            reason = ("Tentative price wording needs a person to check it." if uncertain else
+            reason = ("Question, rhetorical or reported/quoted price wording needs a person to check it."
+                      if context_unclear else
+                      "Tentative price wording needs a person to check it." if uncertain else
                       "A price, fee, tip or money mention has no clear cost opinion.")
             reasons.add(reason)
             evidence.append({

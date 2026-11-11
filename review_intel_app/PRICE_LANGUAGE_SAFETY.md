@@ -1,4 +1,99 @@
-# Price-language safety suite: frozen-cycle diagnostics
+# Price-language safety suite
+
+## Approved separate price-context cycle — 2026-11-10
+
+The user explicitly selected **“Authorize separate rule cycle”** after being
+informed that the prior evaluation remains frozen, held-out data must not be
+used for tuning, and earlier manager tag approvals require renewed approval.
+This supersedes the diagnostic-only restriction for questions, rhetoric and
+reported/quoted opinions only. Punctuation-separated negation and hedges remain
+deferred. The historical account below is retained, not rewritten as new
+evaluation evidence.
+
+Rules are now `local-rules-4-price-context`. Price parsing retains question and
+reporting context before splitting local clauses, tracks quotation spans across
+sentence punctuation, and recognizes “yeah right”/“as if” rhetoric. Ambiguous
+price evidence stays visible as **Needs review** instead of being counted as
+praise or criticism. Explicit opinions in other sentences, explicit mixed
+feedback, monetary-waste complaints, and rating-independent tags are preserved.
+No shared non-price vocabulary, application UI, source reviews, human labels,
+manager decisions or historical action baselines were changed.
+
+This remains conservative pattern matching, not general language understanding.
+Reporting context can suppress a direct author opinion in the **same sentence**
+as a reported claim; attribution boundaries within such sentences need a
+separate change. No real-world accuracy claim is made.
+
+### Backup and baseline provenance
+
+Before any edits, nine existing files were copied without overwriting earlier
+backups to `backups/price_context_20261110T214725957979Z/`. Its `manifest.json`
+contains each original file's SHA-256. It includes the analyzer, engine, case
+specification, safety/UI tests, this document, non-price snapshot, and memory
+note. `before.json` freezes all 38 invented cases at ratings 1, 3 and 5 through
+the actual `engine.tag_offline` entry point: **114 predictions**, not mock output.
+Its SHA-256 is
+`f471cdf1bd1b8d043c2b6d429f1519b8001dd50bd1532825ea5d9f6e85018ce0`.
+
+Backup hashes were verified after implementation. `after.json` and
+`comparison.json` in the same directory preserve the results:
+**66 improved case/rating combinations, zero regressions, and zero non-price
+side or evidence differences**. The existing non-price snapshot is byte-for-byte
+unchanged. No private evaluation directory was opened, scored, or modified.
+These backups are Git-ignored workspace evidence; they do not transfer through
+merge. Keep them available for rollback. The historical evaluation and its old
+implementation identities in `MONEY_WASTE_HANDOFF.md` remain untouched.
+
+Current implementation hashes:
+
+| File | SHA-256 |
+| --- | --- |
+| engine.py | `b2624f72c3cc09f03e386554b53ef751372c83c6b69675a17e96a8df2be471f6` |
+| local_analyzer.py | `02dbfb5fa9b8768a785ab355ae61c48d5c652c7339e6aca1bb5a5c12a0bdee39` |
+| price_rules.py | `5a82af8c9c86ab1e0533f513e539e870372d8ccfdd661dc8fdfe66f5d1d321c6` |
+
+The engine already differed from the historical identity before this task;
+its actual pre-edit hash above was frozen and it remains unchanged. The new
+identity test deliberately identifies this new cycle, not the old evaluation.
+The pre-edit price-rules and local-analyzer hashes still matched the monetary-
+waste handoff.
+
+### Verification
+
+From `review_intel_app`, using `uv run python -B -m unittest`:
+
+- `test_price_language_safety test_price_rules test_local_analyzer
+  test_evaluation_scoring test_manager_corrections test_review_action_flow
+  test_action_tracker test_source_coverage test_price_app test_local_app -q`:
+  234 tests, 224 passed, 9 expected failures, and one UI fixture assertion
+  failed because its newly expanded queue initially selected the quoted review
+  rather than the neutral fee review.
+- The fixture was corrected to explicitly select the question and fee entries.
+  `test_price_app -q` then passed. No application fix was needed and the other
+  passing checks were not rerun. Logs are `regression_tests.log` and `ui_tests.log`
+  in the backup directory. Final combined coverage: **225 passing checks and
+  9 explicitly expected failures**, not a full-suite claim.
+- 22 formerly failing examples × 3 ratings now use ordinary assertions. Only
+  `negation_comma`, `negation_semicolon`, and `hedge_comma` remain expected
+  failures (3 × 3 = 9); their desired assertions were not weakened.
+- Added multi-sentence straight/curly/single quotation controls, explicit
+  monetary-waste opinions after closing quotes, question/reporting scope across
+  conjunctions, and mixed-opinion preservation at all three ratings.
+- Existing correction/renewal/reply-approval and action-baseline provenance
+  checks passed. The rules version is already part of the app cache key and
+  correction scope. No old approval or saved baseline was rewritten.
+- Isolated Streamlit AppTest confirmed price evidence and question/quotation/
+  neutral-fee warnings. The dashboard workflow restarted cleanly and the public
+  `/dashboard/_stcore/health` returned `ok`. The screenshot captured only the
+  initial Streamlit shell, so it is not claimed as signed-in UI verification.
+  No real-browser test or deployment was performed.
+
+For rollback, verify the backup manifest and preserve later edits first.
+Restore only the changed rules/tests/docs appropriate to that cycle, never
+datasets, corrections, or saved actions. Restoring an old rules version can
+make its matching approvals eligible again; inspect their provenance.
+
+## Historical diagnostic-only cycle
 
 ## What shipped, and what did not
 

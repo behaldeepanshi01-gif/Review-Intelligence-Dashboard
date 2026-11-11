@@ -24,6 +24,12 @@ class PriceAppTests(unittest.TestCase):
                 {"review_id": "synthetic-fee", "location": "Demo Cafe",
                  "date": pd.Timestamp("2026-10-02"), "rating": 3, "reviewer": "Guest",
                  "text": "A service charge is included."},
+                {"review_id": "synthetic-question", "location": "Demo Cafe",
+                 "date": pd.Timestamp("2026-10-03"), "rating": 5, "reviewer": "Guest",
+                 "text": "Are the prices fair?"},
+                {"review_id": "synthetic-quote", "location": "Demo Cafe",
+                 "date": pd.Timestamp("2026-10-04"), "rating": 1, "reviewer": "Guest",
+                 "text": 'They said "expensive". My prices were fair.'},
             ])
             with patch.object(E, "load_reviews", return_value=rows):
                 session = manager_session(self, directory, {SAMPLE_ID: ["Demo Cafe"]})
@@ -38,10 +44,24 @@ class PriceAppTests(unittest.TestCase):
                 self.assertTrue(any("Price: Praise" in m.value for m in app.markdown))
                 self.assertTrue(any(e.label == "Why these tags?" for e in app.expander))
                 self.assertTrue(any("pricing" in c.value for c in app.caption))
-                self.assertTrue(any("no clear cost opinion" in w.value for w in app.warning))
+                self.assertTrue(any("reported/quoted price wording" in w.value
+                                    for w in app.warning))
                 self.assertTrue(any(s.label == "Review needing a check" for s in app.selectbox))
                 self.assertTrue(any(e.label.startswith("Reviews needing manager review")
                                     for e in app.expander))
+                # The queue is newest first: quote, question, then neutral fee.
+                next(s for s in app.selectbox
+                     if s.label == "Review needing a check").select(1)
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertTrue(any(t.value == "Are the prices fair?" for t in app.text))
+                self.assertTrue(any("reported/quoted price wording" in w.value
+                                    for w in app.warning))
+                next(s for s in app.selectbox
+                     if s.label == "Review needing a check").select(2)
+                app.run()
+                self.assertFalse(app.exception)
+                self.assertTrue(any("no clear cost opinion" in w.value for w in app.warning))
 
 
 if __name__ == "__main__":

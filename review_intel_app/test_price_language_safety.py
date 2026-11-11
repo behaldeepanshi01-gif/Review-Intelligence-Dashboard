@@ -1,4 +1,4 @@
-"""Synthetic-only frozen-cycle diagnostics; expected failures are open defects.
+"""Synthetic-only price-context checks; expected failures are open defects.
 
 Run: python -B -m unittest test_price_language_safety -v
 Do not count expected failures as successful language handling or accuracy.
@@ -93,17 +93,48 @@ class FrozenPriceLanguageTests(unittest.TestCase):
         self.assertEqual(nonprice_snapshot(), json.loads(path.read_text()))
 
     def test_frozen_implementation_identity(self):
-        # Deliberately fails if tuning is merged into this evaluation cycle.
+        # New, separately approved cycle. The prior evaluation's source hashes
+        # remain in MONEY_WASTE_HANDOFF.md and the pre-edit backup manifest.
         expected = {
-            "engine.py": "c239d262fd38050781b293e9294f4a7873f0c6ae6d396f28eeba44a12f6920ff",
-            "local_analyzer.py": "d6396a7253644cf6322d64f7da38e6f48ab0439e4982e9b18ed009f292fdbfbd",
-            "price_rules.py": "633d70e5d29d0c10b7eb3aa7f903de64a2353ee5a3424cb763ce040ba0d5bc22",
+            "engine.py": "b2624f72c3cc09f03e386554b53ef751372c83c6b69675a17e96a8df2be471f6",
+            "local_analyzer.py": "02dbfb5fa9b8768a785ab355ae61c48d5c652c7339e6aca1bb5a5c12a0bdee39",
+            "price_rules.py": "5a82af8c9c86ab1e0533f513e539e870372d8ccfdd661dc8fdfe66f5d1d321c6",
         }
         for filename, digest in expected.items():
             with self.subTest(file=filename):
                 self.assertEqual(hashlib.sha256(
                     Path(__file__).with_name(filename).read_bytes()).hexdigest(), digest)
-        self.assertEqual(E.LOCAL_ANALYZER_VERSION, "local-rules-3-money-waste")
+        self.assertEqual(E.LOCAL_ANALYZER_VERSION, "local-rules-4-price-context")
+
+
+class PriceContextBoundaryTests(unittest.TestCase):
+    def test_context_boundaries_and_explicit_mixed_feedback(self):
+        cases = [
+            ('"Fair prices. Cheap drinks." My meal was overpriced.', False, True),
+            ('“Fair prices. Cheap drinks.” My meal was overpriced.', False, True),
+            ("'Fair prices. Cheap drinks.' My meal was overpriced.", False, True),
+            ('"Overpriced." My prices were fair.', True, False),
+            ('"Fair prices." Do not waste your money.', False, True),
+            ('"Fair prices." This was a waste of my money.', False, True),
+            ('"Fair prices." This was not a waste of my money.', True, False),
+            ("Are prices fair, and drinks cheap? Overpriced meal.", False, True),
+            ("They said prices were fair and drinks cheap. Overpriced meal.", False, True),
+            ("According to the flyer, prices are fair. My meal was overpriced.", False, True),
+            ("Fair prices but overpriced drinks. Is it expensive?", True, True),
+            ("Is it expensive? Fair prices but overpriced drinks.", True, True),
+            ("They said prices were fair. Maybe overpriced.", False, False),
+        ]
+        for text, praise, complaint in cases:
+            for rating in (1, 3, 5):
+                with self.subTest(text=text, rating=rating):
+                    result = E.tag_offline(text, rating)
+                    self.assertEqual(
+                        ("price" in result["themes_pos"], "price" in result["themes_neg"]),
+                        (praise, complaint))
+                    self.assertTrue(result["needs_review"])
+                    price = [e for e in result["tag_evidence"] if e["theme"] == "price"]
+                    self.assertTrue(any(e["polarity"] == "Needs review" for e in price))
+                    self.assertTrue(all(e["excerpt"] in text for e in price))
 
 
 if __name__ == "__main__":

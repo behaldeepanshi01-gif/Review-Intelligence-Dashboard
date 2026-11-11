@@ -26,3 +26,14 @@ Browser wall time must supplement monotonic elapsed time to account for sleep.
 **How to apply:** Keep the watchdog independent of draft widgets; only a newly
 rendered view should clear its warning. Describe missed updates as potentially
 stale rather than claiming to know the Streamlit socket's connection state.
+
+Permission loss during a timed fragment must invalidate the whole private page,
+not merely stop rendering that fragment.
+
+**Why:** Streamlit preserves content outside the refreshing fragment. A denial
+message inside it can coexist with old reviews, download controls, and retained
+action editors even after server-side draft state has been cleared.
+
+**How to apply:** Route invalidated sessions back through the full-page sign-in
+gate. Verify revocation without browser clicks or reloads, including private
+widgets outside the timed section; a full-rerun AppTest denial cannot prove this.

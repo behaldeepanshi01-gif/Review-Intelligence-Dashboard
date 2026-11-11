@@ -30,6 +30,37 @@ inspection, exports, saved actions and live summaries. Revocation or expiry
 blocks the next interaction/live refresh; locking clears session drafts.
 Previously viewed or downloaded information cannot be recalled.
 
+### Synthetic account-switch browser regression
+
+Run from the workspace root with Node, `uv`, and Playwright/Chromium available:
+
+```sh
+node review_intel_app/test_account_switch_browser.cjs
+```
+
+If Playwright or Chromium is installed outside the default search path, set
+`PLAYWRIGHT_MODULE` to the Playwright module directory and `CHROMIUM_PATH` to
+the browser executable. The runner fails explicitly if dependencies are missing;
+it does not silently skip browser coverage.
+
+This starts an isolated copy of the real Streamlit app on a free loopback port.
+It generates two temporary accounts with disjoint dataset/location grants and
+overlapping review and action IDs. In the same browser page it edits and approves
+A's replies, retains an unsaved action editor, locks, and signs in as B.
+Assertions cover inactive-tab text, widget values, dataset options, approval
+counts, downloaded CSV rows, and B's own working action editor. It then revokes
+B's grants and waits for the real 30-second fragments, with no click or reload:
+the entire private page must disappear, including editors outside the fragments.
+A fresh B login must show no assigned datasets.
+
+Only Python source files are copied; all reviews, accounts, approvals, snapshots,
+and action histories are generated in a temporary directory. No existing private
+data is read or changed. The runner closes Chromium, terminates its Streamlit
+process group, and removes the temporary directory on success, failure, SIGINT,
+or SIGTERM, with a three-minute overall deadline. As with any process, SIGKILL
+cannot run cleanup. Download retrieval reauthorization and conflicting action
+drafts are separate tests, not part of this regression.
+
 Managers may replace an assigned existing dataset only when they have access to
 every location in both the current CSV and the replacement, including rejected
 rows. This prevents a partial-location manager from deleting another location's

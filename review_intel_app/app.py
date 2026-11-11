@@ -100,6 +100,11 @@ def require_access(dataset_id, locations=None):
         return access.require(dataset_id, locations)
     except PermissionError as ex:
         clear_private_state()
+        # A fragment-only stop leaves the rest of the browser page (including
+        # retained action editors and exports) visible. Invalidated sessions
+        # must rerun the whole app through the sign-in gate.
+        if not authorized():
+            st.rerun(scope="app")
         st.warning(str(ex))
         st.stop()
 
@@ -474,9 +479,7 @@ with st.sidebar.expander("Location calendars"):
     @st.fragment(run_every="30s")
     def show_calendar_days():
         for loc in locations:
-            if not authorized(tag, [loc]):
-                st.warning("Calendar access expired or was removed. Sign in again.")
-                return
+            require_access(tag, [loc])
             st.caption(f"{loc} — Action calendar: "
                        f"{A.location_today(loc, timezones_by_location).isoformat()} · "
                        f"{timezones_by_location[loc]}")

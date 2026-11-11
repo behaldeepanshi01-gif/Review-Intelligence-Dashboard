@@ -118,3 +118,31 @@ and this document reverts this change; reconcile later edits before restoring.
 Restart Streamlit to discard sessions. This restores the weaker shared-password
 policy, so do not undo in a shared environment without reviewing that consequence.
 Leave uploads, corrections, histories and the private account database untouched.
+
+## Other dashboard exports
+
+Original upload CSVs, upload validation reports, analyzed reviews, early warnings,
+weekly owner summaries, and kept unsaved action references use the same protected
+delivery service as action reports. No ordinary download in `app.py` registers
+private bytes with Streamlit public media.
+
+Check the privacy acknowledgment for the specific file, prepare its secure link,
+then confirm the same manager ID and password in the download page. Links last at
+most two minutes, are single-use, and require the original dashboard login to
+remain valid. Preparing another export replaces the previous link. Logout, account
+replacement/removal, and permission changes invalidate outstanding links. Retrieval
+rechecks exact dataset and restaurant grants; filenames never confer access.
+Files already delivered cannot be recalled.
+
+Review CSVs and warning CSVs retain the dashboard filters. Weekly summaries retain
+their existing review filters and location-scoped action context. Upload exports
+preserve original bytes (including rejected rows) and require grants for every
+uploaded location in the selected target dataset. Draft references contain only
+the kept editable fields and context for their specific action.
+
+Exports remain ephemeral, single-process deliveries, limited to 2 MB. Select fewer
+reviews/restaurants for oversized analyzed exports; oversized originals cannot be
+downloaded through this service. No new login store or persistent file store is used.
+
+Synthetic coverage: `test_dashboard_exports`, `test_report_downloads`,
+`test_upload_validation`, and the existing dashboard/correction/draft suites.

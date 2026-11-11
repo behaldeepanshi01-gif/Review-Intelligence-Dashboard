@@ -656,7 +656,7 @@ class ManagerCorrectionTests(unittest.TestCase):
             return next(b for b in app.button if b.label == label)
 
         with patch.object(D, "DatasetStore", return_value=store), patch(
-                "streamlit.download_button") as downloads:
+                "dashboard_export_ui.secure_export") as downloads:
             app = reopen()
             wording = "Manager-approved wording.\nKeep this exact punctuation: café!"
             self.reply_widget(app).input(wording).run()
@@ -783,7 +783,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         session = manager_session(self, self.temp.name, {
             SAMPLE_ID: ["Demo Cafe"], other["dataset_id"]: ["Demo Cafe"]})
         with patch.object(D, "DatasetStore", return_value=store), patch(
-                "streamlit.download_button") as downloads:
+                "dashboard_export_ui.secure_export") as downloads:
             app = sample_app(AppTest.from_string(source, default_timeout=30), session)
             next(w for w in app.toggle if w.label == "Show approved").set_value(True).run()
             first_widget = self.reply_widget(app).key
@@ -826,7 +826,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         session = manager_session(self, self.temp.name, {
             SAMPLE_ID: ["Demo Cafe"], saved["dataset_id"]: ["Demo Cafe"]})
         with patch.object(D, "DatasetStore", return_value=store), patch(
-                "streamlit.download_button") as downloads:
+                "dashboard_export_ui.secure_export") as downloads:
             app = sample_app(AppTest.from_string(source, default_timeout=30), session)
             next(w for w in app.radio if w.label == "Data").set_value("Saved file").run()
             next(w for w in app.toggle if w.label == "Show approved").set_value(True).run()
@@ -877,7 +877,7 @@ class ManagerCorrectionTests(unittest.TestCase):
         session = manager_session(self, self.temp.name, {
             dataset["dataset_id"]: ["Demo Cafe"]})
         with patch.object(D, "DatasetStore", return_value=store), patch(
-                "streamlit.download_button") as downloads:
+                "dashboard_export_ui.secure_export") as downloads:
             app = AppTest.from_string(source, default_timeout=30)
             app.session_state["_manager_report_grant"] = session
             app.run()

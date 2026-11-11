@@ -142,8 +142,8 @@ class UploadUITests(unittest.TestCase):
     def test_preview_and_cancel_leave_existing_snapshot_unchanged(self):
         app = self.open_app()
         self.assertTrue(any("Accepted: 1 · Rejected: 4" in x.value for x in app.markdown))
-        self.assertTrue(any(b.label == "Download validation report"
-                            for b in app.get("download_button")))
+        self.assertTrue(any(b.label == "Prepare secure export: Download validation report"
+                            for b in app.button))
         self.assertFalse(any("Undated" in x.value or "Good" in x.value
                              for x in app.markdown))
         self.assert_unchanged()
@@ -163,14 +163,31 @@ class UploadUITests(unittest.TestCase):
         self.assertEqual(Path(self.existing["path"]).read_bytes(), VALID)
         self.assertEqual(len(E.load_reviews(current["path"])), 1)
 
+    def test_original_export_keeps_rejected_rows_and_exact_dataset_scope(self):
+        import report_downloads
+        app = self.open_app()
+        label = "Prepare secure export: Download original CSV"
+        self.assertTrue(next(b for b in app.button if b.label == label).disabled)
+        next(c for c in app.checkbox if c.label.startswith(
+            "I checked synthetic.csv")).check().run()
+        with patch.object(report_downloads, "issue", wraps=report_downloads.issue) as issue:
+            next(b for b in app.button if b.label == label).click().run()
+        self.assertFalse(app.exception)
+        args = issue.call_args.args
+        self.assertEqual(args[1], self.existing["dataset_id"])
+        self.assertEqual(args[2], ["Demo"])
+        self.assertEqual(args[3], MIXED)
+        self.assertFalse(app.get("download_button"))
+        self.assert_unchanged()
+
     def test_all_undated_cannot_replace_existing_dataset(self):
         self.upload = io.BytesIO(UNDATED)
         self.upload.name, self.upload.file_id = "undated.csv", "undated"
         app = self.open_app()
         self.assertTrue(next(b for b in app.button if b.label == "Save CSV").disabled)
         self.assertTrue(any("No reviews are eligible" in x.value for x in app.warning))
-        self.assertTrue(any(b.label == "Download validation report"
-                            for b in app.get("download_button")))
+        self.assertTrue(any(b.label == "Prepare secure export: Download validation report"
+                            for b in app.button))
         self.assert_unchanged()
 
     def test_invalid_schema_cannot_save(self):

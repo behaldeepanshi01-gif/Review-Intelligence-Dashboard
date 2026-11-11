@@ -1,5 +1,6 @@
 """Ephemeral, single-use report delivery; never register reports as public media."""
 import secrets
+import re
 import threading
 import time
 from urllib.parse import parse_qs
@@ -40,10 +41,17 @@ def revoke(grant):
                 del _reports[token]
 
 
-def issue(grant, dataset, locations, text, *, acknowledged):
+def issue(grant, dataset, locations, text, *, acknowledged,
+          filename="manager_action_report.txt", media_type="text/plain"):
     if not acknowledged or not identity.permits(grant, dataset, locations):
         raise PermissionError("Report access or privacy acknowledgment required.")
-    content = text.encode("utf-8")
+    if media_type not in {"text/plain", "text/csv", "application/json"}:
+        raise ValueError("Unsupported export format.")
+    # Filenames are display metadata, never authorization or a filesystem path.
+    filename = re.sub(r"[^A-Za-z0-9._-]", "_", filename)[:150].strip(".")
+    if not filename:
+        filename = "export"
+    content = text.encode("utf-8") if isinstance(text, str) else bytes(text)
     if len(content) > MAX_REPORT_BYTES:
         raise ValueError("Report is too large. Select fewer restaurants.")
     with _lock:
@@ -55,11 +63,12 @@ def issue(grant, dataset, locations, text, *, acknowledged):
         _reports[token] = {
             "grant": dict(grant), "dataset": dataset, "locations": tuple(locations),
             "content": content, "expires": min(time.time() + TTL_SECONDS, grant["expires"]),
+            "filename": filename, "media_type": media_type,
         }
         return token
 
 
-def retrieve(token, username, password):
+def retrieve(token, username, password, *, with_metadata=False):
     # Bound password hashing work globally, not only per guessable username/link.
     with _lock:
         _prune()
@@ -82,7 +91,7 @@ def retrieve(token, username, password):
         if not identity.permits(fresh, row["dataset"], row["locations"]):
             return None
         del _reports[token]
-        return row["content"]
+        return row if with_metadata else row["content"]
 
 
 def unavailable():
@@ -102,16 +111,16 @@ async def download(request):
         return HTMLResponse(
             '<!doctype html><html lang="en"><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
-            '<title>Confirm manager report download</title>'
-            '<h1>Confirm manager report download</h1>'
-            '<p>Enter the same manager account that prepared this report. '
+            '<title>Confirm secure export download</title>'
+            '<h1>Confirm secure export download</h1>'
+            '<p>Enter the same manager account that prepared this export. '
             'This single-use link expires after two minutes. Locking the dashboard '
             'invalidates it. Files already downloaded cannot be recalled.</p>'
             '<form method="post"><label>Manager ID <input name="username" '
             'autocomplete="username" required maxlength="200"></label><br>'
             '<label>Password <input name="password" type="password" '
             'autocomplete="current-password" required maxlength="1000"></label><br>'
-            '<button type="submit">Download manager action report (TXT)</button></form>'
+            '<button type="submit">Download file</button></form>'
             '</html>', headers=HEADERS)
     # No ambient credential/cookie authentication: every POST requires credentials.
     # Still reject cross-site forms so credentials cannot be submitted by other sites.
@@ -132,11 +141,11 @@ async def download(request):
         return unavailable()
     # scrypt should not block Streamlit's event loop.
     from starlette.concurrency import run_in_threadpool
-    content = await run_in_threadpool(retrieve, token, username, password)
-    if content is None:
+    delivery = await run_in_threadpool(retrieve, token, username, password, with_metadata=True)
+    if delivery is None:
         return unavailable()
-    return Response(content, media_type="text/plain; charset=utf-8", headers={
-        **HEADERS, "Content-Disposition": 'attachment; filename="manager_action_report.txt"'})
+    return Response(delivery["content"], media_type=delivery["media_type"], headers={
+        **HEADERS, "Content-Disposition": f'attachment; filename="{delivery["filename"]}"'})
 
 
 routes = [Route("/dashboard/report-download/{token}", download, methods=["GET", "POST"])]

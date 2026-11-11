@@ -552,8 +552,9 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertEqual(len(saved["edit_history"]), 1)
 
     def draft_download(self, app):
-        """Capture the bytes passed to the real Streamlit download widget."""
-        with patch("streamlit.download_button", wraps=st.download_button) as downloads:
+        """Capture the bytes passed to protected delivery, never public media."""
+        from dashboard_export_ui import secure_export
+        with patch("dashboard_export_ui.secure_export", wraps=secure_export) as downloads:
             app.run()
         self.assertFalse(app.exception)
         calls = [call for call in downloads.call_args_list
@@ -563,15 +564,16 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertEqual(call.kwargs["mime"], "application/json")
         self.assertTrue(call.kwargs["file_name"].startswith("unsaved-action-draft-"))
         self.assertTrue(call.kwargs["file_name"].endswith(".json"))
-        self.assertEqual(call.kwargs["on_click"], "ignore")
-        self.assertEqual(sum(w.label == call.args[0]
-                             for w in app.get("download_button")), 1)
+        self.assertEqual(call.kwargs["locations"], [json.loads(call.args[1])["context"]["location"]])
+        self.assertEqual(sum(w.label == "Prepare secure export: " + call.args[0]
+                             for w in app.button), 1)
+        self.assertFalse(app.get("download_button"))
         return json.loads(call.args[1].decode("utf-8"))
 
     def assert_no_draft_download(self, app):
         self.assertFalse(app.exception)
-        self.assertFalse(any(w.label == "Download kept draft (unsaved reference)"
-                             for w in app.get("download_button")))
+        self.assertFalse(any(w.label == "Prepare secure export: Download kept draft (unsaved reference)"
+                             for w in app.button))
 
     def test_download_contains_only_kept_unsaved_fields_and_action_context(self):
         original, app = self.open_app()

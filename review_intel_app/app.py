@@ -18,6 +18,7 @@ import action_tracker as A
 from live_freshness import show_live_freshness
 from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
+from dashboard_export_ui import secure_export
 from manager_report_access import require_manager, authorized
 from manager_report_access import clear_private_state
 from dashboard_access import DashboardAccess
@@ -223,11 +224,13 @@ elif source.startswith("Upload"):
                    "Rejected reviews are not included in these rating adjustments.")
     else:
         st.caption("No accepted reviews need rating adjustments.")
-    st.download_button("Download original CSV", content, file_name=os.path.basename(upload.name),
-                       mime="text/csv")
-    st.download_button(
+    upload_locations = pd.read_csv(io.BytesIO(content))["location"].astype(str).unique().tolist()
+    secure_export("Download original CSV", content, file_name=os.path.basename(upload.name),
+                  mime="text/csv", dataset=target_id, locations=upload_locations)
+    secure_export(
         "Download validation report", E.validation_report_csv(validation),
         file_name="upload_validation_report.csv", mime="text/csv",
+        dataset=target_id, locations=upload_locations,
     )
     st.caption("The validation report lists rejected rows and all their rejection reasons, "
                "without review text. Source rows count CSV records with the header as row 1; "
@@ -999,11 +1002,13 @@ with tabs[5]:
     out = out.drop(columns=["reply_key"])
     buf = io.StringIO()
     out.to_csv(buf, index=False)
-    st.download_button("Download analyzed reviews (CSV)", buf.getvalue(),
-                       file_name="analyzed_reviews.csv", mime="text/csv", type="primary")
+    secure_export("Download analyzed reviews (CSV)", buf.getvalue(),
+                  file_name="analyzed_reviews.csv", mime="text/csv",
+                  dataset=tag, locations=pick)
     if not alerts.empty:
-        st.download_button("Download early warnings (CSV)", alerts.to_csv(index=False),
-                           file_name="early_warnings.csv", mime="text/csv")
+        secure_export("Download early warnings (CSV)", alerts.to_csv(index=False),
+                      file_name="early_warnings.csv", mime="text/csv",
+                      dataset=tag, locations=pick)
     st.markdown("**Weekly owner summary** (copy into an email or WhatsApp)")
     st.caption("Rule changes can change theme counts. Earlier saved action baselines "
                "may use different rules or manager decisions, so check them before comparing. "
@@ -1037,6 +1042,9 @@ with tabs[5]:
             source_reviews=raw.to_dict("records"),
         )
         st.code("\n".join(lines + action_lines), language=None)
+        secure_export("Download weekly owner summary (TXT)", "\n".join(lines + action_lines),
+                      file_name="weekly_owner_summary.txt", mime="text/plain",
+                      dataset=tag, locations=pick)
         show_live_freshness("Owner summary")
 
     show_live_owner_summary()
@@ -1331,13 +1339,13 @@ with tabs[6]:
                 }
                 download_id = hashlib.sha256(
                     f"{tag}:{action_id}".encode("utf-8")).hexdigest()[:16]
-                st.download_button(
+                secure_export(
                     "Download kept draft (unsaved reference)",
                     json.dumps(reference_download, ensure_ascii=False, indent=2).encode("utf-8"),
                     file_name=f"unsaved-action-draft-{download_id}.json",
                     mime="application/json",
                     key=f"{reference_key}_download",
-                    on_click="ignore",
+                    dataset=tag, locations=[action["location"]],
                 )
 
             if submitted and not conflicted and not association_stale:

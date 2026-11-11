@@ -131,7 +131,7 @@ class DashboardAccessTests(unittest.TestCase):
             A, "load_actions", return_value=[]
         ), patch("location_settings.LocationSettings", side_effect=lambda path, **kw:
                  original_settings(self.root / "calendar.sqlite", **kw)) as settings, patch(
-                     "streamlit.download_button",
+                     "dashboard_export_ui.secure_export",
                      return_value=False) as downloads:
             settings.default.side_effect = original_settings.default
             app = AppTest.from_file(str(Path(__file__).with_name("app.py")), default_timeout=30)

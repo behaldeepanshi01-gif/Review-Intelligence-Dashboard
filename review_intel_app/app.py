@@ -15,6 +15,7 @@ import plotly.express as px
 import streamlit as st
 
 import action_tracker as A
+from action_draft_reset import show_reset
 from live_freshness import show_live_freshness
 from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
@@ -826,6 +827,21 @@ with tabs[2]:
                         "Due date", value=draft_default(f"due_date_{key}", action_today + timedelta(days=7)),
                         key=f"due_date_{key}")
                     submitted = st.button("Save action plan", key=f"new_action_{key}")
+                    new_fields = {
+                        "Action": f"action_text_{key}", "Owner": f"action_owner_{key}",
+                        "Start date": f"start_date_{key}", "Due date": f"due_date_{key}",
+                    }
+
+                    def new_reset_target(location=alert["location"], theme=alert["theme"],
+                                         suggestion=suggestion):
+                        require_access(tag, [location])
+                        today = A.location_today(location, timezones_by_location)
+                        return None, {"Action": suggestion, "Owner": "",
+                                      "Start date": today, "Due date": today + timedelta(days=7)}
+
+                    show_reset(f"new_{key}", new_fields, new_reset_target,
+                               lambda widget, keys=tuple(new_fields.values()): widget in keys,
+                               label="Discard new-action draft")
 
                 if submitted:
                     require_access(tag, [alert["location"]])
@@ -1257,12 +1273,42 @@ with tabs[6]:
                 if association_stale:
                     refresh_editor = st.button("Keep draft and refresh editor",
                                                key=f"update_action_{form_key}_refresh")
-                keep_draft = reload_latest = False
+                keep_draft = False
                 if conflicted:
                     keep_draft = st.button("Keep draft for reference",
                                            key=f"update_action_{form_key}_keep")
-                    reload_latest = st.button("Reload latest action",
-                                              key=f"update_action_{form_key}_reload")
+                if not association_stale:
+                    reset_fields = {
+                        "Action": f"update_text_{form_key}", "Owner": f"update_owner_{form_key}",
+                        "Status": f"update_status_{form_key}", "Start date": f"update_start_{form_key}",
+                        "Due date": f"update_due_{form_key}",
+                    }
+
+                    def saved_reset_target(action_id=action_id, association=editor_association):
+                        current_dataset = datasets.get(tag)
+                        if association and history_changed(datasets, association):
+                            raise ValueError("History ownership changed. Keep the draft and refresh "
+                                             "this editor before discarding.")
+                        latest = next((row for row in access.actions(ACTION_LOG, current_dataset)
+                                       if row.get("action_id") == action_id), None)
+                        if latest is None:
+                            raise ValueError("The action is no longer available. Your draft was kept.")
+                        today = A.location_today(latest.get("location"), timezones_by_location)
+                        return latest, {
+                            "Action": latest.get("action_text", ""),
+                            "Owner": latest.get("owner", ""),
+                            "Status": latest.get("status", "Planned"),
+                            "Start date": A.parse_date(latest.get("start_date"), today),
+                            "Due date": A.parse_date(latest.get("due_date"), today),
+                        }
+
+                    reset_prefixes = tuple(f"{prefix}{action_id}_{tag}_" for prefix in (
+                        "update_text_", "update_owner_", "update_status_",
+                        "update_start_", "update_due_"))
+                    show_reset(f"saved_{action_id}_{tag}", reset_fields, saved_reset_target,
+                               lambda widget, prefixes=reset_prefixes: widget.startswith(prefixes),
+                               snapshot_key=snapshot_key,
+                               label="Reload latest action" if conflicted else "Discard unsaved changes")
 
             if refresh_editor or (submitted and association_stale):
                 references = st.session_state.setdefault(f"history_drafts_{tag}", {})
@@ -1300,9 +1346,6 @@ with tabs[6]:
                     st.session_state[reference_key] = dict(draft)
                     st.success("Draft kept for reference in this session. It has not "
                                "been saved to the action log.")
-                if reload_latest:
-                    st.session_state[snapshot_key] = dict(action)
-                    st.rerun()
 
             if reference_key in st.session_state:
                 st.markdown("**Kept draft for reference — not saved**")

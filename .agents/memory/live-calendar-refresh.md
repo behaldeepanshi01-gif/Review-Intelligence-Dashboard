@@ -37,3 +37,12 @@ action editors even after server-side draft state has been cleared.
 **How to apply:** Route invalidated sessions back through the full-page sign-in
 gate. Verify revocation without browser clicks or reloads, including private
 widgets outside the timed section; a full-rerun AppTest denial cannot prove this.
+
+Clearing server-side widget state alone does not guarantee a visible draft reset.
+
+**Why:** A real Streamlit browser can restore the old input when the widget
+identity stays unchanged, even though AppTest shows the expected default.
+
+**How to apply:** Reset unchanged widget identities explicitly to their defaults
+in a callback, or change their identity. Verify destructive draft resets in a
+real browser; server-state assertions alone cannot prove the displayed reset.

@@ -145,6 +145,69 @@ class ActionDraftTests(unittest.TestCase):
         self.assertEqual(self.log.read_bytes(), self.before)
         self.assertFalse(self.app.exception)
 
+    def discard(self, prefix):
+        self.widget("button", prefix).click().run()
+        self.assertFalse(self.app.exception)
+
+    def test_discard_saved_is_confirmed_scoped_and_read_only(self):
+        self.edit()
+        self.app.radio(key="data_source").set_value("Saved file").run()
+        self.widget("text_area", "update_text_").set_value("Other private draft").run()
+        self.app.radio(key="data_source").set_value("Sample data (synthetic)").run()
+        new = self.widget("text_area", "action_text_")
+        new_key = new.key
+        new.set_value("Unrelated new draft").run()
+        self.discard("discard_saved_")
+        self.assert_draft()
+        self.discard("cancel_discard_saved_")
+        self.assert_draft()
+        self.discard("discard_saved_")
+        self.discard("confirm_discard_saved_")
+        self.assertEqual(self.widget("text_area", "update_text_").value, "Original plan")
+        self.assertEqual(self.app.text_area(key=new_key).value, "Unrelated new draft")
+        self.app.radio(key="data_source").set_value("Saved file").run()
+        self.assertEqual(self.widget("text_area", "update_text_").value, "Other private draft")
+        self.assertEqual(self.log.read_bytes(), self.before)
+
+    def test_discard_rechecks_concurrent_saves_before_reset(self):
+        self.edit()
+        self.discard("discard_saved_")
+        rows = A.load_actions(self.log)
+        latest = [dict(row) for row in rows]
+        latest[0]["action_text"] = "Another manager's latest plan"
+        A.save_actions(self.log, latest, expected_actions=rows)
+        after_save = self.log.read_bytes()
+        self.discard("confirm_discard_saved_")
+        self.assertEqual(self.widget("text_area", "update_text_").value, "Private unsaved plan")
+        self.discard("confirm_discard_saved_")
+        self.assertEqual(self.widget("text_area", "update_text_").value,
+                         "Another manager's latest plan")
+        self.assertEqual(self.log.read_bytes(), after_save)
+        # Old retained snapshot keys must not survive this editor's reset.
+        keys = [k for k in self.app.session_state if k.startswith(
+            f"update_text_{self.action_id}_{D.SAMPLE_ID}_")]
+        self.assertEqual(len(keys), 1)
+
+    def test_discard_new_keeps_existing_and_other_new_drafts(self):
+        self.edit()
+        editors = [w for w in self.app.text_area if w.key and w.key.startswith("action_text_")]
+        first_key, initial = editors[0].key, editors[0].value
+        suffix = first_key.removeprefix("action_text_")
+        editors[0].set_value("Discard only this").run()
+        self.app.radio(key="data_source").set_value("Saved file").run()
+        other = self.widget("text_area", "action_text_")
+        other_key = other.key
+        other.set_value("Keep this alert draft").run()
+        self.app.radio(key="data_source").set_value("Sample data (synthetic)").run()
+        self.app.button(key=f"discard_new_{suffix}").click().run()
+        self.assertEqual(self.app.text_area(key=first_key).value, "Discard only this")
+        self.app.button(key=f"confirm_discard_new_{suffix}").click().run()
+        self.assertEqual(self.app.text_area(key=first_key).value, initial)
+        self.assert_draft()
+        self.app.radio(key="data_source").set_value("Saved file").run()
+        self.assertEqual(self.app.text_area(key=other_key).value, "Keep this alert draft")
+        self.assertEqual(self.log.read_bytes(), self.before)
+
 
 if __name__ == "__main__":
     unittest.main()

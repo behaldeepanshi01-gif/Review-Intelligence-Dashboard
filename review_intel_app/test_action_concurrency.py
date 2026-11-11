@@ -221,7 +221,10 @@ class ConcurrentActionTests(unittest.TestCase):
     def action_button(self, app, action, label):
         return next(b for b in app.button
                     if b.label == label and b.key
-                    and b.key.startswith(f"update_action_{action['action_id']}_"))
+                    and b.key.startswith((
+                        f"update_action_{action['action_id']}_",
+                        f"discard_saved_{action['action_id']}_",
+                        f"confirm_discard_saved_{action['action_id']}_")))
 
     def action_table(self, app, action, column):
         editor = next(e for e in app.expander
@@ -340,6 +343,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertEqual(reference["editable_fields"], drafts[resolved_index])
         self.assertEqual(sum("Kept draft" in t.value.columns for t in app.dataframe), 1)
         self.action_button(app, resolved, "Reload latest action").click().run()
+        self.action_button(app, resolved, "Confirm discard").click().run()
         self.assertFalse(app.exception)
         assert_conflict(pending_index)
         self.assertFalse(self.action_button(app, resolved, "Save updates").disabled)
@@ -390,6 +394,7 @@ class ConcurrentActionTests(unittest.TestCase):
         before = Path(self.path).read_bytes()
         self.action_button(app, pending, "Keep draft for reference").click().run()
         self.action_button(app, pending, "Reload latest action").click().run()
+        self.action_button(app, pending, "Confirm discard").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(Path(self.path).read_bytes(), before)
         self.assertEqual(sum("Kept draft" in t.value.columns for t in app.dataframe), 2)
@@ -459,6 +464,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertTrue(next(b for b in app.button if b.label == "Save updates").disabled)
         self.assertTrue(text.key in [t.key for t in app.text_area])
         next(b for b in app.button if b.label == "Reload latest action").click().run()
+        next(b for b in app.button if b.label == "Confirm discard").click().run()
         text = next(item for item in app.text_area
                     if item.key and item.key.startswith("update_text_"))
         self.assertEqual(text.value, "Other manager saved")
@@ -511,6 +517,7 @@ class ConcurrentActionTests(unittest.TestCase):
         self.assertEqual(self.comparison(app).iloc[0]["Latest saved"], "Third saved")
         self.assertEqual(A.load_actions(self.path), [latest])
         next(b for b in app.button if b.label == "Reload latest action").click().run()
+        next(b for b in app.button if b.label == "Confirm discard").click().run()
         self.assertFalse(app.exception)
         text = next(t for t in app.text_area if t.key and t.key.startswith("update_text_"))
         self.assertEqual(text.value, "Third saved")
@@ -618,6 +625,7 @@ class ConcurrentActionTests(unittest.TestCase):
              if t.key and t.key.startswith("update_text_")).set_value("Not kept").run()
         self.assertEqual(self.draft_download(app), payload)
         next(b for b in app.button if b.label == "Reload latest action").click().run()
+        next(b for b in app.button if b.label == "Confirm discard").click().run()
         self.assertEqual(self.draft_download(app), payload)
         self.assertEqual(next(t.value for t in app.text_area
                               if t.key and t.key.startswith("update_text_")),

@@ -97,17 +97,57 @@ class FrozenPriceLanguageTests(unittest.TestCase):
         # remain in MONEY_WASTE_HANDOFF.md and the pre-edit backup manifest.
         expected = {
             "engine.py": "b2624f72c3cc09f03e386554b53ef751372c83c6b69675a17e96a8df2be471f6",
-            "local_analyzer.py": "02dbfb5fa9b8768a785ab355ae61c48d5c652c7339e6aca1bb5a5c12a0bdee39",
-            "price_rules.py": "5a82af8c9c86ab1e0533f513e539e870372d8ccfdd661dc8fdfe66f5d1d321c6",
+            "local_analyzer.py": "c73717a8e97ebaf056815a98ccae17b317fe26f6fd58343643b8e01f2e197d5c",
+            "price_rules.py": "b3bc68e69468132b8e891799de370b46a91ac89fccfdefbdd370a6d0f56105eb",
         }
         for filename, digest in expected.items():
             with self.subTest(file=filename):
                 self.assertEqual(hashlib.sha256(
                     Path(__file__).with_name(filename).read_bytes()).hexdigest(), digest)
-        self.assertEqual(E.LOCAL_ANALYZER_VERSION, "local-rules-4-price-context")
+        self.assertEqual(E.LOCAL_ANALYZER_VERSION, "local-rules-5-price-punctuation")
 
 
 class PriceContextBoundaryTests(unittest.TestCase):
+    def test_punctuation_scope_controls(self):
+        cases = [
+            ("Prices are not, in my opinion, fair.", False, True, False),
+            ("Prices aren’t, in my view, reasonable.", False, True, False),
+            ("Prices are not, by any means, reasonable.", False, True, False),
+            ("Prices are not, to me, expensive.", True, False, False),
+            ("Perhaps, the prices are fair.", False, False, True),
+            ("Maybe, the prices are fair. My meal was overpriced.", False, True, True),
+            ("Affordable prices; not. My meal was overpriced.", False, True, True),
+            ("Overpriced meal; not! My prices were fair.", True, False, True),
+            ("Affordable prices; not expensive.", True, False, False),
+            ("Maybe. The prices are fair.", True, False, False),
+            ("Prices are not — reasonable.", False, True, False),
+            ("Prices are not (at all) reasonable.", False, True, False),
+            ("Prices aren’t reasonable.", False, True, False),
+            ("Prices are reasonable. Not expensive.", True, False, False),
+            ("Yeah right, affordable prices!", False, False, True),
+        ]
+        for text, praise, complaint, unclear in cases:
+            baseline = None
+            for rating in (1, 3, 5):
+                with self.subTest(text=text, rating=rating):
+                    result = E.tag_offline(text, rating)
+                    self.assertEqual(
+                        ("price" in result["themes_pos"], "price" in result["themes_neg"]),
+                        (praise, complaint))
+                    evidence = [e for e in result["tag_evidence"] if e["theme"] == "price"]
+                    self.assertTrue(evidence)
+                    self.assertEqual(any(e["polarity"] == "Needs review" for e in evidence), unclear)
+                    self.assertTrue(all(e["excerpt"] in text and e["matched_terms"]
+                                        and e["reason"] for e in evidence))
+                    if unclear:
+                        self.assertTrue(result["needs_review"])
+                        self.assertTrue(result["review_reasons"])
+                    if "; not." in text or "; not!" in text:
+                        self.assertTrue(any("; not" in e["excerpt"] for e in evidence))
+                    if baseline is not None:
+                        self.assertEqual(evidence, baseline)
+                    baseline = evidence
+
     def test_context_boundaries_and_explicit_mixed_feedback(self):
         cases = [
             ('"Fair prices. Cheap drinks." My meal was overpriced.', False, True),

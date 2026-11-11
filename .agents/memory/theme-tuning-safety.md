@@ -24,7 +24,9 @@ The user initially chose “Keep the evaluation freeze.” On 2026-11-10,
 the user explicitly chose “Authorize separate rule cycle” for price questions,
 rhetorical wording and reported/quoted opinions, using invented cases only.
 This supersedes the freeze for that separate cycle, not for held-out evaluation.
-Punctuation-separated negation and hedges remain outside that authorization.
+Punctuation-separated negation and hedges were subsequently authorized in a
+separate post-freeze cycle. That permission does not authorize tuning during
+held-out labeling/scoring or changing non-price outputs.
 
 **Why:** The user wants a stable actual-app analyzer before independent human
 labeling, not continued tuning on the evaluation batch.

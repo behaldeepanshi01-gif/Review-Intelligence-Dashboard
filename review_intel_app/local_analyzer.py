@@ -5,7 +5,7 @@ import re
 from price_rules import analyze_price
 
 # Bump this whenever rules change so Streamlit does not reuse old analysis.
-RULES_VERSION = "local-rules-4-price-context"
+RULES_VERSION = "local-rules-5-price-punctuation"
 
 EXTRA_TERMS = {
     "food_flavor": ["food", "meal", "chicken", "dishes", "tasty", "undercooked", "overcooked"],

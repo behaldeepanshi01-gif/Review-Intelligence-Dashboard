@@ -18,6 +18,12 @@ class PriceAppTests(unittest.TestCase):
             app_file = Path(directory) / "app.py"
             shutil.copy2(Path(__file__).with_name("app.py"), app_file)
             rows = pd.DataFrame([
+                {"review_id": "synthetic-afterthought", "location": "Demo Cafe",
+                 "date": pd.Timestamp("2026-09-01"), "rating": 3, "reviewer": "Guest",
+                 "text": "Affordable prices; not."},
+                {"review_id": "synthetic-hedge", "location": "Demo Cafe",
+                 "date": pd.Timestamp("2026-09-02"), "rating": 3, "reviewer": "Guest",
+                 "text": "Maybe, the prices are fair."},
                 {"review_id": "synthetic-price", "location": "Demo Cafe",
                  "date": pd.Timestamp("2026-10-01"), "rating": 5, "reviewer": "Guest",
                  "text": "Fair pricing."},
@@ -62,6 +68,15 @@ class PriceAppTests(unittest.TestCase):
                 app.run()
                 self.assertFalse(app.exception)
                 self.assertTrue(any("no clear cost opinion" in w.value for w in app.warning))
+                for index, text in ((3, "Maybe, the prices are fair."),
+                                    (4, "Affordable prices; not.")):
+                    next(s for s in app.selectbox
+                         if s.label == "Review needing a check").select(index)
+                    app.run()
+                    self.assertFalse(app.exception)
+                    self.assertTrue(any(t.value == text for t in app.text))
+                    self.assertTrue(any("Punctuation-separated tentative price wording"
+                                        in w.value for w in app.warning))
 
 
 if __name__ == "__main__":

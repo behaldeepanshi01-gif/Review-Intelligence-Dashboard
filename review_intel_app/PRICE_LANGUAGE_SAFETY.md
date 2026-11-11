@@ -1,5 +1,84 @@
 # Price-language safety suite
 
+## Authorized post-freeze punctuation cycle — 2026-11-11
+
+The separately assigned punctuation cycle builds on the completed question/
+quoted-opinion cycle below; it does not replace that work or tune on held-out
+labels. The working tree was clean before edits and the source hashes matched
+that cycle. `rhetorical_right` was already fixed and remains an ordinary passing
+assertion. Only the three remaining `scope` failure annotations were retired;
+their desired polarity, evidence and warning assertions were not weakened.
+
+Rules are now **`local-rules-5-price-punctuation`**:
+- Explicit negation retains scope through recognized comma-delimited speaker
+  asides: “in my view/opinion”, “to me”, “at all”, and “by any means”.
+  “The prices are not, in my view, reasonable” remains criticism.
+- Leading comma-separated hedges abstain. A bare “; not.” afterthought
+  abstains rather than confidently praising or inverting the opinion.
+- Uncertain price evidence remains visible with a manager warning; the bare
+  afterthought is included verbatim in its evidence excerpt.
+- Existing question, quotation, rhetoric, dash, parentheses, smart-apostrophe,
+  sentence-boundary and mixed-opinion controls remain passing.
+
+This is bounded pattern matching, not a general parenthetical parser.
+Unlisted speaker asides are not claimed as supported. A leading hedge can
+conservatively suppress other price opinions in the same semicolon-delimited
+sentence segment; explicit opinions in separate sentences remain independent.
+No non-price vocabulary or UI behavior was changed.
+
+### Frozen baseline and backups
+
+Before edits, eight app/test/document files and the relevant memory note were
+copied to `backups/price_punctuation_20261111T020401498419Z/`, with SHA-256
+identities in `manifest.json`. Original backup hashes were verified afterward.
+`before.json` contains all 38 invented cases at ratings 1, 3 and 5 through
+`engine.tag_offline` (114 actual predictions). Its SHA-256 is
+`45404bb51942509d8e6938a388f7fc448dddfbc100b20cf51656293acdab0ca3`.
+`after.json` and `comparison.json` record **9 improved combinations, zero
+regressions, and zero exact non-price side/evidence differences**. Only
+`negation_comma`, `negation_semicolon`, and `hedge_comma` changed.
+The committed non-price snapshot remains byte-for-byte unchanged.
+
+These Git-ignored backups are local rollback evidence and do not transfer
+through merge. No private evaluation, source review, human-label, manager
+correction or saved-action record was opened or edited. No held-out scoring
+or labeling was performed. Synthetic regression scores are not accuracy claims.
+The prior evaluation identities and records remain unchanged.
+
+Current implementation identities (superseding the earlier cycle below):
+
+| File | SHA-256 |
+| --- | --- |
+| engine.py (unchanged) | `b2624f72c3cc09f03e386554b53ef751372c83c6b69675a17e96a8df2be471f6` |
+| local_analyzer.py | `c73717a8e97ebaf056815a98ccae17b317fe26f6fd58343643b8e01f2e197d5c` |
+| price_rules.py | `b3bc68e69468132b8e891799de370b46a91ac89fccfdefbdd370a6d0f56105eb` |
+
+### Verification
+
+`uv run python -B -m unittest test_price_language_safety test_price_rules
+test_local_analyzer test_evaluation_scoring test_manager_corrections
+test_review_action_flow test_action_tracker test_source_coverage test_price_app
+test_local_app -q` passed **235 tests with zero expected failures**.
+The log is `regression_tests.log` in the backup directory.
+
+The added controls exercise 15 punctuation/boundary variants at all three
+ratings. Existing correction renewal, approval and saved-baseline provenance
+regressions passed. The rules-version change invalidates the existing
+version-keyed analysis cache and requires renewed matching manager approval;
+it does not rewrite old decisions or historical action baselines.
+
+Isolated Streamlit AppTest fixtures confirmed that both ambiguous punctuation
+examples appear in the manager queue with the new warning. The dashboard
+workflow restarted cleanly and public `/dashboard/_stcore/health` returned `ok`.
+The screenshot showed the existing locked-dashboard/account-setup page, not
+authenticated review content; authenticated UI evidence is the isolated test,
+not that screenshot. No deployment or real-browser flow test was performed.
+
+For rollback, verify the backup manifest, preserve subsequent changes, and
+restore only this cycle's rules/version/tests/docs. Never restore private data
+as part of a rule rollback. An old rules version can re-enable matching old
+approvals; inspect provenance before using them.
+
 ## Approved separate price-context cycle — 2026-11-10
 
 The user explicitly selected **“Authorize separate rule cycle”** after being

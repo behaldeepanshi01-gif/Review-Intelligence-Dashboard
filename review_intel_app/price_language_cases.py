@@ -2,7 +2,8 @@
 
 The final field names a remaining gap, NOT a desired outcome. Question,
 rhetorical and reported/quoted cases were resolved in the approved separate
-price-context cycle. Punctuation-separated negation/hedges remain deferred.
+price-context cycle. The separate punctuation cycle resolved the remaining
+negation/hedge cases without changing their desired assertions.
 """
 
 # id, text, desired praise, desired complaint, known frozen-rule gap
@@ -22,14 +23,14 @@ CASES = (
     ("quoted_negative", 'The word “overpriced” appeared in the flyer.', False, False, ""),
     ("quoted_single", "The brochure calls the prices 'reasonable'.", False, False, ""),
     ("quoted_fragment", '"Fair prices."', False, False, ""),
-    ("negation_comma", "The prices are not, in my view, reasonable.", False, True, "scope"),
-    ("negation_semicolon", "Affordable prices; not.", False, False, "scope"),
+    ("negation_comma", "The prices are not, in my view, reasonable.", False, True, ""),
+    ("negation_semicolon", "Affordable prices; not.", False, False, ""),
     ("negation_dash", "Prices are not — reasonable.", False, True, ""),
     ("negation_parentheses", "Prices are not (at all) reasonable.", False, True, ""),
     ("negation_smart", "Prices aren’t reasonable.", False, True, ""),
     ("negation_period", "Prices are reasonable. Not expensive.", True, False, ""),
     ("negation_question", "Not expensive?", False, False, ""),
-    ("hedge_comma", "Maybe, the prices are fair.", False, False, "scope"),
+    ("hedge_comma", "Maybe, the prices are fair.", False, False, ""),
     ("hedge_colon", "Maybe: the prices are fair.", False, False, ""),
     ("explicit_praise", "Prices are fair!", True, False, ""),
     ("explicit_complaint", "Prices are unreasonable!", False, True, ""),

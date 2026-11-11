@@ -44,26 +44,45 @@ QUOTATION = re.compile(
 CLAUSE_BREAK = re.compile(
     r",\s*|\b(?:but|however|although|though|yet|and|while)\b", re.I
 )
+# These speaker-aside phrases do not change the scope of an explicit negator.
+# Keep the original characters for evidence; elide only for cue matching.
+NEGATION_ASIDE = re.compile(
+    r"(\b(?:not|never|isn't|aren't|wasn't|weren't)\s*)"
+    r",\s*(?:in my (?:view|opinion)|to me|at all|by any means)\s*,",
+    re.I,
+)
+NEGATIVE_AFTERTHOUGHT = re.compile(r"\s*not\s*(?:[.!?;\n]|$)", re.I)
 
 
-def price_clauses(text):
+def price_clauses(text, hedging):
     """Retain question/report scope before the existing local cue splitting.
 
     Quotation offsets survive sentence punctuation inside a quote. A closing
-    quote alone does not mark the author's next sentence as quoted. Negation
-    and hedge handling across comma/semicolon boundaries is deliberately
-    unchanged; this is not a general sentence parser.
+    quote alone does not mark the author's next sentence as quoted. Preserve
+    speaker asides after negators and leading comma-separated hedges. A bare
+    semicolon afterthought is uncertain, not a confidently inverted opinion.
+    This is not a general sentence parser.
     """
     quoted = [m.span() for m in QUOTATION.finditer(text)]
     for sentence in re.finditer(r"[^.!?;\n]+(?:[.!?;\n]+|$)", text):
         body = sentence.group().rstrip(".!?;\n")
+        # Mask only recognized asides, maintaining offsets into original text.
+        scoped_body = NEGATION_ASIDE.sub(
+            lambda m: m.group(1) + " " * (len(m.group()) - len(m.group(1))),
+            body.replace("’", "'"))
+        comma_prefix = body.split(",", 1)[0]
+        punctuation_unclear = (
+            ("," in body and bool(hedging.search(comma_prefix)))
+            or (sentence.group().endswith(";") and bool(
+                NEGATIVE_AFTERTHOUGHT.match(text, sentence.end())))
+        )
         context_unclear = (
             "?" in sentence.group()[len(body):]
             or bool(REPORTED_OPINION.search(body))
             or bool(RHETORICAL.search(body))
         )
         start = 0
-        for boundary in list(CLAUSE_BREAK.finditer(body)) + [None]:
+        for boundary in list(CLAUSE_BREAK.finditer(scoped_body)) + [None]:
             end = boundary.start() if boundary else len(body)
             raw = body[start:end]
             left = sentence.start() + start
@@ -84,7 +103,12 @@ def price_clauses(text):
                 for begin, stop in quoted
             )
             if raw.strip():
-                yield raw, context_unclear or is_quoted
+                if punctuation_unclear and sentence.group().endswith(";") and end == len(body):
+                    # Include the uncertain afterthought in verbatim evidence.
+                    afterthought = NEGATIVE_AFTERTHOUGHT.match(text, sentence.end())
+                    if afterthought:
+                        raw += ";" + afterthought.group()
+                yield raw, context_unclear or is_quoted, punctuation_unclear
             start = boundary.end() if boundary else end
 
 
@@ -109,9 +133,10 @@ def analyze_price(text, themes, hedging):
     other_terms = {term for theme, config in themes.items() if theme != "price"
                    for term in config["kw"]} | {"food", "meal", "server", "service",
                                                "portion", "portions", "staff", "value"}
-    for raw, context_unclear in price_clauses(str(text)):
+    for raw, context_unclear, punctuation_unclear in price_clauses(str(text), hedging):
         clause = raw.strip()
         low = clause.lower().replace("’", "'")
+        low = NEGATION_ASIDE.sub(r"\1 ", low)
         hits = [(m.span(), term) for term in TERMS for m in matches(term, low)]
         # "Reasonably priced" is an explicit price opinion, not a generic adjective.
         hits.extend((m.span(), "reasonably priced")
@@ -119,7 +144,7 @@ def analyze_price(text, themes, hedging):
         hits.extend((m.span(), "well priced") for m in matches("well priced", low))
         if not hits:
             continue
-        uncertain = context_unclear or bool(hedging.search(low)) or bool(re.search(
+        uncertain = context_unclear or punctuation_unclear or bool(hedging.search(low)) or bool(re.search(
             r"\b(?:don't|do not|didn't|cannot|can't)\s+(?:think|say|tell)\b", low))
         cues, occupied = [], []
         money_unclear = monetary_context_unclear(low)
@@ -185,6 +210,8 @@ def analyze_price(text, themes, hedging):
         if uncertain or not assigned:
             reason = ("Question, rhetorical or reported/quoted price wording needs a person to check it."
                       if context_unclear else
+                      "Punctuation-separated tentative price wording or an afterthought needs a person to check it."
+                      if punctuation_unclear else
                       "Tentative price wording needs a person to check it." if uncertain else
                       "A price, fee, tip or money mention has no clear cost opinion.")
             reasons.add(reason)

@@ -46,3 +46,12 @@ identity stays unchanged, even though AppTest shows the expected default.
 **How to apply:** Reset unchanged widget identities explicitly to their defaults
 in a callback, or change their identity. Verify destructive draft resets in a
 real browser; server-state assertions alone cannot prove the displayed reset.
+
+Warn near sign-in expiry even when server state does not prove a draft is dirty.
+
+**Why:** Unsaved action text may still be focused in the browser, and retained
+widget values can be defaults rather than edits. Conditioning the warning on
+server-side dirty detection can miss the draft most at risk.
+
+**How to apply:** Keep expiry notices independent of editor rendering and remind
+managers to save explicitly; notices and saves must never renew authentication.

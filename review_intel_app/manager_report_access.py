@@ -1,12 +1,35 @@
 """Individual local manager sign-in. Shared passwords no longer grant access."""
 import threading
 import time
+import math
 import streamlit as st
 import manager_identity as identity
 import report_downloads
 
 _lock = threading.Lock()
 _attempts = []
+EXPIRY_WARNING_SECONDS = 300
+
+
+@st.fragment(run_every="10s")
+def show_session_expiry():
+    """Refresh only the notice, never the editors holding unsubmitted input."""
+    grant = st.session_state.get("_manager_report_grant")
+    if not authorized():
+        report_downloads.revoke(st.session_state.pop("_manager_report_grant", None))
+        clear_private_state()
+        st.rerun(scope="app")
+    remaining = grant["expires"] - time.time()
+    if remaining <= EXPIRY_WARNING_SECONDS:
+        minutes = max(1, math.ceil(remaining / 60))
+        st.warning(
+            f"Sign-in expires in {minutes} minute{'s' if minutes != 1 else ''} or less. "
+            "Save any unsaved action edits now using each action's Save button, "
+            "including drafts retained under other filters or datasets. "
+            "Only edits you are still authorized to save can be saved. "
+            "Unsaved drafts are cleared when sign-in expires; they are not saved "
+            "automatically. Editing or saving does not extend your sign-in."
+        )
 
 
 def clear_private_state():
@@ -58,7 +81,10 @@ def require_manager(*, purpose="manager report"):
                 if key.startswith("manager_report_checked_"):
                     del st.session_state[key]
             st.rerun()
+        show_session_expiry()
         return True
+    report_downloads.revoke(st.session_state.pop("_manager_report_grant", None))
+    clear_private_state()
     if not identity.configured():
         st.warning(f"{purpose.capitalize()} locked. The app owner must set up individual accounts "
                    "using manage_managers.py. The shared report password is no longer accepted.")

@@ -62,10 +62,16 @@ Run from the workspace:
 ```sh
 cd review_intel_app
 python -B -m unittest test_report_downloads test_manager_identity test_action_report -v
+python -B -m unittest test_dashboard_server -v
 ```
 
 The UI test uses Streamlit AppTest in a temporary copy with synthetic reviews
 and mocked actions; it does not drive a browser or change real action logs.
+The server test launches an unchanged copy of `serve_dashboard.py` on a temporary
+port with isolated synthetic accounts and report inputs. It drives the real report
+UI over Streamlit's WebSocket, checks protected HTTP delivery and public-media
+exclusion, and restarts the process to verify pending links are invalidated.
+It does not exercise the external reverse proxy or the full dashboard.
 
 ## Undo this update
 

@@ -127,6 +127,17 @@ def cancel_upload():
     )
 
 
+if access.is_owner():
+    workspace = st.sidebar.radio("Workspace", ["Manager dashboard", "Owner dataset maintenance"])
+    if workspace == "Owner dataset maintenance":
+        from owner_dataset_ui import show_owner_datasets
+        try:
+            show_owner_datasets(access, datasets, ACTION_LOG)
+        except PermissionError as ex:
+            clear_private_state()
+            st.warning(str(ex))
+        st.stop()
+
 source_options = ["Saved file", "Upload my reviews (CSV)"]
 if access.grants().get(D.SAMPLE_ID):
     source_options.insert(0, "Sample data (synthetic)")

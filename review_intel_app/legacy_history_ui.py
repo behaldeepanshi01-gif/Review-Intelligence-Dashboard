@@ -1,8 +1,9 @@
-"""Deliberate manager-only recovery and correction of legacy associations."""
+"""Deliberate owner-only recovery and correction of legacy associations."""
 
 import sqlite3
 
 import streamlit as st
+import manager_identity as identity
 
 
 def history_changed(store, association):
@@ -82,6 +83,11 @@ def show_history_link_log(store, dataset_id):
 
 
 def show_history_controls(store, dataset, actions):
+    try:
+        identity.require_owner(st.session_state.get("_manager_report_grant"))
+    except PermissionError:
+        st.error("Owner access is required. Sign in again with an authorized owner account.")
+        return
     dataset_id = dataset["dataset_id"]
     legacy_tag = dataset["legacy_tag"]
     revision = dataset["history_revision"]

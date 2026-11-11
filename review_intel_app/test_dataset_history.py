@@ -262,8 +262,8 @@ class HistoryCorrectionTests(unittest.TestCase):
         self.assertEqual(Path(self.log).read_bytes(), self.original_bytes)
 
     def test_authenticated_actors_persist_for_all_operations_without_editing_actions(self):
-        first = manager_session(self, self.root, {})
-        identity.set_account("second-manager", "synthetic-second-password", {})
+        first = manager_session(self, self.root, {}, is_owner=True)
+        identity.set_account("second-manager", "synthetic-second-password", {}, is_owner=True)
         second = identity.authenticate("second-manager", "synthetic-second-password")
         self.store.claim_legacy_history(
             self.third["dataset_id"], "other.csv", self.actions, session=first)
@@ -305,7 +305,7 @@ class HistoryCorrectionTests(unittest.TestCase):
         self.assertEqual(
             migrated.history_link_events(self.source["dataset_id"]), [before])
         self.assertIsNone(before["changed_by"])
-        session = manager_session(self, self.root, {})
+        session = manager_session(self, self.root, {}, is_owner=True)
         migrated.correct_legacy_history(
             self.source["dataset_id"], "old.csv",
             expected_source_revision=self.source["history_revision"], session=session)
@@ -357,7 +357,7 @@ show_history_controls(store, store.get(st.session_state["dataset_id"]),
         app.session_state["store"] = self.store
         app.session_state["dataset_id"] = self.source["dataset_id"]
         app.session_state["log"] = self.log
-        app.session_state["_manager_report_grant"] = manager_session(self, self.root, {})
+        app.session_state["_manager_report_grant"] = manager_session(self, self.root, {}, is_owner=True)
         return app.run()
 
     @staticmethod

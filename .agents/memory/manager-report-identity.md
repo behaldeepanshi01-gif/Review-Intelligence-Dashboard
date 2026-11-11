@@ -36,6 +36,17 @@ and filename-based orphan history has no trustworthy authorization scope.
 without an explicit owner permission model. Preserve stored histories and
 previous snapshots.
 
+Owner maintenance is a separate, explicitly provisioned capability, not a
+wildcard restaurant grant. Owners without location grants must still be able to
+register datasets and recover histories, but cannot use manager review/report
+views merely because they are owners.
+
+**Why:** Recovery must inspect unassigned histories across locations, while
+ordinary restaurant operations must retain exact-location authorization.
+
+**How to apply:** Keep maintenance separate from manager views; never promote
+legacy accounts automatically or infer owner authority from broad location grants.
+
 Authorization based on a snapshot must remain bound to that snapshot at publication.
 
 **Why:** A manager with access to one location could otherwise validate an old

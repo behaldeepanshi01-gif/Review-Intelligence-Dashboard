@@ -5,11 +5,11 @@ from unittest.mock import patch
 import manager_identity as identity
 
 
-def manager_session(test, directory, grants):
+def manager_session(test, directory, grants, *, is_owner=False):
     storage = patch.object(identity, "DB_PATH", Path(directory) / "accounts.sqlite")
     storage.start()
     test.addCleanup(storage.stop)
-    identity.set_account("test-manager", "synthetic-calendar-password", grants)
+    identity.set_account("test-manager", "synthetic-calendar-password", grants, is_owner=is_owner)
     return identity.authenticate("test-manager", "synthetic-calendar-password")
 
 

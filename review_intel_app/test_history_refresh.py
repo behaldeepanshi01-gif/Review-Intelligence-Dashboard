@@ -303,7 +303,8 @@ class HistoryRefreshTests(unittest.TestCase):
         self.app = AppTest.from_string(source, default_timeout=30)
         self.app.session_state["data_source"] = "Sample data (synthetic)"
         self.app.session_state["_manager_report_grant"] = manager_session(
-            self, self.root, {D.SAMPLE_ID: list(E.load_reviews(sample)["location"].unique())})
+            self, self.root, {D.SAMPLE_ID: list(E.load_reviews(sample)["location"].unique())},
+            is_owner=True)
         self.app.run()
         self.assertFalse(self.app.exception)
 

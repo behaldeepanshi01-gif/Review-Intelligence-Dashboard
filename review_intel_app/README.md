@@ -39,6 +39,27 @@ Calendar reads and edits require an individual local manager account, using the
 same accounts as manager reports (see `MANAGER_ACTION_REPORT.md` and
 `manage_managers.py`). The app owner grants access to stable dataset IDs and exact
 location names; no filename matching, wildcard, or automatic ownership is used.
+For dataset registration and legacy-history recovery, explicitly provision an
+owner using `python manage_managers.py set OWNER_ID --permissions permissions.json --owner`.
+The permissions file can be `{}` for an owner without restaurant dashboard access.
+Enter the password privately at the prompts and type `OWNER` to confirm the
+global maintenance capability. Existing accounts remain ordinary managers.
+Running `set` without `--owner` removes owner capability and revokes previous
+sessions, as does removing the account.
+
+After signing in, owners can choose **Workspace → Owner dataset maintenance**.
+Preview a CSV and confirm registration of a separate dataset; no existing
+snapshot is replaced and no filename history is attached automatically.
+Copy the new stable dataset ID into exact-location permissions when granting
+restaurant dashboard access. Owner capability alone does not grant those views.
+In maintenance, select a dataset and inspect the sidebar's older-history
+controls. Claims, unlinks, and transfers require deliberate confirmation and
+reject stale source/destination revisions. They move only the association:
+original snapshots, action records, and saved baselines remain unchanged.
+Ordinary manager sessions cannot use these maintenance operations even when
+they have every location grant. Trusted offline Python maintenance remains a
+local-operator interface; never expose its session-omitting calls to web users.
+
 Only assigned locations appear in calendar-dependent dashboard views. Sessions
 expire after 30 minutes; account removal or permission/password replacement
 revokes access. Storage methods recheck permission on every read and write,

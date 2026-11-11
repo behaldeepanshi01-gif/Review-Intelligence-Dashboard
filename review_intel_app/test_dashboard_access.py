@@ -125,7 +125,7 @@ class DashboardAccessTests(unittest.TestCase):
     def test_dashboard_denies_before_loading_and_scopes_every_view(self):
         self.store.claim_legacy_history(
             D.SAMPLE_ID, "synthetic-old.csv",
-            [{"dataset_tag": "synthetic-old.csv"}], session=self.session)
+            [{"dataset_tag": "synthetic-old.csv"}])
         original_settings = LocationSettings
         with patch.object(D, "DatasetStore", return_value=self.store), patch.object(
             A, "load_actions", return_value=[]
@@ -146,7 +146,7 @@ class DashboardAccessTests(unittest.TestCase):
             self.assertIn("History-link corrections", [e.label for e in app.expander])
             audit = next(frame.value for frame in app.dataframe
                          if "Changed by" in frame.value.columns)
-            self.assertEqual(audit["Changed by"].tolist(), ["test-manager"])
+            self.assertEqual(audit["Changed by"].tolist(), ["Unknown"])
             self.assertFalse(any(b.label in {"Link older history", "Confirm history correction"}
                                  for b in app.button))
             self.assertEqual(next(s for s in app.selectbox if s.label == "Calendar location").options,

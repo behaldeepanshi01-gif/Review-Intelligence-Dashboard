@@ -10,6 +10,8 @@ def main():
     parser.add_argument("operation", choices=["set", "remove"])
     parser.add_argument("manager_id")
     parser.add_argument("--permissions", help="Private JSON mapping dataset IDs to location lists")
+    parser.add_argument("--owner", action="store_true",
+                        help="Explicitly allow dataset registration and all legacy-history recovery")
     args = parser.parse_args()
     if args.operation == "remove":
         identity.remove_account(args.manager_id)
@@ -22,7 +24,10 @@ def main():
     password = getpass.getpass("New password (at least 16 characters): ")
     if password != getpass.getpass("Confirm password: "):
         raise SystemExit("Passwords did not match. Nothing changed.")
-    identity.set_account(args.manager_id, password, grants)
+    if args.owner:
+        if input("Grant global dataset registration and legacy-history recovery? Type OWNER: ") != "OWNER":
+            raise SystemExit("Owner capability not confirmed. Nothing changed.")
+    identity.set_account(args.manager_id, password, grants, is_owner=args.owner)
     print("Account saved. Previous sessions revoked.")
 
 

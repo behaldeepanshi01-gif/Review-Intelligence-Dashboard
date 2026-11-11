@@ -168,7 +168,8 @@ class DatasetStore:
                     "Refresh the history and review its current ownership before editing.")
             yield
 
-    def save_snapshot(self, name, content, dataset_id=None, *, expected_path=None):
+    def save_snapshot(self, name, content, dataset_id=None, *, expected_path=None,
+                      session=_LOCAL_OWNER):
         """Create a new dataset unless a specific existing ID was selected.
 
         Keep previous CSV snapshots untouched. Publish the new path only once
@@ -177,6 +178,8 @@ class DatasetStore:
         Protected callers pass the exact path whose locations were authorized.
         A conditional update atomically rejects a replacement of a newer snapshot.
         """
+        if dataset_id is None and session is not _LOCAL_OWNER:
+            identity.require_owner(session)
         if dataset_id == SAMPLE_ID:
             raise ValueError("The built-in sample cannot be replaced by an upload.")
         if dataset_id is not None:
@@ -190,6 +193,8 @@ class DatasetStore:
             file.write(content)
         try:
             with closing(self.connect()) as db, db:
+                if session is not _LOCAL_OWNER and expected_path is None:
+                    identity.require_owner(session)
                 if expected_path is not None:
                     result = db.execute(
                         "UPDATE datasets SET path = ? WHERE dataset_id = ? AND path = ?",
@@ -298,11 +303,7 @@ class DatasetStore:
         """
         changed_by = None
         if session is not _LOCAL_OWNER:
-            account = identity.current_account(session)
-            if not account:
-                raise PermissionError(
-                    "Manager access expired or was removed. Sign in again before "
-                    "changing the history link.")
+            account = identity.require_owner(session)
             changed_by = account["username"]
         db.execute(
             "INSERT INTO history_link_events "
@@ -315,6 +316,8 @@ class DatasetStore:
     def claim_legacy_history(self, dataset_id, legacy_tag, actions, *, expected_revision=None,
                              session=_LOCAL_OWNER):
         """Link an old filename-scoped history once, without rewriting its log."""
+        if session is not _LOCAL_OWNER:
+            identity.require_owner(session)
         if (not isinstance(legacy_tag, str)
                 or legacy_tag.startswith(("upload:", "builtin:"))
                 or not any(row.get("dataset_tag") == legacy_tag for row in actions)):
@@ -353,6 +356,8 @@ class DatasetStore:
         Revisions reject stale confirmations even if a link was removed and then
         restored to the same dataset while the manager's screen was open.
         """
+        if session is not _LOCAL_OWNER:
+            identity.require_owner(session)
         if target_id == source_id:
             raise ValueError("Choose a different destination dataset.")
         with closing(self.connect()) as db, db:

@@ -17,6 +17,32 @@ class DashboardAccess:
             raise PermissionError("Dashboard access expired or was removed. Sign in again.")
         return account["grants"]
 
+    def is_owner(self):
+        account = identity.current_account(self.session)
+        return bool(account and account["is_owner"])
+
+    def require_owner(self):
+        return identity.require_owner(self.session)
+
+    def owner_datasets(self, store):
+        self.require_owner()
+        return store.list_datasets(include_sample=True)
+
+    def owner_actions(self, path):
+        self.require_owner()
+        rows = actions.load_actions(path)
+        self.require_owner()
+        return rows
+
+    def register_dataset(self, store, name, content, *, confirmed=False):
+        self.require_owner()
+        if confirmed is not True:
+            raise ValueError("Confirm creation of a separate dataset first.")
+        _, validation = engine.preview_reviews(io.BytesIO(content))
+        if not validation["accepted"]:
+            raise ValueError("No reviews are eligible for analysis. Nothing was saved.")
+        return store.save_snapshot(name, content, session=self.session)
+
     def require(self, dataset_id, locations=None):
         grants = self.grants()
         allowed = grants.get(dataset_id, [])

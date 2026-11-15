@@ -266,3 +266,17 @@ mtime_ms = 1794004912694
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/c778a940-9911-4e93-bd3e-d6dfada26149/b0ec37ae-9a08-4c13-b186-17a7f58f8677"
 storage_version_token = "1794004980707695"
 content_type = "text/html"
+
+[[outputs]]
+id = "O2fbUjbyGIeSx6xoqpNur"
+uri = "file://review_intel_app/data/private_evaluation/adjudication_20261106/manager_adjudication_20261115T203502Z/adjudication_summary.md"
+type = "text"
+title = "Mumbai Central adjudication summary"
+description = "Private aggregate report of the 24 manager decisions. It contains no guest review text or names."
+logical_id = "9e8e04e8-40f1-4986-8bdf-934d57fed1df"
+content_hash = "sha256:404aa5820d1631724153d500452184dc120cd1df78a32412b7324d1f41acdaed"
+size = 2982
+mtime_ms = 1794774902757
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/9e8e04e8-40f1-4986-8bdf-934d57fed1df/198427b0-7078-4c5a-8d46-f24f24937b2e"
+storage_version_token = "1794775005557486"
+content_type = "text/markdown"

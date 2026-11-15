@@ -215,14 +215,14 @@ content_type = "text/csv"
 id = "Mm-_WH7DYI8GXRQ8QUqe9"
 uri = "file://review_intel_app/data/private_evaluation/adjudication_20261106/manager_decisions_blank.csv"
 type = "table"
-title = "Private review decision sheet"
-description = "24 review/theme decisions, including all 13 original Unclear cells. Contains real review text. Keep private."
+title = "24-row manager decision sheet"
+description = "Private sheet for the manager to decide the 24 unclear Mumbai Central labels. Keep it private."
 logical_id = "33ae54dc-3e2a-4d61-9bc6-e255edfbc857"
 content_hash = "sha256:76ca215a761736bb1403e0994b3459f51918118a85d5304da9a17c83f59d5810"
 size = 10010
 mtime_ms = 1793985481397
-storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/33ae54dc-3e2a-4d61-9bc6-e255edfbc857/c61eb373-06a8-4e3f-8b74-1de3490716fe"
-storage_version_token = "1793985507041999"
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:c2f50559-7cfa-4fb0-a091-b7ff25605a27/33ae54dc-3e2a-4d61-9bc6-e255edfbc857/e1d2ccc7-e259-4131-b7a1-2b1968c67d46"
+storage_version_token = "1794773931337162"
 content_type = "text/csv"
 
 [[outputs]]

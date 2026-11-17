@@ -1,0 +1,16 @@
+- [Mumbai Central demo constraints](mumbai-central-demo.md) — target the Falls Church restaurant; public demos use synthetic reviews and omit guest names and Yelp data.
+- [Manager decision scope](manager-decisions.md) — renewed approval after rule changes; preserve evidence and historical action baselines.
+- [Dataset history ownership](dataset-history-ownership.md) — filenames cannot establish continuity; legacy action histories need explicit, exclusive recovery.
+- [Restaurant action calendar](action-calendar.md) — Eastern-time default targets Falls Church; distinguish session-wide configuration from per-location ownership.
+- [Action comparison provenance](action-provenance.md) — location-wide, filter-independent comparisons are conservative warnings, not evidence that action outcomes changed.
+- [Local action concurrency](action-concurrency.md) — preserve existing JSON histories; shared-file locking is not a multi-host persistence guarantee.
+- [Agent mode controls](agent-mode-controls.md) — the workspace Build tab and the composer Plan toggle are separate; check the latter for read-only errors.
+- [Theme tuning safeguards](theme-tuning-safety.md) — compare non-target tags per review, not just totals; nearby cue assignment can hide cross-theme changes.
+- [Manager identity boundary](manager-report-identity.md) — one local identity system now covers the dashboard, reports and calendars; orphan history remains owner-only.
+- [Approved theme boundaries](theme-definition-approval.md) — four adjudication definitions approved; individual review decisions still require separate approval.
+- [Dashboard routing](dashboard-routing.md) — distinguish interactive Streamlit from the root demo; verify public HTTP and WebSocket access, not just localhost health.
+- [Live calendar refresh safety](live-calendar-refresh.md) — unsent Streamlit forms require isolation from timer reruns; AppTest alone cannot prove browser draft preservation.
+- [Streamlit test isolation](streamlit-test-isolation.md) — run multiprocessing checks before AppTest; select sample data explicitly in dashboard fixtures.
+- [Upload publication dates](upload-date-semantics.md) — preserve source calendar dates across timezone offsets to avoid shifting trend periods.
+- [Rating normalization compatibility](rating-policy.md) — explain existing conversions rather than silently changing historical analysis semantics.
+- [Trend coverage context](trend-coverage-context.md) — approved descriptive warnings must not imply complete capture or statistical reliability.

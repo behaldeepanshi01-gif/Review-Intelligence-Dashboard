@@ -1,0 +1,931 @@
+review_id,location,date,rating,reviewer,text,source
+UDR-0006,Upscale Dining Room,2025-10-31,4,Maria K.,"Our server Asha gave great recommendations. The lamb rogan josh was just okay, nothing special. Prices are on the high side for what you get.",synthetic
+UDR-0129,Upscale Dining Room,2025-10-31,5,Raj K.,"Prices are on the high side for what you get. Got a table quickly even without a reservation. Loved the chicken tikka masala, easily one of the best I have had. Our server Asha gave great recommendations.",synthetic
+UDR-0246,Upscale Dining Room,2025-10-31,3,Tom E.,"The goat curry was just okay, nothing special.",synthetic
+UDR-0013,Upscale Dining Room,2025-11-01,5,Leo E.,"A bit pricey but worth it for the experience. The chicken tikka masala was just okay, nothing special. Shout out to Asha, amazing hospitality. Loved the train station theme, so unique.",synthetic
+NBA-0252,Neighborhood Bistro A,2025-11-01,5,Lena S.,"The decor is beautiful, it feels like a special night out. They catered our wedding for 250 guests and everyone loved it.",synthetic
+NBB-0098,Neighborhood Bistro B,2025-11-01,4,Kate A.,"The pani puri was perfectly cooked and tasted fresh. Very stingy with the meat, mostly rice. Shout out to Tara, amazing hospitality.",synthetic
+NBB-0115,Neighborhood Bistro B,2025-11-01,5,Emily K.,"Generous portions, we took leftovers home. Loved the momos, easily one of the best I have had. Our server Arjun gave great recommendations.",synthetic
+NBB-0121,Neighborhood Bistro B,2025-11-01,4,Kate H.,"Our server seemed distracted and hard to flag down. The chicken biryani was perfectly cooked and tasted fresh. Consistently great, we come back every month. Loved the train station theme, so unique.",synthetic
+NBB-0184,Neighborhood Bistro B,2025-11-01,5,Priya W.,"The baingan bharta was perfectly cooked and tasted fresh. Great value for the price. Cozy and calm atmosphere, great for a date. Tara was so warm and attentive, made our night.",synthetic
+NBA-0135,Neighborhood Bistro A,2025-11-02,3,Raj K.,Tables were sticky and the restroom needed attention. They catered our wedding for 250 guests and everyone loved it.,synthetic
+FHE-0047,Food Hall Express,2025-11-02,5,Ana L.,"Loved the garlic naan, easily one of the best I have had.",synthetic
+NBB-0120,Neighborhood Bistro B,2025-11-03,5,Vikas L.,"Every visit the food is just as good as the last. Tara was so warm and attentive, made our night.",synthetic
+FHE-0146,Food Hall Express,2025-11-03,4,Mike D.,The palak paneer was rich and full of flavor.,synthetic
+NBA-0068,Neighborhood Bistro A,2025-11-04,5,Priya W.,"Shout out to Nisha, amazing hospitality.",synthetic
+NBB-0103,Neighborhood Bistro B,2025-11-04,5,Raj F.,"Tara was so warm and attentive, made our night. Loved the butter chicken, easily one of the best I have had.",synthetic
+UDR-0027,Upscale Dining Room,2025-11-05,5,Vikas R.,"The decor is beautiful, it feels like a special night out. A bit pricey but worth it for the experience. The mango lassi was perfectly cooked and tasted fresh.",synthetic
+NBA-0133,Neighborhood Bistro A,2025-11-05,5,Jordan W.,"Loved the goat curry, easily one of the best I have had. Very clean restaurant and restrooms.",synthetic
+FHE-0010,Food Hall Express,2025-11-05,4,Jordan F.,"The chicken tikka masala was perfectly cooked and tasted fresh. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBB-0028,Neighborhood Bistro B,2025-11-06,5,Leo B.,"Tara was so warm and attentive, made our night. Generous portions, we took leftovers home. The momos was rich and full of flavor.",synthetic
+FHE-0035,Food Hall Express,2025-11-06,3,Mike M.,"Very stingy with the meat, mostly rice.",synthetic
+NBA-0181,Neighborhood Bistro A,2025-11-07,2,Lena L.,Our server seemed distracted and hard to flag down. The garlic naan was dry and a bit disappointing.,synthetic
+UDR-0189,Upscale Dining Room,2025-11-08,3,Tom N.,"Prices are on the high side for what you get. Cozy and calm atmosphere, great for a date. The dal makhani was just okay, nothing special.",synthetic
+NBA-0123,Neighborhood Bistro A,2025-11-08,5,Mike S.,The momos was rich and full of flavor.,synthetic
+NBB-0050,Neighborhood Bistro B,2025-11-08,5,Raj K.,The mango lassi was rich and full of flavor.,synthetic
+NBB-0192,Neighborhood Bistro B,2025-11-08,5,Tom F.,"Cozy and calm atmosphere, great for a date.",synthetic
+FHE-0100,Food Hall Express,2025-11-08,1,Tom H.,It took forever to get our order and the check. Staff felt rushed and not very friendly. Prices are on the high side for what you get.,synthetic
+FHE-0115,Food Hall Express,2025-11-08,5,Tom G.,Service was fast and smooth.,synthetic
+FHE-0135,Food Hall Express,2025-11-08,4,Isha N.,"Paid over $20 for a bowl and a drink, not worth it. Service was fast and smooth. Shout out to Dev, amazing hospitality.",synthetic
+UDR-0058,Upscale Dining Room,2025-11-09,3,Chris R.,"Our server seemed distracted and hard to flag down. Long wait between courses, the kitchen seemed overwhelmed. The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0141,Upscale Dining Room,2025-11-10,4,Chris B.,"It was very loud, hard to have a conversation. The garlic naan was rich and full of flavor.",synthetic
+NBB-0046,Neighborhood Bistro B,2025-11-10,3,Omar K.,"The garlic naan was just okay, nothing special. Generous portions, we took leftovers home.",synthetic
+NBB-0139,Neighborhood Bistro B,2025-11-10,5,Leo G.,"The fish curry was perfectly cooked and tasted fresh. Shout out to Tara, amazing hospitality. Every visit the food is just as good as the last.",synthetic
+NBB-0097,Neighborhood Bistro B,2025-11-11,5,Emily D.,"Very clean restaurant and restrooms. The decor is beautiful, it feels like a special night out. Our server Arjun gave great recommendations.",synthetic
+NBB-0059,Neighborhood Bistro B,2025-11-12,5,Mike P.,"Tara was so warm and attentive, made our night. Loved the train station theme, so unique. Takeout was packed well and still hot at home. Generous portions, we took leftovers home.",synthetic
+UDR-0049,Upscale Dining Room,2025-11-13,4,Lena P.,Prices are on the high side for what you get. Service was fast and smooth.,synthetic
+NBB-0165,Neighborhood Bistro B,2025-11-13,5,Leo G.,"Every visit the food is just as good as the last. The garlic naan was rich and full of flavor. Shout out to Tara, amazing hospitality.",synthetic
+NBA-0020,Neighborhood Bistro A,2025-11-14,5,Neha M.,Takeout was packed well and still hot at home. The momos was rich and full of flavor.,synthetic
+NBA-0038,Neighborhood Bistro A,2025-11-14,4,Ana D.,"Used them for an office event, food and setup were excellent. The chicken tikka masala was just okay, nothing special.",synthetic
+NBA-0192,Neighborhood Bistro A,2025-11-14,4,Emily L.,"Shout out to Kabir, amazing hospitality. The dal makhani was just okay, nothing special.",synthetic
+NBB-0001,Neighborhood Bistro B,2025-11-14,3,Omar S.,"Very clean restaurant and restrooms. Takeout order was missing an item. The chicken tikka masala used to be amazing, this time it tasted different.",synthetic
+NBB-0090,Neighborhood Bistro B,2025-11-14,5,Jordan W.,"Very clean restaurant and restrooms. Loved the pani puri, easily one of the best I have had.",synthetic
+UDR-0135,Upscale Dining Room,2025-11-15,2,Chris H.,It took forever to get our order and the check. The goat curry was dry and a bit disappointing.,synthetic
+NBA-0082,Neighborhood Bistro A,2025-11-15,4,Vikas G.,"Cozy and calm atmosphere, great for a date. Staff felt rushed and not very friendly.",synthetic
+NBB-0026,Neighborhood Bistro B,2025-11-15,5,Mike J.,Our server Tara gave great recommendations.,synthetic
+UDR-0115,Upscale Dining Room,2025-11-16,5,Isha M.,"The momos was perfectly cooked and tasted fresh. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0216,Neighborhood Bistro B,2025-11-16,5,Isha M.,The momos was perfectly cooked and tasted fresh.,synthetic
+FHE-0067,Food Hall Express,2025-11-16,4,Sana H.,"Service was fast and smooth. Food was too mild, it needed more spice and seasoning.",synthetic
+NBB-0085,Neighborhood Bistro B,2025-11-17,5,Mike D.,"The decor is beautiful, it feels like a special night out. Great value for the price. Shout out to Tara, amazing hospitality. The chana masala was perfectly cooked and tasted fresh.",synthetic
+UDR-0037,Upscale Dining Room,2025-11-18,4,Chris F.,"Great balance of spices in every dish. Our server Meera gave great recommendations. The chana masala was just okay, nothing special.",synthetic
+NBA-0000,Neighborhood Bistro A,2025-11-18,2,Omar D.,"Flavors felt diluted and bland for Indian food. Our server Nisha gave great recommendations. Cozy and calm atmosphere, great for a date. The mango lassi was just okay, nothing special. The butter chicken used to be amazing, this time it tasted different.",synthetic
+NBA-0137,Neighborhood Bistro A,2025-11-18,4,Chris N.,The palak paneer was rich and full of flavor.,synthetic
+UDR-0148,Upscale Dining Room,2025-11-19,5,Sana L.,"Prices are on the high side for what you get. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0155,Neighborhood Bistro A,2025-11-20,5,Neha P.,"Kabir was so warm and attentive, made our night. Very clean restaurant and restrooms.",synthetic
+NBA-0262,Neighborhood Bistro A,2025-11-20,5,Omar T.,"Loved the butter chicken, easily one of the best I have had.",synthetic
+NBA-0271,Neighborhood Bistro A,2025-11-20,4,Priya M.,"It was very loud, hard to have a conversation. The dal makhani was rich and full of flavor. Our server Nisha gave great recommendations.",synthetic
+NBB-0048,Neighborhood Bistro B,2025-11-20,5,Tom M.,"Loved the mango lassi, easily one of the best I have had.",synthetic
+NBB-0088,Neighborhood Bistro B,2025-11-20,4,Ben W.,"The pani puri was rich and full of flavor. It was very loud, hard to have a conversation. Great value for the price.",synthetic
+UDR-0184,Upscale Dining Room,2025-11-21,3,Jordan T.,"Our server Rohan gave great recommendations. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBB-0058,Neighborhood Bistro B,2025-11-21,5,Lena P.,"Loved the chana masala, easily one of the best I have had.",synthetic
+NBB-0132,Neighborhood Bistro B,2025-11-21,5,Maria T.,"Shout out to Arjun, amazing hospitality. Cozy and calm atmosphere, great for a date. The dal makhani was perfectly cooked and tasted fresh. We have been coming for years but the food is not the same anymore. Takeout was packed well and still hot at home.",synthetic
+UDR-0059,Upscale Dining Room,2025-11-22,4,Chris G.,"The decor is beautiful, it feels like a special night out. Our server Meera gave great recommendations. The chicken biryani was dry and a bit disappointing.",synthetic
+UDR-0230,Upscale Dining Room,2025-11-22,4,Emily A.,It took forever to get our order and the check. The baingan bharta was rich and full of flavor.,synthetic
+UDR-0076,Upscale Dining Room,2025-11-23,5,Sam M.,"Loved the train station theme, so unique. The garlic naan was perfectly cooked and tasted fresh.",synthetic
+NBA-0136,Neighborhood Bistro A,2025-11-23,5,Priya H.,"Loved the chicken biryani, easily one of the best I have had.",synthetic
+NBA-0299,Neighborhood Bistro A,2025-11-23,5,Chris T.,They catered our wedding for 250 guests and everyone loved it. The butter chicken was perfectly cooked and tasted fresh.,synthetic
+NBA-0073,Neighborhood Bistro A,2025-11-24,4,Neha T.,"They catered our wedding for 250 guests and everyone loved it. Food was too mild, it needed more spice and seasoning.",synthetic
+NBB-0180,Neighborhood Bistro B,2025-11-24,5,Ana F.,The chicken tikka masala was perfectly cooked and tasted fresh. Our server Tara gave great recommendations.,synthetic
+NBB-0193,Neighborhood Bistro B,2025-11-24,4,Maria F.,Our server Arjun gave great recommendations. The goat curry was dry and a bit disappointing.,synthetic
+FHE-0050,Food Hall Express,2025-11-25,3,Ana F.,"The chicken biryani was rich and full of flavor. Dev was so warm and attentive, made our night. Very stingy with the meat, mostly rice.",synthetic
+UDR-0061,Upscale Dining Room,2025-11-27,5,Priya H.,"Loved the palak paneer, easily one of the best I have had. Loved the train station theme, so unique. Got a table quickly even without a reservation. Asha was so warm and attentive, made our night.",synthetic
+NBA-0207,Neighborhood Bistro A,2025-11-27,2,Leo G.,"It was very loud, hard to have a conversation.",synthetic
+NBA-0221,Neighborhood Bistro A,2025-11-27,5,Emily J.,"Kabir was so warm and attentive, made our night. The mango lassi was perfectly cooked and tasted fresh. Even when we asked for spicy, the goat curry had barely any heat.",synthetic
+NBB-0202,Neighborhood Bistro B,2025-11-27,5,Isha G.,"Every visit the food is just as good as the last. Loved the dal makhani, easily one of the best I have had.",synthetic
+UDR-0236,Upscale Dining Room,2025-11-28,4,Jordan S.,"Our server Asha gave great recommendations. Loved the lamb rogan josh, easily one of the best I have had. Prices are on the high side for what you get.",synthetic
+NBA-0010,Neighborhood Bistro A,2025-11-28,5,Kate H.,Our server Nisha gave great recommendations.,synthetic
+NBB-0054,Neighborhood Bistro B,2025-11-28,5,Tom F.,"Generous portions, we took leftovers home. Every visit the food is just as good as the last.",synthetic
+FHE-0080,Food Hall Express,2025-11-28,4,Leo G.,"Paid over $20 for a bowl and a drink, not worth it. Service was fast and smooth. The pani puri was just okay, nothing special. Great balance of spices in every dish.",synthetic
+UDR-0093,Upscale Dining Room,2025-11-29,5,Jordan G.,A bit pricey but worth it for the experience. The malai kofta was rich and full of flavor.,synthetic
+NBB-0151,Neighborhood Bistro B,2025-11-29,5,Omar J.,The tandoori chicken was perfectly cooked and tasted fresh.,synthetic
+NBB-0210,Neighborhood Bistro B,2025-11-29,5,Jordan D.,"Arjun was so warm and attentive, made our night. Consistently great, we come back every month. Takeout was packed well and still hot at home.",synthetic
+FHE-0123,Food Hall Express,2025-11-29,4,Neha A.,"Loved the fish curry, easily one of the best I have had. Our server Dev gave great recommendations. Paid over $20 for a bowl and a drink, not worth it.",synthetic
+UDR-0257,Upscale Dining Room,2025-11-30,5,Priya N.,"Got a table quickly even without a reservation. The decor is beautiful, it feels like a special night out. Loved the chicken biryani, easily one of the best I have had. Staff felt rushed and not very friendly.",synthetic
+NBB-0010,Neighborhood Bistro B,2025-11-30,5,Neha G.,"Every visit the food is just as good as the last. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0118,Neighborhood Bistro B,2025-11-30,4,Ben K.,"Consistently great, we come back every month.",synthetic
+NBB-0200,Neighborhood Bistro B,2025-11-30,5,Vikas S.,The goat curry was rich and full of flavor. Our server Arjun gave great recommendations.,synthetic
+FHE-0060,Food Hall Express,2025-11-30,4,Tom D.,"Very stingy with the meat, mostly rice. The baingan bharta was perfectly cooked and tasted fresh.",synthetic
+NBA-0121,Neighborhood Bistro A,2025-12-01,3,Raj M.,"The dal makhani was just okay, nothing special. Used them for an office event, food and setup were excellent.",synthetic
+FHE-0034,Food Hall Express,2025-12-01,3,Raj K.,"The chicken tikka masala was just okay, nothing special. Dev was so warm and attentive, made our night.",synthetic
+NBA-0211,Neighborhood Bistro A,2025-12-02,5,Isha T.,Our server Kabir gave great recommendations. The garlic naan was perfectly cooked and tasted fresh.,synthetic
+NBA-0213,Neighborhood Bistro A,2025-12-02,5,Isha W.,The lamb rogan josh was rich and full of flavor.,synthetic
+FHE-0063,Food Hall Express,2025-12-02,3,Vikas N.,"Prices are on the high side for what you get. Generous portions, we took leftovers home.",synthetic
+FHE-0086,Food Hall Express,2025-12-02,4,Lena E.,"The butter chicken was perfectly cooked and tasted fresh. Portions were small for the price, barely any chicken in the bowl.",synthetic
+NBA-0044,Neighborhood Bistro A,2025-12-03,5,Neha P.,"Cozy and calm atmosphere, great for a date. The garlic naan was perfectly cooked and tasted fresh.",synthetic
+NBB-0110,Neighborhood Bistro B,2025-12-03,5,Emily W.,"The mango lassi was perfectly cooked and tasted fresh. Generous portions, we took leftovers home.",synthetic
+NBA-0030,Neighborhood Bistro A,2025-12-04,3,Omar F.,"The pani puri was rich and full of flavor. Our server Nisha gave great recommendations. Food was too mild, it needed more spice and seasoning. Takeout order was missing an item.",synthetic
+FHE-0003,Food Hall Express,2025-12-04,4,Isha A.,The chana masala was perfectly cooked and tasted fresh. Prices are on the high side for what you get.,synthetic
+FHE-0101,Food Hall Express,2025-12-04,5,Neha A.,"Loved the mango lassi, easily one of the best I have had. Our server Dev gave great recommendations.",synthetic
+NBA-0091,Neighborhood Bistro A,2025-12-05,4,Raj S.,"Kabir was so warm and attentive, made our night. The garlic naan was dry and a bit disappointing.",synthetic
+NBB-0096,Neighborhood Bistro B,2025-12-05,3,Raj E.,"Loved the palak paneer, easily one of the best I have had. Very stingy with the meat, mostly rice. Tables were sticky and the restroom needed attention.",synthetic
+NBB-0089,Neighborhood Bistro B,2025-12-06,5,Kate N.,Great value for the price. The palak paneer was perfectly cooked and tasted fresh.,synthetic
+NBB-0135,Neighborhood Bistro B,2025-12-06,5,Sana G.,"Every visit the food is just as good as the last. The decor is beautiful, it feels like a special night out. Very clean restaurant and restrooms.",synthetic
+FHE-0064,Food Hall Express,2025-12-06,2,Maria K.,"The chicken tikka masala was perfectly cooked and tasted fresh. Paid over $20 for a bowl and a drink, not worth it. Food was too mild, it needed more spice and seasoning.",synthetic
+NBA-0106,Neighborhood Bistro A,2025-12-07,5,Alex F.,"Takeout was packed well and still hot at home. Kabir was so warm and attentive, made our night. The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0009,Upscale Dining Room,2025-12-08,5,Lena J.,"The goat curry was rich and full of flavor. Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0127,Upscale Dining Room,2025-12-09,5,Sana M.,"Got a table quickly even without a reservation. Asha was so warm and attentive, made our night. Great balance of spices in every dish.",synthetic
+NBB-0187,Neighborhood Bistro B,2025-12-09,5,Vikas B.,"Takeout was packed well and still hot at home. Consistently great, we come back every month. Very clean restaurant and restrooms. Shout out to Tara, amazing hospitality.",synthetic
+FHE-0084,Food Hall Express,2025-12-09,2,Isha J.,"Very stingy with the meat, mostly rice. The momos was dry and a bit disappointing.",synthetic
+UDR-0038,Upscale Dining Room,2025-12-10,5,Emily R.,"Our server Asha gave great recommendations. Loved the butter chicken, easily one of the best I have had.",synthetic
+FHE-0008,Food Hall Express,2025-12-12,5,Ben N.,The butter chicken was perfectly cooked and tasted fresh.,synthetic
+UDR-0102,Upscale Dining Room,2025-12-13,5,Leo L.,"The palak paneer was perfectly cooked and tasted fresh. Flavors felt diluted and bland for Indian food. Rohan was so warm and attentive, made our night. Got a table quickly even without a reservation.",synthetic
+UDR-0144,Upscale Dining Room,2025-12-13,5,Jordan N.,The chicken tikka masala was rich and full of flavor.,synthetic
+NBB-0091,Neighborhood Bistro B,2025-12-13,5,Omar S.,Great value for the price.,synthetic
+NBA-0012,Neighborhood Bistro A,2025-12-14,3,Sam K.,"Spice level was spot on, they asked how hot we wanted it. The lamb rogan josh was dry and a bit disappointing.",synthetic
+NBA-0152,Neighborhood Bistro A,2025-12-14,4,Ana A.,"Kabir was so warm and attentive, made our night. They catered our wedding for 250 guests and everyone loved it. Food was too mild, it needed more spice and seasoning. Cozy and calm atmosphere, great for a date.",synthetic
+FHE-0129,Food Hall Express,2025-12-14,5,Leo B.,The chicken tikka masala was perfectly cooked and tasted fresh.,synthetic
+UDR-0082,Upscale Dining Room,2025-12-15,4,Kate K.,"It took forever to get our order and the check. Rohan was so warm and attentive, made our night.",synthetic
+NBA-0046,Neighborhood Bistro A,2025-12-15,2,Raj G.,"Food was too mild, it needed more spice and seasoning. It was very loud, hard to have a conversation.",synthetic
+NBB-0177,Neighborhood Bistro B,2025-12-15,5,Sana A.,"Tara was so warm and attentive, made our night.",synthetic
+UDR-0137,Upscale Dining Room,2025-12-16,5,Kate K.,"Meera was so warm and attentive, made our night. The decor is beautiful, it feels like a special night out. Loved the chicken tikka masala, easily one of the best I have had. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBA-0077,Neighborhood Bistro A,2025-12-16,3,Leo H.,"Food was too mild, it needed more spice and seasoning. Our server seemed distracted and hard to flag down. Very clean restaurant and restrooms. The tandoori chicken was rich and full of flavor.",synthetic
+NBA-0083,Neighborhood Bistro A,2025-12-16,1,Isha T.,Staff felt rushed and not very friendly. Quality has gone down compared to our last few visits.,synthetic
+FHE-0126,Food Hall Express,2025-12-16,5,Kate J.,"Generous portions, we took leftovers home. Loved the fish curry, easily one of the best I have had.",synthetic
+FHE-0140,Food Hall Express,2025-12-16,3,Raj P.,"Portions were small for the price, barely any chicken in the bowl.",synthetic
+UDR-0118,Upscale Dining Room,2025-12-17,4,Priya D.,"Our server Meera gave great recommendations. The mango lassi was just okay, nothing special.",synthetic
+UDR-0163,Upscale Dining Room,2025-12-17,5,Chris N.,"The decor is beautiful, it feels like a special night out. Loved the fish curry, easily one of the best I have had. A bit pricey but worth it for the experience.",synthetic
+NBA-0055,Neighborhood Bistro A,2025-12-17,5,Ana P.,"The decor is beautiful, it feels like a special night out. Loved the goat curry, easily one of the best I have had.",synthetic
+NBA-0071,Neighborhood Bistro A,2025-12-17,2,Chris E.,The chicken biryani was dry and a bit disappointing. Flavors felt diluted and bland for Indian food.,synthetic
+NBA-0118,Neighborhood Bistro A,2025-12-17,5,Ben N.,"Loved the malai kofta, easily one of the best I have had.",synthetic
+UDR-0008,Upscale Dining Room,2025-12-18,5,Sana H.,"Loved the train station theme, so unique. The dal makhani was perfectly cooked and tasted fresh.",synthetic
+NBB-0063,Neighborhood Bistro B,2025-12-18,5,Tom H.,"The decor is beautiful, it feels like a special night out. Loved the lamb rogan josh, easily one of the best I have had.",synthetic
+NBB-0161,Neighborhood Bistro B,2025-12-18,5,Omar D.,"Loved the butter chicken, easily one of the best I have had. Very clean restaurant and restrooms. Tara was so warm and attentive, made our night.",synthetic
+FHE-0137,Food Hall Express,2025-12-18,5,Ben S.,The tandoori chicken was perfectly cooked and tasted fresh.,synthetic
+UDR-0213,Upscale Dining Room,2025-12-19,5,Jordan R.,"The decor is beautiful, it feels like a special night out. Meera was so warm and attentive, made our night. Very clean restaurant and restrooms.",synthetic
+FHE-0105,Food Hall Express,2025-12-19,3,Lena R.,"Portions were small for the price, barely any chicken in the bowl.",synthetic
+UDR-0043,Upscale Dining Room,2025-12-20,5,Isha G.,"The chana masala was rich and full of flavor. Shout out to Asha, amazing hospitality. Even with a reservation we waited 30 minutes to be seated.",synthetic
+NBB-0084,Neighborhood Bistro B,2025-12-20,5,Raj S.,"Very clean restaurant and restrooms. Loved the mango lassi, easily one of the best I have had.",synthetic
+UDR-0142,Upscale Dining Room,2025-12-21,4,Jordan S.,"Meera was so warm and attentive, made our night. The momos was rich and full of flavor. It was very loud, hard to have a conversation.",synthetic
+NBA-0231,Neighborhood Bistro A,2025-12-21,5,Jordan M.,"Used them for an office event, food and setup were excellent. Kabir was so warm and attentive, made our night. Loved the butter chicken, easily one of the best I have had.",synthetic
+NBB-0018,Neighborhood Bistro B,2025-12-21,5,Omar T.,"Consistently great, we come back every month. Our server Tara gave great recommendations.",synthetic
+NBB-0047,Neighborhood Bistro B,2025-12-21,4,Sana D.,Very clean restaurant and restrooms. We have been coming for years but the food is not the same anymore.,synthetic
+NBB-0143,Neighborhood Bistro B,2025-12-21,5,Chris F.,Our server Arjun gave great recommendations. The malai kofta was perfectly cooked and tasted fresh.,synthetic
+UDR-0132,Upscale Dining Room,2025-12-22,5,Jordan G.,"Asha was so warm and attentive, made our night.",synthetic
+NBA-0243,Neighborhood Bistro A,2025-12-22,5,Alex N.,"Our server Kabir gave great recommendations. They catered our wedding for 250 guests and everyone loved it. Consistently great, we come back every month.",synthetic
+NBB-0014,Neighborhood Bistro B,2025-12-23,5,Alex D.,The pani puri was perfectly cooked and tasted fresh.,synthetic
+UDR-0171,Upscale Dining Room,2025-12-24,4,Ana K.,"Even with a reservation we waited 30 minutes to be seated. Cozy and calm atmosphere, great for a date. Our server Asha gave great recommendations.",synthetic
+UDR-0178,Upscale Dining Room,2025-12-24,5,Neha F.,"Prices are on the high side for what you get. Very clean restaurant and restrooms. Cozy and calm atmosphere, great for a date. Service was fast and smooth. The butter chicken was perfectly cooked and tasted fresh.",synthetic
+NBB-0053,Neighborhood Bistro B,2025-12-24,5,Alex D.,The palak paneer was rich and full of flavor. Great value for the price.,synthetic
+NBB-0087,Neighborhood Bistro B,2025-12-24,5,Alex W.,"Loved the fish curry, easily one of the best I have had. Very clean restaurant and restrooms. Portions were small for the price, barely any chicken in the bowl. Consistently great, we come back every month.",synthetic
+FHE-0007,Food Hall Express,2025-12-24,4,Neha D.,"Generous portions, we took leftovers home. The goat curry was just okay, nothing special.",synthetic
+NBB-0163,Neighborhood Bistro B,2025-12-25,5,Kate L.,"Loved the mango lassi, easily one of the best I have had. The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0256,Upscale Dining Room,2025-12-26,5,Lena L.,"Rohan was so warm and attentive, made our night.",synthetic
+NBA-0165,Neighborhood Bistro A,2025-12-26,2,Neha G.,"The baingan bharta was just okay, nothing special. Even when we asked for spicy, the chana masala had barely any heat.",synthetic
+NBA-0151,Neighborhood Bistro A,2025-12-27,5,Isha N.,The palak paneer was perfectly cooked and tasted fresh.,synthetic
+NBB-0211,Neighborhood Bistro B,2025-12-27,5,Chris R.,"Our server Arjun gave great recommendations. The chicken tikka masala was rich and full of flavor. Generous portions, we took leftovers home.",synthetic
+FHE-0072,Food Hall Express,2025-12-27,5,Ana B.,The lamb rogan josh was perfectly cooked and tasted fresh.,synthetic
+NBA-0057,Neighborhood Bistro A,2025-12-28,5,Leo J.,"Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0180,Neighborhood Bistro A,2025-12-28,5,Mike B.,The momos was rich and full of flavor. Very clean restaurant and restrooms.,synthetic
+NBA-0208,Neighborhood Bistro A,2025-12-28,4,Chris E.,"Even when we asked for spicy, the chana masala had barely any heat. The dal makhani was rich and full of flavor. Used them for an office event, food and setup were excellent.",synthetic
+FHE-0022,Food Hall Express,2025-12-28,5,Chris B.,"Spice level was spot on, they asked how hot we wanted it. Loved the palak paneer, easily one of the best I have had. Generous portions, we took leftovers home.",synthetic
+UDR-0042,Upscale Dining Room,2025-12-29,4,Raj M.,"Loved the train station theme, so unique. Rohan was so warm and attentive, made our night. The palak paneer was dry and a bit disappointing.",synthetic
+UDR-0143,Upscale Dining Room,2025-12-29,5,Neha D.,"Loved the momos, easily one of the best I have had. Loved the train station theme, so unique.",synthetic
+UDR-0253,Upscale Dining Room,2025-12-29,5,Mike A.,"Loved the train station theme, so unique.",synthetic
+NBA-0286,Neighborhood Bistro A,2025-12-29,5,Omar J.,"The chicken biryani was rich and full of flavor. Shout out to Kabir, amazing hospitality. Great balance of spices in every dish.",synthetic
+UDR-0191,Upscale Dining Room,2025-12-30,5,Ben W.,"The decor is beautiful, it feels like a special night out. Shout out to Rohan, amazing hospitality.",synthetic
+NBA-0185,Neighborhood Bistro A,2025-12-30,5,Ben A.,The butter chicken was rich and full of flavor.,synthetic
+NBB-0015,Neighborhood Bistro B,2025-12-30,5,Sana R.,The momos was rich and full of flavor.,synthetic
+NBB-0114,Neighborhood Bistro B,2025-12-30,5,Neha B.,"Takeout was packed well and still hot at home. Loved the pani puri, easily one of the best I have had. Loved the train station theme, so unique.",synthetic
+FHE-0048,Food Hall Express,2025-12-30,3,Neha P.,"The lamb rogan josh was rich and full of flavor. Very stingy with the meat, mostly rice.",synthetic
+FHE-0139,Food Hall Express,2025-12-30,5,Ana D.,"Dev was so warm and attentive, made our night. Great balance of spices in every dish. Food came out quickly even on a busy night.",synthetic
+NBA-0002,Neighborhood Bistro A,2025-12-31,4,Tom E.,"The momos was just okay, nothing special. The decor is beautiful, it feels like a special night out. Shout out to Kabir, amazing hospitality.",synthetic
+NBA-0085,Neighborhood Bistro A,2026-01-01,4,Sam N.,"Loved the garlic naan, easily one of the best I have had.",synthetic
+NBA-0070,Neighborhood Bistro A,2026-01-02,5,Mike C.,"The chana masala was just okay, nothing special. Shout out to Nisha, amazing hospitality. They catered our wedding for 250 guests and everyone loved it.",synthetic
+FHE-0021,Food Hall Express,2026-01-02,3,Priya M.,Prices are on the high side for what you get.,synthetic
+UDR-0187,Upscale Dining Room,2026-01-04,4,Tom F.,"Asha was so warm and attentive, made our night. The butter chicken was dry and a bit disappointing.",synthetic
+NBB-0213,Neighborhood Bistro B,2026-01-04,4,Maria P.,"Very clean restaurant and restrooms. Generous portions, we took leftovers home. The momos was just okay, nothing special.",synthetic
+FHE-0075,Food Hall Express,2026-01-04,5,Jordan P.,"A bit pricey but worth it for the experience. Dev was so warm and attentive, made our night.",synthetic
+NBA-0218,Neighborhood Bistro A,2026-01-05,5,Vikas M.,"The decor is beautiful, it feels like a special night out. Takeout order was missing an item. Kabir was so warm and attentive, made our night. The mango lassi was rich and full of flavor.",synthetic
+NBB-0207,Neighborhood Bistro B,2026-01-05,2,Vikas G.,"The palak paneer was just okay, nothing special. It was very loud, hard to have a conversation.",synthetic
+FHE-0117,Food Hall Express,2026-01-05,4,Neha B.,The chicken biryani was dry and a bit disappointing. Great value for the price.,synthetic
+NBA-0009,Neighborhood Bistro A,2026-01-06,5,Jordan L.,"Catering for our family party was perfect and on time. The butter chicken was rich and full of flavor. Takeout was packed well and still hot at home. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0148,Neighborhood Bistro A,2026-01-06,5,Emily H.,"Spice level was spot on, they asked how hot we wanted it. The palak paneer was rich and full of flavor. Loved the train station theme, so unique.",synthetic
+NBB-0052,Neighborhood Bistro B,2026-01-06,5,Sam E.,The garlic naan was rich and full of flavor.,synthetic
+FHE-0124,Food Hall Express,2026-01-07,4,Sam R.,"Portions were small for the price, barely any chicken in the bowl. Our server Dev gave great recommendations.",synthetic
+UDR-0088,Upscale Dining Room,2026-01-08,5,Ben E.,"Loved the lamb rogan josh, easily one of the best I have had.",synthetic
+UDR-0150,Upscale Dining Room,2026-01-08,5,Sana F.,"Service was fast and smooth. Asha was so warm and attentive, made our night.",synthetic
+UDR-0219,Upscale Dining Room,2026-01-08,5,Omar F.,"Service was fast and smooth. Loved the train station theme, so unique. Great balance of spices in every dish.",synthetic
+NBB-0031,Neighborhood Bistro B,2026-01-08,5,Ana B.,"Tara was so warm and attentive, made our night. The fish curry was perfectly cooked and tasted fresh.",synthetic
+NBB-0149,Neighborhood Bistro B,2026-01-08,5,Sana F.,Every visit the food is just as good as the last. Great value for the price.,synthetic
+FHE-0068,Food Hall Express,2026-01-08,2,Chris C.,The chana masala was dry and a bit disappointing.,synthetic
+NBA-0022,Neighborhood Bistro A,2026-01-09,3,Ben W.,Our server seemed distracted and hard to flag down.,synthetic
+NBA-0090,Neighborhood Bistro A,2026-01-09,4,Maria G.,"Cozy and calm atmosphere, great for a date. Flavors felt diluted and bland for Indian food. Takeout was packed well and still hot at home.",synthetic
+FHE-0149,Food Hall Express,2026-01-09,5,Emily S.,"Generous portions, we took leftovers home. Loved the butter chicken, easily one of the best I have had.",synthetic
+UDR-0004,Upscale Dining Room,2026-01-10,5,Ben J.,"Asha was so warm and attentive, made our night. Loved the train station theme, so unique. A bit pricey but worth it for the experience.",synthetic
+NBA-0147,Neighborhood Bistro A,2026-01-10,5,Ana N.,"Loved the chicken biryani, easily one of the best I have had. Our server Kabir gave great recommendations. Great balance of spices in every dish.",synthetic
+NBA-0159,Neighborhood Bistro A,2026-01-10,5,Alex S.,"Loved the baingan bharta, easily one of the best I have had. Every visit the food is just as good as the last. Catering for our family party was perfect and on time. Spice level was spot on, they asked how hot we wanted it.",synthetic
+UDR-0031,Upscale Dining Room,2026-01-11,5,Jordan S.,"Loved the train station theme, so unique. Shout out to Rohan, amazing hospitality. The chicken tikka masala was rich and full of flavor. Spice level was spot on, they asked how hot we wanted it. Even with a reservation we waited 30 minutes to be seated.",synthetic
+UDR-0249,Upscale Dining Room,2026-01-11,4,Leo B.,"Our server Meera gave great recommendations. The goat curry was just okay, nothing special.",synthetic
+NBB-0109,Neighborhood Bistro B,2026-01-11,5,Maria A.,"Consistently great, we come back every month. Tara was so warm and attentive, made our night.",synthetic
+UDR-0157,Upscale Dining Room,2026-01-12,5,Mike S.,"The decor is beautiful, it feels like a special night out. Long wait between courses, the kitchen seemed overwhelmed. The chana masala was rich and full of flavor.",synthetic
+NBA-0040,Neighborhood Bistro A,2026-01-12,3,Omar A.,"Loved the chana masala, easily one of the best I have had. Flavors felt diluted and bland for Indian food.",synthetic
+UDR-0054,Upscale Dining Room,2026-01-13,4,Kate L.,"The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0080,Upscale Dining Room,2026-01-13,5,Isha H.,"Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0252,Upscale Dining Room,2026-01-13,4,Priya J.,The chicken biryani was rich and full of flavor.,synthetic
+NBA-0037,Neighborhood Bistro A,2026-01-14,3,Emily E.,"Food was too mild, it needed more spice and seasoning. Shout out to Nisha, amazing hospitality. The decor is beautiful, it feels like a special night out. The fish curry was dry and a bit disappointing.",synthetic
+FHE-0096,Food Hall Express,2026-01-14,4,Priya S.,"Paid over $20 for a bowl and a drink, not worth it. A bit pricey but worth it for the experience.",synthetic
+UDR-0035,Upscale Dining Room,2026-01-15,5,Kate S.,"Loved the train station theme, so unique.",synthetic
+UDR-0154,Upscale Dining Room,2026-01-15,5,Ana K.,"The decor is beautiful, it feels like a special night out. Rohan was so warm and attentive, made our night. Loved the chicken tikka masala, easily one of the best I have had.",synthetic
+NBB-0173,Neighborhood Bistro B,2026-01-15,5,Alex N.,"Generous portions, we took leftovers home. Loved the malai kofta, easily one of the best I have had.",synthetic
+UDR-0055,Upscale Dining Room,2026-01-16,3,Sana G.,"Loved the chana masala, easily one of the best I have had. Cozy and calm atmosphere, great for a date. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBB-0000,Neighborhood Bistro B,2026-01-16,5,Sam L.,"Arjun was so warm and attentive, made our night.",synthetic
+NBB-0045,Neighborhood Bistro B,2026-01-16,4,Jordan C.,The palak paneer was perfectly cooked and tasted fresh.,synthetic
+NBA-0053,Neighborhood Bistro A,2026-01-17,4,Jordan N.,"The mango lassi was perfectly cooked and tasted fresh. Very clean restaurant and restrooms. The chicken tikka masala used to be amazing, this time it tasted different.",synthetic
+NBA-0101,Neighborhood Bistro A,2026-01-17,5,Ben N.,"Loved the lamb rogan josh, easily one of the best I have had.",synthetic
+FHE-0122,Food Hall Express,2026-01-17,5,Maria L.,"Loved the malai kofta, easily one of the best I have had.",synthetic
+NBA-0115,Neighborhood Bistro A,2026-01-18,5,Sam T.,"Loved the train station theme, so unique. Consistently great, we come back every month. They catered our wedding for 250 guests and everyone loved it.",synthetic
+NBA-0173,Neighborhood Bistro A,2026-01-18,5,Priya W.,"Consistently great, we come back every month. Very clean restaurant and restrooms. Cozy and calm atmosphere, great for a date. Great balance of spices in every dish.",synthetic
+NBA-0174,Neighborhood Bistro A,2026-01-18,4,Mike T.,"Shout out to Nisha, amazing hospitality. Used them for an office event, food and setup were excellent. Even when we asked for spicy, the chicken tikka masala had barely any heat.",synthetic
+NBA-0216,Neighborhood Bistro A,2026-01-19,3,Mike J.,"Even when we asked for spicy, the tandoori chicken had barely any heat.",synthetic
+NBA-0264,Neighborhood Bistro A,2026-01-20,5,Vikas S.,The pani puri was perfectly cooked and tasted fresh. Takeout was packed well and still hot at home.,synthetic
+NBB-0060,Neighborhood Bistro B,2026-01-20,5,Leo P.,"Very clean restaurant and restrooms. Loved the dal makhani, easily one of the best I have had.",synthetic
+NBB-0152,Neighborhood Bistro B,2026-01-20,5,Neha N.,"Takeout was packed well and still hot at home. Great value for the price. The tandoori chicken was dry and a bit disappointing. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0156,Neighborhood Bistro B,2026-01-20,4,Omar B.,"The momos was just okay, nothing special. Arjun was so warm and attentive, made our night.",synthetic
+UDR-0193,Upscale Dining Room,2026-01-21,5,Leo B.,"The decor is beautiful, it feels like a special night out. The momos was rich and full of flavor.",synthetic
+NBB-0017,Neighborhood Bistro B,2026-01-21,5,Kate K.,"Generous portions, we took leftovers home. The garlic naan was perfectly cooked and tasted fresh.",synthetic
+NBB-0205,Neighborhood Bistro B,2026-01-21,4,Chris R.,"Loved the dal makhani, easily one of the best I have had.",synthetic
+FHE-0051,Food Hall Express,2026-01-21,5,Vikas A.,Our server Dev gave great recommendations.,synthetic
+NBA-0021,Neighborhood Bistro A,2026-01-22,5,Neha A.,"The momos was perfectly cooked and tasted fresh. Food was too mild, it needed more spice and seasoning. Loved the train station theme, so unique.",synthetic
+UDR-0168,Upscale Dining Room,2026-01-23,4,Isha S.,"Asha was so warm and attentive, made our night. The garlic naan was perfectly cooked and tasted fresh. Cozy and calm atmosphere, great for a date. Prices are on the high side for what you get.",synthetic
+NBB-0108,Neighborhood Bistro B,2026-01-23,5,Emily E.,"Our server Tara gave great recommendations. Consistently great, we come back every month. Very clean restaurant and restrooms. The malai kofta was perfectly cooked and tasted fresh.",synthetic
+NBA-0153,Neighborhood Bistro A,2026-01-24,5,Chris R.,Catering for our family party was perfect and on time.,synthetic
+NBB-0215,Neighborhood Bistro B,2026-01-24,5,Raj K.,"Generous portions, we took leftovers home. Every visit the food is just as good as the last.",synthetic
+UDR-0160,Upscale Dining Room,2026-01-25,5,Tom G.,"Got a table quickly even without a reservation. The dal makhani was rich and full of flavor. The decor is beautiful, it feels like a special night out. A bit pricey but worth it for the experience. Meera was so warm and attentive, made our night.",synthetic
+NBA-0160,Neighborhood Bistro A,2026-01-25,3,Tom M.,"Flavors felt diluted and bland for Indian food. Cozy and calm atmosphere, great for a date. Our server seemed distracted and hard to flag down.",synthetic
+NBA-0246,Neighborhood Bistro A,2026-01-25,3,Mike A.,"Takeout was packed well and still hot at home. The lamb rogan josh was just okay, nothing special.",synthetic
+UDR-0071,Upscale Dining Room,2026-01-26,5,Sam S.,Got a table quickly even without a reservation.,synthetic
+UDR-0078,Upscale Dining Room,2026-01-26,5,Emily S.,"Loved the train station theme, so unique. Shout out to Asha, amazing hospitality. Service was fast and smooth. The fish curry was rich and full of flavor. A bit pricey but worth it for the experience.",synthetic
+UDR-0155,Upscale Dining Room,2026-01-26,5,Jordan H.,The malai kofta was rich and full of flavor.,synthetic
+FHE-0069,Food Hall Express,2026-01-26,5,Neha R.,A bit pricey but worth it for the experience.,synthetic
+NBA-0109,Neighborhood Bistro A,2026-01-27,4,Leo L.,"Our server Kabir gave great recommendations. The pani puri was just okay, nothing special. Catering for our family party was perfect and on time.",synthetic
+FHE-0028,Food Hall Express,2026-01-27,5,Emily F.,"Loved the chana masala, easily one of the best I have had.",synthetic
+FHE-0036,Food Hall Express,2026-01-27,4,Kate H.,"The momos was just okay, nothing special. Great value for the price.",synthetic
+UDR-0181,Upscale Dining Room,2026-01-28,5,Isha N.,"Rohan was so warm and attentive, made our night.",synthetic
+UDR-0194,Upscale Dining Room,2026-01-28,5,Isha M.,"Food came out quickly even on a busy night. The goat curry was perfectly cooked and tasted fresh. A bit pricey but worth it for the experience. Shout out to Asha, amazing hospitality.",synthetic
+FHE-0103,Food Hall Express,2026-01-28,5,Emily A.,Great balance of spices in every dish.,synthetic
+NBA-0158,Neighborhood Bistro A,2026-01-29,5,Jordan G.,"Spice level was spot on, they asked how hot we wanted it. They catered our wedding for 250 guests and everyone loved it. Shout out to Kabir, amazing hospitality. The baingan bharta was perfectly cooked and tasted fresh. Very clean restaurant and restrooms.",synthetic
+NBA-0277,Neighborhood Bistro A,2026-01-29,5,Isha S.,"Used them for an office event, food and setup were excellent. Kabir was so warm and attentive, made our night. Loved the chana masala, easily one of the best I have had.",synthetic
+NBA-0234,Neighborhood Bistro A,2026-01-30,3,Leo D.,"Very clean restaurant and restrooms. Even when we asked for spicy, the chicken biryani had barely any heat.",synthetic
+NBA-0251,Neighborhood Bistro A,2026-01-30,5,Maria F.,The pani puri was perfectly cooked and tasted fresh.,synthetic
+NBA-0270,Neighborhood Bistro A,2026-01-30,5,Ana R.,"Shout out to Kabir, amazing hospitality. Loved the garlic naan, easily one of the best I have had. The decor is beautiful, it feels like a special night out.",synthetic
+FHE-0148,Food Hall Express,2026-01-30,3,Isha D.,"The pani puri was just okay, nothing special.",synthetic
+UDR-0106,Upscale Dining Room,2026-01-31,5,Emily E.,"Loved the mango lassi, easily one of the best I have had.",synthetic
+NBB-0148,Neighborhood Bistro B,2026-01-31,5,Kate W.,The goat curry was rich and full of flavor.,synthetic
+UDR-0113,Upscale Dining Room,2026-02-01,3,Mike R.,"Loved the train station theme, so unique. The baingan bharta was just okay, nothing special. Meera was so warm and attentive, made our night. Prices are on the high side for what you get.",synthetic
+UDR-0139,Upscale Dining Room,2026-02-01,5,Jordan L.,Service was fast and smooth.,synthetic
+UDR-0241,Upscale Dining Room,2026-02-01,5,Vikas E.,Great balance of spices in every dish.,synthetic
+NBA-0120,Neighborhood Bistro A,2026-02-01,4,Alex A.,"Very clean restaurant and restrooms. Food was too mild, it needed more spice and seasoning. They catered our wedding for 250 guests and everyone loved it.",synthetic
+UDR-0174,Upscale Dining Room,2026-02-02,5,Alex N.,"Great balance of spices in every dish. Meera was so warm and attentive, made our night. The mango lassi was rich and full of flavor. The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0179,Upscale Dining Room,2026-02-02,5,Leo C.,"Great balance of spices in every dish. The chana masala was perfectly cooked and tasted fresh. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0134,Neighborhood Bistro A,2026-02-02,3,Leo F.,The mango lassi was dry and a bit disappointing.,synthetic
+NBA-0019,Neighborhood Bistro A,2026-02-03,3,Tom H.,"Loved the train station theme, so unique. Flavors felt diluted and bland for Indian food.",synthetic
+NBA-0036,Neighborhood Bistro A,2026-02-03,3,Vikas R.,"Even when we asked for spicy, the chana masala had barely any heat.",synthetic
+NBB-0157,Neighborhood Bistro B,2026-02-03,5,Raj D.,"Shout out to Arjun, amazing hospitality. The momos was perfectly cooked and tasted fresh.",synthetic
+NBB-0181,Neighborhood Bistro B,2026-02-03,3,Raj W.,"The mango lassi was just okay, nothing special. Consistently great, we come back every month.",synthetic
+UDR-0247,Upscale Dining Room,2026-02-04,3,Sana T.,"Even with a reservation we waited 30 minutes to be seated. Loved the palak paneer, easily one of the best I have had. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBA-0013,Neighborhood Bistro A,2026-02-04,3,Sana K.,"The garlic naan was just okay, nothing special.",synthetic
+NBA-0102,Neighborhood Bistro A,2026-02-04,4,Maria E.,"Food was too mild, it needed more spice and seasoning. Loved the tandoori chicken, easily one of the best I have had. Used them for an office event, food and setup were excellent. Very clean restaurant and restrooms. Kabir was so warm and attentive, made our night.",synthetic
+NBB-0032,Neighborhood Bistro B,2026-02-04,5,Maria M.,The butter chicken was perfectly cooked and tasted fresh.,synthetic
+NBA-0047,Neighborhood Bistro A,2026-02-05,4,Mike F.,"Loved the chicken biryani, easily one of the best I have had.",synthetic
+FHE-0119,Food Hall Express,2026-02-05,4,Lena N.,"Great value for the price. Dev was so warm and attentive, made our night.",synthetic
+UDR-0079,Upscale Dining Room,2026-02-06,5,Lena M.,"Our server Meera gave great recommendations. Loved the mango lassi, easily one of the best I have had.",synthetic
+NBA-0075,Neighborhood Bistro A,2026-02-06,3,Emily G.,Quality has gone down compared to our last few visits.,synthetic
+UDR-0180,Upscale Dining Room,2026-02-07,5,Ben D.,"Cozy and calm atmosphere, great for a date. Food came out quickly even on a busy night. Loved the fish curry, easily one of the best I have had.",synthetic
+NBA-0086,Neighborhood Bistro A,2026-02-07,4,Tom H.,"The goat curry was just okay, nothing special. Kabir was so warm and attentive, made our night.",synthetic
+NBA-0197,Neighborhood Bistro A,2026-02-07,4,Lena D.,The malai kofta was perfectly cooked and tasted fresh. Staff felt rushed and not very friendly. They catered our wedding for 250 guests and everyone loved it.,synthetic
+NBA-0219,Neighborhood Bistro A,2026-02-07,4,Jordan C.,"Catering for our family party was perfect and on time. The goat curry was just okay, nothing special. The decor is beautiful, it feels like a special night out. Takeout was packed well and still hot at home.",synthetic
+NBA-0244,Neighborhood Bistro A,2026-02-07,4,Raj P.,The mango lassi was perfectly cooked and tasted fresh.,synthetic
+NBB-0159,Neighborhood Bistro B,2026-02-07,5,Raj C.,Very clean restaurant and restrooms. Our server Arjun gave great recommendations.,synthetic
+UDR-0096,Upscale Dining Room,2026-02-08,5,Chris E.,"The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0223,Upscale Dining Room,2026-02-09,5,Kate N.,"Our server Rohan gave great recommendations. Very clean restaurant and restrooms. Cozy and calm atmosphere, great for a date. It took forever to get our order and the check.",synthetic
+NBA-0093,Neighborhood Bistro A,2026-02-09,5,Ana P.,"They catered our wedding for 250 guests and everyone loved it. Loved the baingan bharta, easily one of the best I have had. Our server Nisha gave great recommendations.",synthetic
+NBA-0242,Neighborhood Bistro A,2026-02-09,5,Sam T.,The goat curry was perfectly cooked and tasted fresh.,synthetic
+NBA-0263,Neighborhood Bistro A,2026-02-09,5,Sam S.,"They catered our wedding for 250 guests and everyone loved it. Takeout was packed well and still hot at home. Very clean restaurant and restrooms. Loved the train station theme, so unique.",synthetic
+NBA-0293,Neighborhood Bistro A,2026-02-09,5,Priya T.,"Loved the train station theme, so unique.",synthetic
+NBA-0214,Neighborhood Bistro A,2026-02-10,5,Tom T.,"The tandoori chicken was perfectly cooked and tasted fresh. Spice level was spot on, they asked how hot we wanted it. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0217,Neighborhood Bistro A,2026-02-10,4,Ben S.,"Cozy and calm atmosphere, great for a date. The chicken biryani was just okay, nothing special.",synthetic
+NBB-0137,Neighborhood Bistro B,2026-02-10,5,Ben T.,Very clean restaurant and restrooms.,synthetic
+FHE-0000,Food Hall Express,2026-02-10,4,Kate G.,"Shout out to Dev, amazing hospitality. The butter chicken was just okay, nothing special.",synthetic
+FHE-0099,Food Hall Express,2026-02-10,3,Chris T.,"Portions were small for the price, barely any chicken in the bowl.",synthetic
+FHE-0108,Food Hall Express,2026-02-11,5,Sana K.,"Great value for the price. Dev was so warm and attentive, made our night. The baingan bharta was dry and a bit disappointing.",synthetic
+UDR-0221,Upscale Dining Room,2026-02-12,5,Lena J.,"The pani puri was rich and full of flavor. Got a table quickly even without a reservation. Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0178,Neighborhood Bistro B,2026-02-12,5,Sana S.,"Shout out to Arjun, amazing hospitality.",synthetic
+FHE-0016,Food Hall Express,2026-02-12,4,Leo D.,The fish curry was perfectly cooked and tasted fresh. Food came out quickly even on a busy night. Our server seemed distracted and hard to flag down.,synthetic
+NBA-0003,Neighborhood Bistro A,2026-02-13,5,Sana G.,"Our server Nisha gave great recommendations. Loved the fish curry, easily one of the best I have had. Very clean restaurant and restrooms.",synthetic
+NBA-0103,Neighborhood Bistro A,2026-02-13,4,Sana R.,The baingan bharta was dry and a bit disappointing. Very clean restaurant and restrooms.,synthetic
+NBA-0241,Neighborhood Bistro A,2026-02-13,4,Vikas W.,"Our server Nisha gave great recommendations. Even when we asked for spicy, the garlic naan had barely any heat.",synthetic
+NBA-0296,Neighborhood Bistro A,2026-02-13,5,Sana D.,"Kabir was so warm and attentive, made our night. The chicken tikka masala was perfectly cooked and tasted fresh.",synthetic
+UDR-0030,Upscale Dining Room,2026-02-14,5,Neha J.,"Loved the mango lassi, easily one of the best I have had. Meera was so warm and attentive, made our night. Service was fast and smooth.",synthetic
+NBA-0290,Neighborhood Bistro A,2026-02-14,4,Tom H.,"Food was too mild, it needed more spice and seasoning. Nisha was so warm and attentive, made our night. Very clean restaurant and restrooms.",synthetic
+NBB-0042,Neighborhood Bistro B,2026-02-14,5,Maria G.,Our server Tara gave great recommendations.,synthetic
+NBA-0100,Neighborhood Bistro A,2026-02-15,5,Priya E.,"The chana masala was perfectly cooked and tasted fresh. Spice level was spot on, they asked how hot we wanted it. Catering for our family party was perfect and on time. Our server Nisha gave great recommendations.",synthetic
+NBA-0260,Neighborhood Bistro A,2026-02-15,5,Chris A.,"Consistently great, we come back every month. Shout out to Nisha, amazing hospitality. The dal makhani was rich and full of flavor.",synthetic
+NBB-0142,Neighborhood Bistro B,2026-02-15,4,Mike L.,"The lamb rogan josh was just okay, nothing special. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0195,Neighborhood Bistro A,2026-02-16,4,Jordan J.,"Very clean restaurant and restrooms. Loved the chicken biryani, easily one of the best I have had. Even when we asked for spicy, the garlic naan had barely any heat.",synthetic
+UDR-0120,Upscale Dining Room,2026-02-17,5,Vikas G.,"A bit pricey but worth it for the experience. Loved the lamb rogan josh, easily one of the best I have had. The decor is beautiful, it feels like a special night out. Meera was so warm and attentive, made our night.",synthetic
+NBA-0175,Neighborhood Bistro A,2026-02-17,3,Sam W.,"Food was too mild, it needed more spice and seasoning. Our server Nisha gave great recommendations.",synthetic
+NBA-0145,Neighborhood Bistro A,2026-02-19,5,Sam R.,The momos was rich and full of flavor.,synthetic
+UDR-0085,Upscale Dining Room,2026-02-20,4,Leo C.,"Shout out to Rohan, amazing hospitality.",synthetic
+UDR-0188,Upscale Dining Room,2026-02-20,4,Neha D.,Prices are on the high side for what you get.,synthetic
+NBA-0198,Neighborhood Bistro A,2026-02-20,5,Neha A.,Very clean restaurant and restrooms. Our server Nisha gave great recommendations.,synthetic
+NBB-0175,Neighborhood Bistro B,2026-02-20,3,Neha E.,Takeout order was missing an item.,synthetic
+FHE-0077,Food Hall Express,2026-02-20,4,Maria A.,"Loved the palak paneer, easily one of the best I have had. Dev was so warm and attentive, made our night.",synthetic
+UDR-0015,Upscale Dining Room,2026-02-21,5,Sam D.,"Loved the train station theme, so unique. Our server Rohan gave great recommendations.",synthetic
+FHE-0120,Food Hall Express,2026-02-21,5,Sam B.,"Great value for the price. Loved the baingan bharta, easily one of the best I have had. Our server Dev gave great recommendations. Prices are on the high side for what you get.",synthetic
+UDR-0152,Upscale Dining Room,2026-02-22,5,Vikas W.,"Loved the train station theme, so unique.",synthetic
+NBB-0064,Neighborhood Bistro B,2026-02-22,5,Leo D.,Very clean restaurant and restrooms.,synthetic
+NBB-0191,Neighborhood Bistro B,2026-02-22,5,Ben L.,Our server Arjun gave great recommendations.,synthetic
+FHE-0081,Food Hall Express,2026-02-23,4,Ben L.,The pani puri was perfectly cooked and tasted fresh. A bit pricey but worth it for the experience. It took forever to get our order and the check.,synthetic
+UDR-0203,Upscale Dining Room,2026-02-24,4,Alex C.,"Service was really slow, we waited almost an hour for our mains. Cozy and calm atmosphere, great for a date. Loved the chana masala, easily one of the best I have had.",synthetic
+NBA-0061,Neighborhood Bistro A,2026-02-26,5,Isha L.,"Cozy and calm atmosphere, great for a date. Shout out to Nisha, amazing hospitality. Takeout was packed well and still hot at home.",synthetic
+NBA-0235,Neighborhood Bistro A,2026-02-26,3,Sana P.,"Our server seemed distracted and hard to flag down. Very clean restaurant and restrooms. Even when we asked for spicy, the baingan bharta had barely any heat.",synthetic
+NBA-0288,Neighborhood Bistro A,2026-02-26,5,Tom P.,"Our server Kabir gave great recommendations. Loved the mango lassi, easily one of the best I have had.",synthetic
+UDR-0044,Upscale Dining Room,2026-02-27,4,Leo B.,"Loved the baingan bharta, easily one of the best I have had. Cozy and calm atmosphere, great for a date. Even with a reservation we waited 30 minutes to be seated. A bit pricey but worth it for the experience.",synthetic
+NBB-0144,Neighborhood Bistro B,2026-02-27,5,Jordan F.,"Tara was so warm and attentive, made our night. Generous portions, we took leftovers home.",synthetic
+FHE-0136,Food Hall Express,2026-02-27,3,Chris E.,"Food came out quickly even on a busy night. Very stingy with the meat, mostly rice. Prices are on the high side for what you get. Loved the baingan bharta, easily one of the best I have had.",synthetic
+UDR-0198,Upscale Dining Room,2026-02-28,4,Isha J.,The momos was rich and full of flavor. A bit pricey but worth it for the experience.,synthetic
+UDR-0201,Upscale Dining Room,2026-02-28,5,Alex R.,The palak paneer was perfectly cooked and tasted fresh. Very clean restaurant and restrooms. A bit pricey but worth it for the experience.,synthetic
+NBA-0033,Neighborhood Bistro A,2026-02-28,5,Tom D.,Takeout was packed well and still hot at home. Our server Kabir gave great recommendations. Very clean restaurant and restrooms.,synthetic
+NBA-0049,Neighborhood Bistro A,2026-02-28,5,Mike F.,"The chicken tikka masala was perfectly cooked and tasted fresh. Flavors felt diluted and bland for Indian food. Our server Kabir gave great recommendations. Loved the train station theme, so unique. Very clean restaurant and restrooms. They catered our wedding for 250 guests and everyone loved it.",synthetic
+NBA-0163,Neighborhood Bistro A,2026-02-28,4,Alex C.,"It was very loud, hard to have a conversation. The momos was rich and full of flavor. Nisha was so warm and attentive, made our night. Takeout was packed well and still hot at home.",synthetic
+UDR-0014,Upscale Dining Room,2026-03-01,3,Priya S.,Prices are on the high side for what you get.,synthetic
+UDR-0237,Upscale Dining Room,2026-03-01,5,Maria B.,"Asha was so warm and attentive, made our night. Loved the palak paneer, easily one of the best I have had. Loved the train station theme, so unique.",synthetic
+UDR-0024,Upscale Dining Room,2026-03-02,5,Leo D.,"Long wait between courses, the kitchen seemed overwhelmed. Cozy and calm atmosphere, great for a date. Got a table quickly even without a reservation.",synthetic
+NBB-0069,Neighborhood Bistro B,2026-03-02,5,Priya G.,"Tara was so warm and attentive, made our night. The chicken tikka masala was rich and full of flavor. Takeout was packed well and still hot at home.",synthetic
+NBA-0279,Neighborhood Bistro A,2026-03-03,5,Priya K.,"Our server Kabir gave great recommendations. Consistently great, we come back every month. Takeout was packed well and still hot at home.",synthetic
+NBB-0034,Neighborhood Bistro B,2026-03-03,5,Emily P.,"Our server Tara gave great recommendations. Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0082,Neighborhood Bistro B,2026-03-03,5,Leo K.,"Arjun was so warm and attentive, made our night. Generous portions, we took leftovers home.",synthetic
+UDR-0020,Upscale Dining Room,2026-03-04,5,Chris S.,"The decor is beautiful, it feels like a special night out. Staff felt rushed and not very friendly. Loved the palak paneer, easily one of the best I have had.",synthetic
+UDR-0081,Upscale Dining Room,2026-03-04,5,Omar B.,"The decor is beautiful, it feels like a special night out. Food came out quickly even on a busy night. Our server Meera gave great recommendations.",synthetic
+NBA-0113,Neighborhood Bistro A,2026-03-04,5,Ana C.,"Nisha was so warm and attentive, made our night. Cozy and calm atmosphere, great for a date. The goat curry was perfectly cooked and tasted fresh.",synthetic
+NBB-0182,Neighborhood Bistro B,2026-03-04,4,Ben P.,Our server Arjun gave great recommendations.,synthetic
+NBA-0076,Neighborhood Bistro A,2026-03-05,5,Lena J.,Our server Kabir gave great recommendations.,synthetic
+NBA-0132,Neighborhood Bistro A,2026-03-05,5,Sana M.,"Loved the tandoori chicken, easily one of the best I have had.",synthetic
+NBA-0237,Neighborhood Bistro A,2026-03-05,5,Leo N.,"The chicken biryani was rich and full of flavor. Every visit the food is just as good as the last. Kabir was so warm and attentive, made our night.",synthetic
+NBB-0140,Neighborhood Bistro B,2026-03-05,2,Jordan D.,Takeout order was missing an item. The mango lassi was dry and a bit disappointing.,synthetic
+FHE-0118,Food Hall Express,2026-03-05,5,Ana N.,"Great value for the price. Prices are on the high side for what you get. Shout out to Dev, amazing hospitality.",synthetic
+NBA-0258,Neighborhood Bistro A,2026-03-06,2,Tom M.,"The palak paneer was just okay, nothing special. Food was too mild, it needed more spice and seasoning.",synthetic
+UDR-0185,Upscale Dining Room,2026-03-08,5,Chris F.,"The butter chicken was perfectly cooked and tasted fresh. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0220,Neighborhood Bistro A,2026-03-08,3,Ana D.,Flavors felt diluted and bland for Indian food.,synthetic
+NBB-0013,Neighborhood Bistro B,2026-03-08,4,Mike J.,"Loved the train station theme, so unique.",synthetic
+UDR-0216,Upscale Dining Room,2026-03-10,5,Neha E.,"Rohan was so warm and attentive, made our night. Loved the train station theme, so unique. The garlic naan was just okay, nothing special.",synthetic
+NBA-0054,Neighborhood Bistro A,2026-03-10,5,Mike P.,"Shout out to Kabir, amazing hospitality. Used them for an office event, food and setup were excellent. The lamb rogan josh was dry and a bit disappointing. Very clean restaurant and restrooms.",synthetic
+UDR-0175,Upscale Dining Room,2026-03-11,5,Jordan G.,"The chicken biryani was perfectly cooked and tasted fresh. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0171,Neighborhood Bistro A,2026-03-11,5,Sana M.,"Loved the palak paneer, easily one of the best I have had.",synthetic
+NBB-0125,Neighborhood Bistro B,2026-03-12,5,Chris D.,"Takeout was packed well and still hot at home. Tara was so warm and attentive, made our night. Loved the fish curry, easily one of the best I have had.",synthetic
+FHE-0055,Food Hall Express,2026-03-12,3,Emily K.,"The momos was just okay, nothing special. Dev was so warm and attentive, made our night. Great value for the price. Long wait between courses, the kitchen seemed overwhelmed.",synthetic
+UDR-0011,Upscale Dining Room,2026-03-13,5,Ben K.,"Our server Asha gave great recommendations. The decor is beautiful, it feels like a special night out. Very clean restaurant and restrooms. The dal makhani was perfectly cooked and tasted fresh.",synthetic
+UDR-0016,Upscale Dining Room,2026-03-13,4,Kate L.,"Loved the dal makhani, easily one of the best I have had. It was very loud, hard to have a conversation. A bit pricey but worth it for the experience.",synthetic
+UDR-0130,Upscale Dining Room,2026-03-13,5,Omar R.,"Loved the garlic naan, easily one of the best I have had. A bit pricey but worth it for the experience.",synthetic
+FHE-0009,Food Hall Express,2026-03-13,4,Vikas R.,"Generous portions, we took leftovers home.",synthetic
+UDR-0212,Upscale Dining Room,2026-03-14,5,Kate D.,"Our server Rohan gave great recommendations. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0032,Neighborhood Bistro A,2026-03-14,2,Raj H.,"The tandoori chicken was dry and a bit disappointing. Food was too mild, it needed more spice and seasoning.",synthetic
+NBB-0051,Neighborhood Bistro B,2026-03-14,5,Mike L.,"The malai kofta was rich and full of flavor. Shout out to Arjun, amazing hospitality. Very clean restaurant and restrooms.",synthetic
+FHE-0083,Food Hall Express,2026-03-14,2,Priya H.,"Prices are on the high side for what you get. Portions were small for the price, barely any chicken in the bowl.",synthetic
+UDR-0131,Upscale Dining Room,2026-03-15,5,Alex R.,"A bit pricey but worth it for the experience. Our server Asha gave great recommendations. Spice level was spot on, they asked how hot we wanted it.",synthetic
+UDR-0217,Upscale Dining Room,2026-03-15,5,Raj A.,"Loved the dal makhani, easily one of the best I have had. The decor is beautiful, it feels like a special night out. Meera was so warm and attentive, made our night. Prices are on the high side for what you get.",synthetic
+NBA-0161,Neighborhood Bistro A,2026-03-15,5,Chris N.,Our server Kabir gave great recommendations. They catered our wedding for 250 guests and everyone loved it.,synthetic
+UDR-0258,Upscale Dining Room,2026-03-16,5,Priya C.,"Loved the train station theme, so unique. Very clean restaurant and restrooms.",synthetic
+FHE-0049,Food Hall Express,2026-03-16,3,Sam A.,"Great value for the price. Prices are on the high side for what you get. Spice level was spot on, they asked how hot we wanted it. The momos was dry and a bit disappointing.",synthetic
+FHE-0082,Food Hall Express,2026-03-16,4,Leo N.,The chicken tikka masala was perfectly cooked and tasted fresh. Flavors felt diluted and bland for Indian food.,synthetic
+UDR-0149,Upscale Dining Room,2026-03-17,5,Ana N.,"Loved the mango lassi, easily one of the best I have had.",synthetic
+NBA-0247,Neighborhood Bistro A,2026-03-17,5,Alex P.,The lamb rogan josh was perfectly cooked and tasted fresh.,synthetic
+NBA-0289,Neighborhood Bistro A,2026-03-17,3,Sam G.,"Loved the momos, easily one of the best I have had. Tables were sticky and the restroom needed attention. Even when we asked for spicy, the garlic naan had barely any heat.",synthetic
+UDR-0028,Upscale Dining Room,2026-03-18,5,Omar E.,"The tandoori chicken was perfectly cooked and tasted fresh. Shout out to Asha, amazing hospitality. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0139,Neighborhood Bistro A,2026-03-18,5,Alex T.,The fish curry was perfectly cooked and tasted fresh. Our server Nisha gave great recommendations. Great balance of spices in every dish.,synthetic
+UDR-0239,Upscale Dining Room,2026-03-19,5,Priya C.,"A bit pricey but worth it for the experience. Our server Meera gave great recommendations. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0112,Neighborhood Bistro B,2026-03-19,5,Ana M.,"Arjun was so warm and attentive, made our night. Loved the pani puri, easily one of the best I have had.",synthetic
+UDR-0170,Upscale Dining Room,2026-03-20,4,Sam T.,"Loved the train station theme, so unique. Shout out to Meera, amazing hospitality. The chicken biryani was perfectly cooked and tasted fresh. Long wait between courses, the kitchen seemed overwhelmed. Prices are on the high side for what you get.",synthetic
+NBA-0043,Neighborhood Bistro A,2026-03-20,4,Emily T.,The baingan bharta was rich and full of flavor.,synthetic
+UDR-0122,Upscale Dining Room,2026-03-21,5,Neha N.,"Loved the chicken biryani, easily one of the best I have had. A bit pricey but worth it for the experience. Shout out to Meera, amazing hospitality.",synthetic
+NBA-0004,Neighborhood Bistro A,2026-03-21,2,Raj R.,"Quality has gone down compared to our last few visits. Food was too mild, it needed more spice and seasoning. The mango lassi was rich and full of flavor.",synthetic
+NBA-0295,Neighborhood Bistro A,2026-03-21,2,Maria E.,"Flavors felt diluted and bland for Indian food. The garlic naan was just okay, nothing special. Loved the train station theme, so unique. Our server Kabir gave great recommendations.",synthetic
+NBA-0291,Neighborhood Bistro A,2026-03-23,3,Isha K.,"Quality has gone down compared to our last few visits. Used them for an office event, food and setup were excellent.",synthetic
+NBB-0062,Neighborhood Bistro B,2026-03-23,4,Kate T.,"Arjun was so warm and attentive, made our night.",synthetic
+NBA-0063,Neighborhood Bistro A,2026-03-24,3,Jordan L.,"Our server Kabir gave great recommendations. Food was too mild, it needed more spice and seasoning. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0080,Neighborhood Bistro A,2026-03-24,4,Kate A.,"The tandoori chicken was just okay, nothing special. Our server Nisha gave great recommendations. Catering for our family party was perfect and on time.",synthetic
+FHE-0044,Food Hall Express,2026-03-24,3,Ben G.,"Paid over $20 for a bowl and a drink, not worth it.",synthetic
+UDR-0051,Upscale Dining Room,2026-03-25,5,Lena W.,Food came out quickly even on a busy night. The pani puri was rich and full of flavor.,synthetic
+NBA-0052,Neighborhood Bistro A,2026-03-25,3,Alex L.,Takeout order was missing an item. The malai kofta was perfectly cooked and tasted fresh.,synthetic
+NBA-0191,Neighborhood Bistro A,2026-03-25,1,Vikas D.,"Our server Nisha gave great recommendations. The chana masala was just okay, nothing special. Food was too mild, it needed more spice and seasoning. Takeout order was missing an item.",synthetic
+NBB-0198,Neighborhood Bistro B,2026-03-25,4,Sana K.,"Shout out to Arjun, amazing hospitality.",synthetic
+UDR-0040,Upscale Dining Room,2026-03-26,5,Tom K.,"Meera was so warm and attentive, made our night. The palak paneer was perfectly cooked and tasted fresh. A bit pricey but worth it for the experience. Service was really slow, we waited almost an hour for our mains.",synthetic
+UDR-0147,Upscale Dining Room,2026-03-26,4,Leo N.,"Loved the palak paneer, easily one of the best I have had.",synthetic
+UDR-0251,Upscale Dining Room,2026-03-26,5,Kate C.,"Our server Meera gave great recommendations. The decor is beautiful, it feels like a special night out. The palak paneer was perfectly cooked and tasted fresh.",synthetic
+UDR-0254,Upscale Dining Room,2026-03-27,5,Alex J.,"Shout out to Asha, amazing hospitality.",synthetic
+NBA-0018,Neighborhood Bistro A,2026-03-27,2,Neha G.,"The fish curry was dry and a bit disappointing. Shout out to Kabir, amazing hospitality. The fish curry used to be amazing, this time it tasted different.",synthetic
+NBA-0239,Neighborhood Bistro A,2026-03-27,4,Raj A.,"The fish curry was rich and full of flavor. Even when we asked for spicy, the dal makhani had barely any heat.",synthetic
+NBB-0124,Neighborhood Bistro B,2026-03-27,5,Alex E.,"The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0002,Upscale Dining Room,2026-03-28,5,Jordan F.,The malai kofta was perfectly cooked and tasted fresh.,synthetic
+UDR-0207,Upscale Dining Room,2026-03-28,5,Omar S.,"Loved the train station theme, so unique. Very clean restaurant and restrooms. The butter chicken was rich and full of flavor.",synthetic
+NBA-0240,Neighborhood Bistro A,2026-03-28,3,Chris W.,"Loved the chicken tikka masala, easily one of the best I have had. Flavors felt diluted and bland for Indian food.",synthetic
+UDR-0105,Upscale Dining Room,2026-03-29,5,Isha W.,The chicken biryani was perfectly cooked and tasted fresh.,synthetic
+NBA-0105,Neighborhood Bistro A,2026-03-29,4,Sana A.,"Very clean restaurant and restrooms. Food was too mild, it needed more spice and seasoning.",synthetic
+NBB-0133,Neighborhood Bistro B,2026-03-29,5,Sam D.,The fish curry was perfectly cooked and tasted fresh.,synthetic
+UDR-0046,Upscale Dining Room,2026-03-30,5,Alex L.,"The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0107,Neighborhood Bistro A,2026-03-30,4,Maria H.,"Cozy and calm atmosphere, great for a date. They catered our wedding for 250 guests and everyone loved it. The lamb rogan josh was just okay, nothing special.",synthetic
+NBA-0227,Neighborhood Bistro A,2026-03-30,5,Vikas G.,"Spice level was spot on, they asked how hot we wanted it.",synthetic
+NBB-0169,Neighborhood Bistro B,2026-03-30,5,Mike A.,"Arjun was so warm and attentive, made our night. Loved the chicken biryani, easily one of the best I have had.",synthetic
+FHE-0023,Food Hall Express,2026-03-30,5,Mike S.,The fish curry was perfectly cooked and tasted fresh.,synthetic
+NBA-0056,Neighborhood Bistro A,2026-03-31,5,Ana A.,"Loved the momos, easily one of the best I have had.",synthetic
+NBB-0065,Neighborhood Bistro B,2026-03-31,5,Sana N.,"Takeout was packed well and still hot at home. Our server Tara gave great recommendations. The decor is beautiful, it feels like a special night out.",synthetic
+FHE-0113,Food Hall Express,2026-04-01,4,Jordan K.,The malai kofta was perfectly cooked and tasted fresh.,synthetic
+UDR-0235,Upscale Dining Room,2026-04-02,5,Sana P.,"The decor is beautiful, it feels like a special night out. Shout out to Asha, amazing hospitality. The mango lassi was perfectly cooked and tasted fresh.",synthetic
+UDR-0039,Upscale Dining Room,2026-04-03,5,Leo S.,"Our server Asha gave great recommendations. Loved the train station theme, so unique.",synthetic
+UDR-0091,Upscale Dining Room,2026-04-03,5,Tom B.,"Loved the chicken tikka masala, easily one of the best I have had.",synthetic
+NBB-0075,Neighborhood Bistro B,2026-04-03,5,Maria C.,"Generous portions, we took leftovers home. The dal makhani was rich and full of flavor.",synthetic
+NBB-0209,Neighborhood Bistro B,2026-04-03,4,Ana G.,"The garlic naan was rich and full of flavor. It was very loud, hard to have a conversation. Arjun was so warm and attentive, made our night.",synthetic
+UDR-0095,Upscale Dining Room,2026-04-06,5,Omar E.,"Loved the train station theme, so unique. Very clean restaurant and restrooms.",synthetic
+FHE-0025,Food Hall Express,2026-04-06,4,Mike L.,"Prices are on the high side for what you get. Shout out to Dev, amazing hospitality.",synthetic
+FHE-0065,Food Hall Express,2026-04-06,4,Maria F.,Service was fast and smooth.,synthetic
+NBA-0128,Neighborhood Bistro A,2026-04-07,5,Maria H.,"Loved the chicken tikka masala, easily one of the best I have had.",synthetic
+FHE-0031,Food Hall Express,2026-04-07,2,Omar R.,"Very stingy with the meat, mostly rice. Flavors felt diluted and bland for Indian food.",synthetic
+FHE-0112,Food Hall Express,2026-04-09,5,Mike H.,"Loved the momos, easily one of the best I have had.",synthetic
+NBA-0050,Neighborhood Bistro A,2026-04-10,5,Chris R.,The goat curry was rich and full of flavor.,synthetic
+FHE-0004,Food Hall Express,2026-04-10,3,Maria R.,"Portions were small for the price, barely any chicken in the bowl. The chicken tikka masala was perfectly cooked and tasted fresh.",synthetic
+UDR-0225,Upscale Dining Room,2026-04-11,5,Neha T.,Our server Rohan gave great recommendations. The malai kofta was perfectly cooked and tasted fresh. A bit pricey but worth it for the experience.,synthetic
+NBB-0131,Neighborhood Bistro B,2026-04-11,5,Alex S.,"Shout out to Tara, amazing hospitality. Takeout was packed well and still hot at home. The decor is beautiful, it feels like a special night out. Every visit the food is just as good as the last.",synthetic
+NBA-0045,Neighborhood Bistro A,2026-04-12,4,Ben H.,"The decor is beautiful, it feels like a special night out. The malai kofta was just okay, nothing special.",synthetic
+UDR-0056,Upscale Dining Room,2026-04-13,3,Kate B.,"Staff felt rushed and not very friendly. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBA-0096,Neighborhood Bistro A,2026-04-13,5,Sana H.,The chicken tikka masala was perfectly cooked and tasted fresh.,synthetic
+UDR-0138,Upscale Dining Room,2026-04-14,5,Lena B.,"Shout out to Asha, amazing hospitality. Loved the train station theme, so unique.",synthetic
+FHE-0006,Food Hall Express,2026-04-14,5,Ben F.,Our server Dev gave great recommendations. Great value for the price.,synthetic
+FHE-0087,Food Hall Express,2026-04-14,2,Emily W.,"Prices are on the high side for what you get. Loved the chana masala, easily one of the best I have had. Our server seemed distracted and hard to flag down.",synthetic
+UDR-0210,Upscale Dining Room,2026-04-15,5,Maria A.,"Cozy and calm atmosphere, great for a date. The mango lassi was perfectly cooked and tasted fresh. Got a table quickly even without a reservation. Spice level was spot on, they asked how hot we wanted it.",synthetic
+NBB-0204,Neighborhood Bistro B,2026-04-15,4,Tom H.,"Shout out to Tara, amazing hospitality.",synthetic
+NBA-0017,Neighborhood Bistro A,2026-04-16,5,Mike R.,Catering for our family party was perfect and on time. Great balance of spices in every dish. Our server Nisha gave great recommendations. The goat curry was perfectly cooked and tasted fresh.,synthetic
+NBA-0027,Neighborhood Bistro A,2026-04-16,4,Alex E.,"Flavors felt diluted and bland for Indian food. Loved the tandoori chicken, easily one of the best I have had. Takeout was packed well and still hot at home.",synthetic
+NBA-0146,Neighborhood Bistro A,2026-04-17,5,Sana F.,"Loved the baingan bharta, easily one of the best I have had. They catered our wedding for 250 guests and everyone loved it. Kabir was so warm and attentive, made our night.",synthetic
+UDR-0077,Upscale Dining Room,2026-04-18,5,Priya S.,The butter chicken was perfectly cooked and tasted fresh.,synthetic
+NBA-0092,Neighborhood Bistro A,2026-04-18,5,Sam G.,"Loved the train station theme, so unique.",synthetic
+UDR-0202,Upscale Dining Room,2026-04-20,5,Chris L.,"Cozy and calm atmosphere, great for a date. Very clean restaurant and restrooms. Shout out to Meera, amazing hospitality. The tandoori chicken was rich and full of flavor.",synthetic
+NBA-0069,Neighborhood Bistro A,2026-04-20,3,Ana M.,"The tandoori chicken was just okay, nothing special. Catering for our family party was perfect and on time. Even when we asked for spicy, the garlic naan had barely any heat.",synthetic
+NBB-0071,Neighborhood Bistro B,2026-04-20,3,Isha K.,"Staff felt rushed and not very friendly. The dal makhani was dry and a bit disappointing. Generous portions, we took leftovers home.",synthetic
+FHE-0057,Food Hall Express,2026-04-20,3,Omar A.,"Prices are on the high side for what you get. Loved the lamb rogan josh, easily one of the best I have had. Paid over $20 for a bowl and a drink, not worth it.",synthetic
+NBA-0130,Neighborhood Bistro A,2026-04-21,4,Alex E.,"Cozy and calm atmosphere, great for a date. Loved the pani puri, easily one of the best I have had. Catering for our family party was perfect and on time. Flavors felt diluted and bland for Indian food.",synthetic
+NBB-0190,Neighborhood Bistro B,2026-04-21,3,Vikas D.,Staff felt rushed and not very friendly.,synthetic
+UDR-0041,Upscale Dining Room,2026-04-22,5,Omar P.,"Very clean restaurant and restrooms. The malai kofta was rich and full of flavor. Service was fast and smooth. Meera was so warm and attentive, made our night.",synthetic
+UDR-0064,Upscale Dining Room,2026-04-22,5,Vikas B.,A bit pricey but worth it for the experience. Our server Meera gave great recommendations. The chana masala was perfectly cooked and tasted fresh.,synthetic
+NBA-0089,Neighborhood Bistro A,2026-04-22,4,Chris H.,"Catering for our family party was perfect and on time. Kabir was so warm and attentive, made our night.",synthetic
+NBB-0049,Neighborhood Bistro B,2026-04-22,4,Leo S.,"Our server Arjun gave great recommendations. Very stingy with the meat, mostly rice.",synthetic
+FHE-0032,Food Hall Express,2026-04-22,5,Tom C.,A bit pricey but worth it for the experience.,synthetic
+FHE-0107,Food Hall Express,2026-04-22,4,Isha K.,The chicken biryani was perfectly cooked and tasted fresh.,synthetic
+NBA-0058,Neighborhood Bistro A,2026-04-23,5,Leo M.,"Catering for our family party was perfect and on time. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0087,Neighborhood Bistro A,2026-04-23,5,Neha B.,"Takeout was packed well and still hot at home. Shout out to Kabir, amazing hospitality.",synthetic
+NBB-0129,Neighborhood Bistro B,2026-04-23,4,Emily L.,"Tara was so warm and attentive, made our night. The goat curry was dry and a bit disappointing.",synthetic
+UDR-0250,Upscale Dining Room,2026-04-24,3,Leo A.,"The tandoori chicken was dry and a bit disappointing. Loved the train station theme, so unique. Long wait between courses, the kitchen seemed overwhelmed.",synthetic
+NBA-0024,Neighborhood Bistro A,2026-04-24,5,Emily M.,"They catered our wedding for 250 guests and everyone loved it. Our server Kabir gave great recommendations. The dal makhani was perfectly cooked and tasted fresh. Very clean restaurant and restrooms. Even when we asked for spicy, the goat curry had barely any heat. Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0068,Neighborhood Bistro B,2026-04-24,5,Emily H.,The chicken biryani was rich and full of flavor.,synthetic
+NBB-0083,Neighborhood Bistro B,2026-04-24,5,Lena W.,"Loved the mango lassi, easily one of the best I have had.",synthetic
+UDR-0092,Upscale Dining Room,2026-04-25,5,Neha R.,"Loved the goat curry, easily one of the best I have had.",synthetic
+NBB-0176,Neighborhood Bistro B,2026-04-25,5,Sana H.,Takeout was packed well and still hot at home. The mango lassi was perfectly cooked and tasted fresh.,synthetic
+UDR-0101,Upscale Dining Room,2026-04-26,5,Chris N.,"The decor is beautiful, it feels like a special night out. Great balance of spices in every dish.",synthetic
+UDR-0195,Upscale Dining Room,2026-04-26,5,Raj L.,"Rohan was so warm and attentive, made our night. Loved the dal makhani, easily one of the best I have had. Food came out quickly even on a busy night.",synthetic
+FHE-0030,Food Hall Express,2026-04-26,4,Ana F.,The baingan bharta was perfectly cooked and tasted fresh.,synthetic
+UDR-0032,Upscale Dining Room,2026-04-27,5,Vikas S.,"The decor is beautiful, it feels like a special night out. Shout out to Meera, amazing hospitality. Loved the garlic naan, easily one of the best I have had.",synthetic
+NBA-0140,Neighborhood Bistro A,2026-04-27,5,Sam T.,"Loved the pani puri, easily one of the best I have had.",synthetic
+NBB-0093,Neighborhood Bistro B,2026-04-27,5,Maria R.,"Consistently great, we come back every month. Very clean restaurant and restrooms.",synthetic
+UDR-0190,Upscale Dining Room,2026-04-28,5,Sam T.,A bit pricey but worth it for the experience.,synthetic
+UDR-0220,Upscale Dining Room,2026-04-28,2,Ben G.,"The goat curry was rich and full of flavor. Food was too mild, it needed more spice and seasoning. Prices are on the high side for what you get.",synthetic
+NBA-0025,Neighborhood Bistro A,2026-04-29,4,Alex F.,"Kabir was so warm and attentive, made our night. Food was too mild, it needed more spice and seasoning. The goat curry was perfectly cooked and tasted fresh.",synthetic
+NBA-0162,Neighborhood Bistro A,2026-04-29,3,Raj C.,"The fish curry was perfectly cooked and tasted fresh. Food was too mild, it needed more spice and seasoning.",synthetic
+NBA-0178,Neighborhood Bistro A,2026-04-29,5,Alex C.,"Nisha was so warm and attentive, made our night. The garlic naan was perfectly cooked and tasted fresh.",synthetic
+NBA-0215,Neighborhood Bistro A,2026-04-29,4,Vikas C.,"The lamb rogan josh was just okay, nothing special. Cozy and calm atmosphere, great for a date. Shout out to Kabir, amazing hospitality.",synthetic
+FHE-0002,Food Hall Express,2026-04-29,4,Isha A.,Flavors felt diluted and bland for Indian food.,synthetic
+UDR-0156,Upscale Dining Room,2026-04-30,4,Mike R.,"Asha was so warm and attentive, made our night. Even when we asked for spicy, the dal makhani had barely any heat. Loved the train station theme, so unique.",synthetic
+NBA-0026,Neighborhood Bistro A,2026-04-30,5,Priya C.,"Loved the momos, easily one of the best I have had.",synthetic
+NBA-0253,Neighborhood Bistro A,2026-04-30,5,Emily D.,The lamb rogan josh was perfectly cooked and tasted fresh.,synthetic
+FHE-0013,Food Hall Express,2026-04-30,3,Chris K.,"Very stingy with the meat, mostly rice. The goat curry was perfectly cooked and tasted fresh.",synthetic
+FHE-0142,Food Hall Express,2026-04-30,5,Maria T.,"Shout out to Dev, amazing hospitality. The baingan bharta was perfectly cooked and tasted fresh.",synthetic
+NBA-0201,Neighborhood Bistro A,2026-05-01,5,Vikas L.,The fish curry was perfectly cooked and tasted fresh. Great balance of spices in every dish.,synthetic
+UDR-0164,Upscale Dining Room,2026-05-02,5,Sam T.,"Loved the chicken tikka masala, easily one of the best I have had.",synthetic
+NBB-0214,Neighborhood Bistro B,2026-05-02,3,Emily B.,"Our server seemed distracted and hard to flag down. Loved the tandoori chicken, easily one of the best I have had.",synthetic
+UDR-0063,Upscale Dining Room,2026-05-03,5,Vikas W.,"Loved the malai kofta, easily one of the best I have had. It took forever to get our order and the check. Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0072,Neighborhood Bistro B,2026-05-03,5,Tom S.,"The malai kofta was rich and full of flavor. Arjun was so warm and attentive, made our night.",synthetic
+FHE-0076,Food Hall Express,2026-05-03,4,Emily E.,The chicken tikka masala was rich and full of flavor.,synthetic
+UDR-0186,Upscale Dining Room,2026-05-04,5,Raj B.,The baingan bharta was perfectly cooked and tasted fresh.,synthetic
+FHE-0046,Food Hall Express,2026-05-05,4,Jordan W.,"Loved the pani puri, easily one of the best I have had. Paid over $20 for a bowl and a drink, not worth it. Service was fast and smooth.",synthetic
+UDR-0259,Upscale Dining Room,2026-05-06,4,Maria E.,"It was very loud, hard to have a conversation. Loved the chicken biryani, easily one of the best I have had.",synthetic
+NBA-0144,Neighborhood Bistro A,2026-05-06,3,Isha N.,Takeout order was missing an item.,synthetic
+NBB-0194,Neighborhood Bistro B,2026-05-06,5,Sana N.,"Takeout was packed well and still hot at home. Shout out to Arjun, amazing hospitality.",synthetic
+NBB-0158,Neighborhood Bistro B,2026-05-07,5,Maria M.,"The baingan bharta was perfectly cooked and tasted fresh. The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0073,Upscale Dining Room,2026-05-08,5,Maria F.,"The decor is beautiful, it feels like a special night out. Rohan was so warm and attentive, made our night.",synthetic
+FHE-0070,Food Hall Express,2026-05-08,4,Chris D.,Prices are on the high side for what you get. Great value for the price.,synthetic
+UDR-0208,Upscale Dining Room,2026-05-09,5,Ana G.,"Asha was so warm and attentive, made our night. Loved the butter chicken, easily one of the best I have had. Loved the train station theme, so unique.",synthetic
+NBA-0268,Neighborhood Bistro A,2026-05-09,5,Leo R.,"Loved the train station theme, so unique.",synthetic
+NBB-0217,Neighborhood Bistro B,2026-05-09,4,Alex R.,"Generous portions, we took leftovers home. The malai kofta was just okay, nothing special. Our server Arjun gave great recommendations.",synthetic
+NBA-0108,Neighborhood Bistro A,2026-05-10,4,Vikas L.,"Spice level was spot on, they asked how hot we wanted it. Very clean restaurant and restrooms. It was very loud, hard to have a conversation.",synthetic
+NBA-0112,Neighborhood Bistro A,2026-05-10,4,Kate L.,"Loved the chicken biryani, easily one of the best I have had. Flavors felt diluted and bland for Indian food.",synthetic
+NBA-0116,Neighborhood Bistro A,2026-05-10,2,Vikas B.,The momos was dry and a bit disappointing. Tables were sticky and the restroom needed attention.,synthetic
+NBA-0294,Neighborhood Bistro A,2026-05-10,3,Jordan P.,"The garlic naan was rich and full of flavor. Food was too mild, it needed more spice and seasoning.",synthetic
+NBA-0131,Neighborhood Bistro A,2026-05-11,4,Neha N.,"It was very loud, hard to have a conversation.",synthetic
+NBA-0297,Neighborhood Bistro A,2026-05-11,4,Alex S.,"Kabir was so warm and attentive, made our night. The pani puri was just okay, nothing special.",synthetic
+NBB-0147,Neighborhood Bistro B,2026-05-11,5,Priya T.,"Generous portions, we took leftovers home. Shout out to Arjun, amazing hospitality.",synthetic
+NBA-0228,Neighborhood Bistro A,2026-05-12,3,Ana B.,Flavors felt diluted and bland for Indian food.,synthetic
+NBB-0153,Neighborhood Bistro B,2026-05-12,5,Lena B.,"Tara was so warm and attentive, made our night.",synthetic
+UDR-0090,Upscale Dining Room,2026-05-13,3,Kate H.,"Very clean restaurant and restrooms. Long wait between courses, the kitchen seemed overwhelmed. Our server Meera gave great recommendations. Even with a reservation we waited 30 minutes to be seated.",synthetic
+NBA-0150,Neighborhood Bistro A,2026-05-13,5,Kate K.,"Our server Kabir gave great recommendations. Very clean restaurant and restrooms. Even when we asked for spicy, the fish curry had barely any heat. The goat curry was perfectly cooked and tasted fresh.",synthetic
+NBA-0111,Neighborhood Bistro A,2026-05-14,5,Priya E.,"The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0067,Upscale Dining Room,2026-05-15,5,Maria K.,Our server Rohan gave great recommendations. The momos was rich and full of flavor. Got a table quickly even without a reservation.,synthetic
+UDR-0158,Upscale Dining Room,2026-05-15,5,Omar K.,"Cozy and calm atmosphere, great for a date. A bit pricey but worth it for the experience.",synthetic
+NBA-0266,Neighborhood Bistro A,2026-05-15,5,Kate E.,"Nisha was so warm and attentive, made our night. Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0103,Upscale Dining Room,2026-05-16,5,Leo G.,"The decor is beautiful, it feels like a special night out. Rohan was so warm and attentive, made our night. The baingan bharta was rich and full of flavor.",synthetic
+FHE-0110,Food Hall Express,2026-05-16,3,Vikas E.,Prices are on the high side for what you get. The garlic naan was dry and a bit disappointing. Our server Dev gave great recommendations.,synthetic
+FHE-0128,Food Hall Express,2026-05-16,3,Neha C.,"Very stingy with the meat, mostly rice.",synthetic
+FHE-0027,Food Hall Express,2026-05-18,3,Maria C.,Our server seemed distracted and hard to flag down. Great value for the price. The pani puri was dry and a bit disappointing.,synthetic
+NBA-0202,Neighborhood Bistro A,2026-05-19,4,Tom E.,"Shout out to Kabir, amazing hospitality.",synthetic
+NBB-0039,Neighborhood Bistro B,2026-05-19,4,Priya D.,"The goat curry was just okay, nothing special. Arjun was so warm and attentive, made our night.",synthetic
+NBB-0189,Neighborhood Bistro B,2026-05-19,5,Chris W.,Takeout was packed well and still hot at home.,synthetic
+NBA-0028,Neighborhood Bistro A,2026-05-21,5,Lena M.,"The baingan bharta was rich and full of flavor. Used them for an office event, food and setup were excellent.",synthetic
+NBA-0097,Neighborhood Bistro A,2026-05-21,5,Sam F.,"Loved the baingan bharta, easily one of the best I have had. Shout out to Nisha, amazing hospitality. Spice level was spot on, they asked how hot we wanted it.",synthetic
+NBA-0127,Neighborhood Bistro A,2026-05-21,3,Priya L.,The palak paneer was dry and a bit disappointing.,synthetic
+NBB-0024,Neighborhood Bistro B,2026-05-21,4,Leo B.,The tandoori chicken was perfectly cooked and tasted fresh.,synthetic
+NBA-0280,Neighborhood Bistro A,2026-05-22,5,Alex L.,"Cozy and calm atmosphere, great for a date. Catering for our family party was perfect and on time.",synthetic
+NBB-0076,Neighborhood Bistro B,2026-05-22,5,Sana A.,"Consistently great, we come back every month. Very clean restaurant and restrooms.",synthetic
+FHE-0097,Food Hall Express,2026-05-22,4,Ben W.,The baingan bharta was rich and full of flavor. Great value for the price. Prices are on the high side for what you get.,synthetic
+UDR-0007,Upscale Dining Room,2026-05-23,5,Mike G.,Prices are on the high side for what you get. Food came out quickly even on a busy night. The goat curry was rich and full of flavor. Got a table quickly even without a reservation.,synthetic
+NBA-0187,Neighborhood Bistro A,2026-05-23,5,Sana P.,Great balance of spices in every dish.,synthetic
+NBB-0218,Neighborhood Bistro B,2026-05-23,3,Alex L.,The baingan bharta was dry and a bit disappointing.,synthetic
+FHE-0092,Food Hall Express,2026-05-23,5,Kate T.,Service was fast and smooth. The dal makhani was rich and full of flavor.,synthetic
+NBA-0166,Neighborhood Bistro A,2026-05-24,5,Jordan M.,"Spice level was spot on, they asked how hot we wanted it.",synthetic
+FHE-0138,Food Hall Express,2026-05-24,4,Lena K.,"Generous portions, we took leftovers home. Prices are on the high side for what you get. Our server Dev gave great recommendations.",synthetic
+UDR-0075,Upscale Dining Room,2026-05-25,4,Ana B.,"Cozy and calm atmosphere, great for a date. The malai kofta was perfectly cooked and tasted fresh. Prices are on the high side for what you get.",synthetic
+UDR-0166,Upscale Dining Room,2026-05-25,5,Priya H.,"Shout out to Asha, amazing hospitality. A bit pricey but worth it for the experience. Very clean restaurant and restrooms.",synthetic
+NBB-0183,Neighborhood Bistro B,2026-05-25,5,Sam M.,"Loved the palak paneer, easily one of the best I have had.",synthetic
+UDR-0018,Upscale Dining Room,2026-05-26,5,Jordan K.,"Loved the train station theme, so unique.",synthetic
+UDR-0227,Upscale Dining Room,2026-05-26,4,Ana D.,The chicken tikka masala was perfectly cooked and tasted fresh.,synthetic
+UDR-0244,Upscale Dining Room,2026-05-26,5,Omar K.,"Spice level was spot on, they asked how hot we wanted it. Cozy and calm atmosphere, great for a date. Asha was so warm and attentive, made our night.",synthetic
+NBA-0143,Neighborhood Bistro A,2026-05-26,5,Chris C.,"Shout out to Nisha, amazing hospitality. The butter chicken was perfectly cooked and tasted fresh.",synthetic
+NBB-0134,Neighborhood Bistro B,2026-05-26,5,Raj B.,The palak paneer was rich and full of flavor.,synthetic
+NBA-0142,Neighborhood Bistro A,2026-05-27,4,Ben D.,"Kabir was so warm and attentive, made our night. Loved the train station theme, so unique.",synthetic
+NBB-0078,Neighborhood Bistro B,2026-05-27,5,Neha L.,"Consistently great, we come back every month. Loved the momos, easily one of the best I have had. Generous portions, we took leftovers home.",synthetic
+NBB-0081,Neighborhood Bistro B,2026-05-27,5,Jordan K.,"Arjun was so warm and attentive, made our night.",synthetic
+NBB-0167,Neighborhood Bistro B,2026-05-27,5,Leo P.,"Very clean restaurant and restrooms. Every visit the food is just as good as the last. Loved the dal makhani, easily one of the best I have had.",synthetic
+NBA-0048,Neighborhood Bistro A,2026-05-28,4,Priya L.,"Food was too mild, it needed more spice and seasoning. Very clean restaurant and restrooms.",synthetic
+UDR-0098,Upscale Dining Room,2026-05-29,5,Sana H.,"Loved the train station theme, so unique. Our server Asha gave great recommendations.",synthetic
+UDR-0134,Upscale Dining Room,2026-05-29,4,Kate H.,"Our server Rohan gave great recommendations. The butter chicken was just okay, nothing special.",synthetic
+NBB-0130,Neighborhood Bistro B,2026-05-29,4,Emily L.,"Paid over $20 for a bowl and a drink, not worth it. Shout out to Tara, amazing hospitality.",synthetic
+NBB-0203,Neighborhood Bistro B,2026-05-29,5,Raj F.,The palak paneer was rich and full of flavor.,synthetic
+FHE-0024,Food Hall Express,2026-05-29,3,Sam R.,"Paid over $20 for a bowl and a drink, not worth it.",synthetic
+NBB-0113,Neighborhood Bistro B,2026-05-30,5,Kate M.,"Loved the train station theme, so unique. Arjun was so warm and attentive, made our night.",synthetic
+FHE-0127,Food Hall Express,2026-05-30,4,Isha L.,"Shout out to Dev, amazing hospitality. Very stingy with the meat, mostly rice. The goat curry was perfectly cooked and tasted fresh.",synthetic
+NBB-0162,Neighborhood Bistro B,2026-05-31,4,Ana K.,The tandoori chicken was rich and full of flavor.,synthetic
+UDR-0232,Upscale Dining Room,2026-06-01,4,Emily L.,"Prices are on the high side for what you get. Shout out to Rohan, amazing hospitality.",synthetic
+UDR-0022,Upscale Dining Room,2026-06-02,5,Sam C.,"Rohan was so warm and attentive, made our night. Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0062,Upscale Dining Room,2026-06-02,5,Jordan T.,"Loved the butter chicken, easily one of the best I have had.",synthetic
+NBB-0164,Neighborhood Bistro B,2026-06-02,4,Leo C.,"Our server Tara gave great recommendations. Loved the train station theme, so unique. Paid over $20 for a bowl and a drink, not worth it. The tandoori chicken was rich and full of flavor.",synthetic
+FHE-0042,Food Hall Express,2026-06-03,3,Kate N.,Food came out quickly even on a busy night. Prices are on the high side for what you get.,synthetic
+UDR-0107,Upscale Dining Room,2026-06-04,3,Vikas F.,The chicken tikka masala was dry and a bit disappointing. Staff felt rushed and not very friendly.,synthetic
+NBA-0196,Neighborhood Bistro A,2026-06-04,5,Lena P.,"Takeout was packed well and still hot at home. Shout out to Nisha, amazing hospitality. They catered our wedding for 250 guests and everyone loved it. The dal makhani was perfectly cooked and tasted fresh.",synthetic
+NBB-0004,Neighborhood Bistro B,2026-06-04,5,Isha N.,The chicken tikka masala was perfectly cooked and tasted fresh. Very clean restaurant and restrooms.,synthetic
+FHE-0141,Food Hall Express,2026-06-04,4,Ben A.,"The baingan bharta was rich and full of flavor. Dev was so warm and attentive, made our night. Very stingy with the meat, mostly rice.",synthetic
+UDR-0248,Upscale Dining Room,2026-06-05,5,Tom C.,"Meera was so warm and attentive, made our night. The goat curry was perfectly cooked and tasted fresh.",synthetic
+UDR-0047,Upscale Dining Room,2026-06-06,5,Mike M.,"Our server Meera gave great recommendations. The decor is beautiful, it feels like a special night out.",synthetic
+UDR-0240,Upscale Dining Room,2026-06-06,5,Vikas N.,"Rohan was so warm and attentive, made our night. The chana masala was perfectly cooked and tasted fresh. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0035,Neighborhood Bistro A,2026-06-06,4,Sam T.,The tandoori chicken was dry and a bit disappointing.,synthetic
+NBA-0114,Neighborhood Bistro A,2026-06-06,4,Ana P.,"Food was too mild, it needed more spice and seasoning. Shout out to Nisha, amazing hospitality.",synthetic
+FHE-0125,Food Hall Express,2026-06-06,3,Isha A.,"Service was fast and smooth. Very stingy with the meat, mostly rice. The malai kofta was just okay, nothing special. Dev was so warm and attentive, made our night.",synthetic
+FHE-0017,Food Hall Express,2026-06-07,5,Emily W.,"Loved the lamb rogan josh, easily one of the best I have had. Generous portions, we took leftovers home.",synthetic
+NBA-0064,Neighborhood Bistro A,2026-06-08,4,Alex F.,Flavors felt diluted and bland for Indian food. The goat curry was perfectly cooked and tasted fresh. Takeout was packed well and still hot at home.,synthetic
+FHE-0045,Food Hall Express,2026-06-08,5,Leo C.,"Generous portions, we took leftovers home. The goat curry was rich and full of flavor.",synthetic
+UDR-0245,Upscale Dining Room,2026-06-10,5,Ben B.,The momos was rich and full of flavor.,synthetic
+NBA-0125,Neighborhood Bistro A,2026-06-10,4,Isha C.,"Used them for an office event, food and setup were excellent. Flavors felt diluted and bland for Indian food.",synthetic
+NBA-0269,Neighborhood Bistro A,2026-06-10,5,Ben J.,The mango lassi was rich and full of flavor.,synthetic
+NBA-0051,Neighborhood Bistro A,2026-06-11,4,Jordan G.,The chicken tikka masala was dry and a bit disappointing.,synthetic
+NBB-0102,Neighborhood Bistro B,2026-06-11,3,Chris H.,"Very stingy with the meat, mostly rice. Our server Arjun gave great recommendations. Every visit the food is just as good as the last. The fish curry was just okay, nothing special.",synthetic
+NBA-0066,Neighborhood Bistro A,2026-06-12,5,Mike R.,"Loved the train station theme, so unique. Used them for an office event, food and setup were excellent.",synthetic
+NBA-0261,Neighborhood Bistro A,2026-06-12,5,Lena K.,"Loved the mango lassi, easily one of the best I have had.",synthetic
+FHE-0043,Food Hall Express,2026-06-12,4,Jordan H.,"Great balance of spices in every dish. The fish curry was just okay, nothing special.",synthetic
+NBA-0015,Neighborhood Bistro A,2026-06-13,5,Neha A.,The chicken tikka masala was perfectly cooked and tasted fresh. They catered our wedding for 250 guests and everyone loved it.,synthetic
+NBA-0088,Neighborhood Bistro A,2026-06-14,5,Leo D.,"Loved the lamb rogan josh, easily one of the best I have had. Kabir was so warm and attentive, made our night.",synthetic
+NBA-0098,Neighborhood Bistro A,2026-06-14,5,Emily G.,"Loved the lamb rogan josh, easily one of the best I have had. Takeout was packed well and still hot at home.",synthetic
+FHE-0061,Food Hall Express,2026-06-14,5,Sam H.,The momos was perfectly cooked and tasted fresh.,synthetic
+NBB-0011,Neighborhood Bistro B,2026-06-15,5,Alex W.,"Loved the butter chicken, easily one of the best I have had.",synthetic
+NBB-0074,Neighborhood Bistro B,2026-06-15,5,Priya D.,The dal makhani was rich and full of flavor.,synthetic
+UDR-0109,Upscale Dining Room,2026-06-16,5,Omar B.,"Service was fast and smooth. Cozy and calm atmosphere, great for a date. The dal makhani was rich and full of flavor.",synthetic
+UDR-0140,Upscale Dining Room,2026-06-16,5,Priya K.,"Rohan was so warm and attentive, made our night. Cozy and calm atmosphere, great for a date. The fish curry was rich and full of flavor.",synthetic
+FHE-0090,Food Hall Express,2026-06-16,2,Chris A.,"Paid over $20 for a bowl and a drink, not worth it. The baingan bharta was dry and a bit disappointing.",synthetic
+NBA-0232,Neighborhood Bistro A,2026-06-17,5,Isha M.,The lamb rogan josh was perfectly cooked and tasted fresh.,synthetic
+UDR-0021,Upscale Dining Room,2026-06-18,5,Omar N.,"Loved the lamb rogan josh, easily one of the best I have had. Our server Meera gave great recommendations. Cozy and calm atmosphere, great for a date. Very clean restaurant and restrooms. Food came out quickly even on a busy night.",synthetic
+NBB-0122,Neighborhood Bistro B,2026-06-18,3,Mike A.,"The goat curry was just okay, nothing special. Arjun was so warm and attentive, made our night.",synthetic
+FHE-0033,Food Hall Express,2026-06-18,3,Sam W.,"Portions were small for the price, barely any chicken in the bowl. A bit pricey but worth it for the experience.",synthetic
+UDR-0228,Upscale Dining Room,2026-06-19,5,Sana G.,"The decor is beautiful, it feels like a special night out. Loved the tandoori chicken, easily one of the best I have had. Food came out quickly even on a busy night. Shout out to Asha, amazing hospitality.",synthetic
+NBA-0200,Neighborhood Bistro A,2026-06-19,4,Raj E.,Flavors felt diluted and bland for Indian food. The malai kofta was perfectly cooked and tasted fresh.,synthetic
+NBB-0005,Neighborhood Bistro B,2026-06-19,5,Tom W.,"Shout out to Tara, amazing hospitality.",synthetic
+NBB-0126,Neighborhood Bistro B,2026-06-19,5,Kate F.,"The decor is beautiful, it feels like a special night out. The chana masala was perfectly cooked and tasted fresh.",synthetic
+UDR-0010,Upscale Dining Room,2026-06-20,5,Ana L.,"Meera was so warm and attentive, made our night. A bit pricey but worth it for the experience. Loved the baingan bharta, easily one of the best I have had. Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0050,Upscale Dining Room,2026-06-20,4,Mike D.,"Service was really slow, we waited almost an hour for our mains. Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0083,Upscale Dining Room,2026-06-20,5,Jordan N.,"Rohan was so warm and attentive, made our night. Prices are on the high side for what you get. The chana masala was rich and full of flavor.",synthetic
+UDR-0167,Upscale Dining Room,2026-06-20,4,Alex B.,"Cozy and calm atmosphere, great for a date. Service was really slow, we waited almost an hour for our mains.",synthetic
+UDR-0229,Upscale Dining Room,2026-06-20,5,Ben N.,"Cozy and calm atmosphere, great for a date. The momos was perfectly cooked and tasted fresh.",synthetic
+UDR-0087,Upscale Dining Room,2026-06-21,5,Mike F.,"A bit pricey but worth it for the experience. Spice level was spot on, they asked how hot we wanted it.",synthetic
+UDR-0159,Upscale Dining Room,2026-06-21,3,Isha T.,"Prices are on the high side for what you get. The garlic naan was just okay, nothing special.",synthetic
+UDR-0162,Upscale Dining Room,2026-06-21,3,Leo J.,"Even with a reservation we waited 30 minutes to be seated. Asha was so warm and attentive, made our night.",synthetic
+NBA-0001,Neighborhood Bistro A,2026-06-21,5,Kate C.,"Our server Nisha gave great recommendations. They catered our wedding for 250 guests and everyone loved it. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0138,Neighborhood Bistro A,2026-06-21,3,Raj C.,"Loved the palak paneer, easily one of the best I have had. Even when we asked for spicy, the chicken biryani had barely any heat.",synthetic
+NBB-0006,Neighborhood Bistro B,2026-06-21,5,Sana P.,"Tara was so warm and attentive, made our night. Loved the train station theme, so unique.",synthetic
+UDR-0104,Upscale Dining Room,2026-06-22,5,Lena L.,"Our server Rohan gave great recommendations. Loved the train station theme, so unique.",synthetic
+UDR-0196,Upscale Dining Room,2026-06-22,5,Vikas T.,The goat curry was perfectly cooked and tasted fresh.,synthetic
+UDR-0231,Upscale Dining Room,2026-06-22,5,Priya D.,"Very clean restaurant and restrooms. The decor is beautiful, it feels like a special night out. Our server Rohan gave great recommendations. The malai kofta was rich and full of flavor.",synthetic
+NBA-0210,Neighborhood Bistro A,2026-06-22,3,Lena T.,"It was very loud, hard to have a conversation. The tandoori chicken was perfectly cooked and tasted fresh.",synthetic
+UDR-0238,Upscale Dining Room,2026-06-23,5,Sana D.,"Very clean restaurant and restrooms. A bit pricey but worth it for the experience. The decor is beautiful, it feels like a special night out.",synthetic
+FHE-0147,Food Hall Express,2026-06-23,5,Vikas S.,The tandoori chicken was rich and full of flavor.,synthetic
+FHE-0041,Food Hall Express,2026-06-24,5,Tom J.,"Loved the chicken biryani, easily one of the best I have had. A bit pricey but worth it for the experience. Generous portions, we took leftovers home.",synthetic
+NBA-0060,Neighborhood Bistro A,2026-06-25,5,Ana S.,"The baingan bharta was rich and full of flavor. The decor is beautiful, it feels like a special night out. Consistently great, we come back every month.",synthetic
+NBB-0201,Neighborhood Bistro B,2026-06-25,5,Alex N.,"Every visit the food is just as good as the last. Loved the malai kofta, easily one of the best I have had.",synthetic
+NBA-0203,Neighborhood Bistro A,2026-06-26,5,Alex B.,"The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0206,Neighborhood Bistro A,2026-06-26,3,Alex T.,Takeout order was missing an item. Catering for our family party was perfect and on time. Great balance of spices in every dish. The butter chicken was rich and full of flavor. Quality has gone down compared to our last few visits.,synthetic
+NBB-0023,Neighborhood Bistro B,2026-06-26,2,Mike E.,The chana masala was dry and a bit disappointing. Our server seemed distracted and hard to flag down. Takeout was packed well and still hot at home.,synthetic
+FHE-0054,Food Hall Express,2026-06-27,3,Jordan B.,"Loved the dal makhani, easily one of the best I have had. Prices are on the high side for what you get. Portions were small for the price, barely any chicken in the bowl.",synthetic
+NBB-0002,Neighborhood Bistro B,2026-06-28,4,Neha H.,"Shout out to Tara, amazing hospitality.",synthetic
+NBB-0055,Neighborhood Bistro B,2026-06-28,4,Leo P.,"The chana masala was rich and full of flavor. Staff felt rushed and not very friendly. Loved the train station theme, so unique.",synthetic
+UDR-0200,Upscale Dining Room,2026-06-29,5,Alex J.,Our server Rohan gave great recommendations.,synthetic
+NBA-0006,Neighborhood Bistro A,2026-06-29,4,Chris F.,"Cozy and calm atmosphere, great for a date. Shout out to Nisha, amazing hospitality. Food was too mild, it needed more spice and seasoning.",synthetic
+UDR-0151,Upscale Dining Room,2026-06-30,5,Leo A.,The chicken biryani was perfectly cooked and tasted fresh. Our server Rohan gave great recommendations. Very clean restaurant and restrooms.,synthetic
+UDR-0204,Upscale Dining Room,2026-06-30,5,Isha P.,"Shout out to Rohan, amazing hospitality. Loved the palak paneer, easily one of the best I have had. Loved the train station theme, so unique. A bit pricey but worth it for the experience.",synthetic
+UDR-0209,Upscale Dining Room,2026-06-30,4,Raj P.,"A bit pricey but worth it for the experience. It was very loud, hard to have a conversation.",synthetic
+NBB-0145,Neighborhood Bistro B,2026-06-30,4,Sana F.,"The baingan bharta was rich and full of flavor. We have been coming for years but the food is not the same anymore. Shout out to Tara, amazing hospitality.",synthetic
+NBB-0155,Neighborhood Bistro B,2026-06-30,4,Mike K.,"The pani puri was just okay, nothing special. Arjun was so warm and attentive, made our night.",synthetic
+NBA-0029,Neighborhood Bistro A,2026-07-01,4,Alex B.,"The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0164,Neighborhood Bistro A,2026-07-02,5,Sam K.,They catered our wedding for 250 guests and everyone loved it. Our server Kabir gave great recommendations.,synthetic
+NBB-0041,Neighborhood Bistro B,2026-07-03,5,Neha M.,"Very clean restaurant and restrooms. Our server Arjun gave great recommendations. Consistently great, we come back every month.",synthetic
+FHE-0109,Food Hall Express,2026-07-03,5,Mike G.,"The fish curry was perfectly cooked and tasted fresh. Generous portions, we took leftovers home.",synthetic
+FHE-0052,Food Hall Express,2026-07-04,3,Sana B.,"Prices are on the high side for what you get. The baingan bharta was rich and full of flavor. Very stingy with the meat, mostly rice.",synthetic
+UDR-0192,Upscale Dining Room,2026-07-05,4,Leo B.,"Loved the train station theme, so unique. Prices are on the high side for what you get.",synthetic
+NBA-0284,Neighborhood Bistro A,2026-07-05,4,Emily F.,"Shout out to Kabir, amazing hospitality. Catering for our family party was perfect and on time. Takeout was packed well and still hot at home. Flavors felt diluted and bland for Indian food.",synthetic
+UDR-0114,Upscale Dining Room,2026-07-08,5,Raj K.,"Even with a reservation we waited 30 minutes to be seated. Meera was so warm and attentive, made our night. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0204,Neighborhood Bistro A,2026-07-08,5,Kate E.,"The butter chicken was perfectly cooked and tasted fresh. Loved the train station theme, so unique. Flavors felt diluted and bland for Indian food. Our server Nisha gave great recommendations.",synthetic
+UDR-0199,Upscale Dining Room,2026-07-09,5,Raj J.,"Very clean restaurant and restrooms. Rohan was so warm and attentive, made our night. Cozy and calm atmosphere, great for a date. Food came out quickly even on a busy night.",synthetic
+NBA-0031,Neighborhood Bistro A,2026-07-09,5,Priya N.,"Loved the mango lassi, easily one of the best I have had.",synthetic
+UDR-0069,Upscale Dining Room,2026-07-10,4,Neha W.,"Loved the train station theme, so unique. Rohan was so warm and attentive, made our night. Tables were sticky and the restroom needed attention.",synthetic
+NBA-0078,Neighborhood Bistro A,2026-07-10,5,Alex H.,"Shout out to Kabir, amazing hospitality.",synthetic
+NBA-0084,Neighborhood Bistro A,2026-07-10,3,Mike J.,Our server seemed distracted and hard to flag down. The baingan bharta was perfectly cooked and tasted fresh. Tables were sticky and the restroom needed attention.,synthetic
+NBA-0236,Neighborhood Bistro A,2026-07-10,3,Priya A.,"The dal makhani was dry and a bit disappointing. Nisha was so warm and attentive, made our night. We have been coming for years but the food is not the same anymore.",synthetic
+UDR-0125,Upscale Dining Room,2026-07-12,5,Tom R.,"Loved the dal makhani, easily one of the best I have had. Shout out to Asha, amazing hospitality.",synthetic
+FHE-0134,Food Hall Express,2026-07-12,2,Vikas E.,"Portions were small for the price, barely any chicken in the bowl. Staff felt rushed and not very friendly.",synthetic
+UDR-0074,Upscale Dining Room,2026-07-13,5,Emily M.,Very clean restaurant and restrooms. Our server Asha gave great recommendations.,synthetic
+NBB-0027,Neighborhood Bistro B,2026-07-13,5,Sam T.,Takeout was packed well and still hot at home. The goat curry was rich and full of flavor.,synthetic
+NBB-0099,Neighborhood Bistro B,2026-07-13,5,Jordan R.,"Consistently great, we come back every month. Our server Arjun gave great recommendations. Loved the chicken biryani, easily one of the best I have had.",synthetic
+NBB-0080,Neighborhood Bistro B,2026-07-14,5,Raj M.,The butter chicken was perfectly cooked and tasted fresh. Great value for the price.,synthetic
+NBB-0123,Neighborhood Bistro B,2026-07-14,5,Ben W.,The chicken biryani was perfectly cooked and tasted fresh.,synthetic
+NBB-0174,Neighborhood Bistro B,2026-07-15,5,Priya M.,"The garlic naan was rich and full of flavor. Every visit the food is just as good as the last. Shout out to Arjun, amazing hospitality.",synthetic
+FHE-0133,Food Hall Express,2026-07-15,5,Maria R.,"Loved the butter chicken, easily one of the best I have had. Service was fast and smooth.",synthetic
+NBA-0072,Neighborhood Bistro A,2026-07-16,3,Neha P.,"The dal makhani was just okay, nothing special. Consistently great, we come back every month. Catering for our family party was perfect and on time.",synthetic
+NBB-0056,Neighborhood Bistro B,2026-07-17,5,Sana A.,"Very clean restaurant and restrooms. Tara was so warm and attentive, made our night.",synthetic
+UDR-0034,Upscale Dining Room,2026-07-18,5,Isha S.,The palak paneer was perfectly cooked and tasted fresh. Our server Rohan gave great recommendations.,synthetic
+UDR-0169,Upscale Dining Room,2026-07-18,3,Leo H.,"Service was really slow, we waited almost an hour for our mains.",synthetic
+UDR-0242,Upscale Dining Room,2026-07-18,5,Kate G.,"The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0095,Neighborhood Bistro A,2026-07-18,5,Sana F.,"Used them for an office event, food and setup were excellent.",synthetic
+NBA-0154,Neighborhood Bistro A,2026-07-18,4,Raj K.,"Spice level was spot on, they asked how hot we wanted it. The malai kofta was dry and a bit disappointing.",synthetic
+NBB-0117,Neighborhood Bistro B,2026-07-18,4,Priya C.,"Loved the fish curry, easily one of the best I have had.",synthetic
+FHE-0074,Food Hall Express,2026-07-18,5,Omar W.,Food came out quickly even on a busy night. The malai kofta was perfectly cooked and tasted fresh.,synthetic
+UDR-0126,Upscale Dining Room,2026-07-19,4,Kate J.,"Service was really slow, we waited almost an hour for our mains. Shout out to Asha, amazing hospitality. Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0092,Neighborhood Bistro B,2026-07-19,5,Raj G.,The palak paneer was perfectly cooked and tasted fresh. Takeout was packed well and still hot at home.,synthetic
+FHE-0011,Food Hall Express,2026-07-19,5,Sana N.,The palak paneer was perfectly cooked and tasted fresh.,synthetic
+NBA-0172,Neighborhood Bistro A,2026-07-20,5,Ben A.,The chicken tikka masala was perfectly cooked and tasted fresh.,synthetic
+UDR-0019,Upscale Dining Room,2026-07-21,4,Tom N.,"The tandoori chicken was just okay, nothing special. A bit pricey but worth it for the experience.",synthetic
+FHE-0040,Food Hall Express,2026-07-21,5,Ana N.,Food came out quickly even on a busy night.,synthetic
+NBA-0067,Neighborhood Bistro A,2026-07-22,4,Kate M.,"They catered our wedding for 250 guests and everyone loved it. Kabir was so warm and attentive, made our night. Tables were sticky and the restroom needed attention.",synthetic
+NBA-0182,Neighborhood Bistro A,2026-07-22,5,Mike A.,The palak paneer was perfectly cooked and tasted fresh.,synthetic
+NBA-0257,Neighborhood Bistro A,2026-07-22,4,Sana C.,"Catering for our family party was perfect and on time. Very clean restaurant and restrooms. Nisha was so warm and attentive, made our night. Takeout was packed well and still hot at home. Food was too mild, it needed more spice and seasoning. The chicken tikka masala was dry and a bit disappointing.",synthetic
+NBA-0283,Neighborhood Bistro A,2026-07-22,5,Tom F.,The momos was rich and full of flavor.,synthetic
+FHE-0019,Food Hall Express,2026-07-22,5,Ben H.,"Loved the baingan bharta, easily one of the best I have had.",synthetic
+NBA-0186,Neighborhood Bistro A,2026-07-23,3,Mike T.,"Food was too mild, it needed more spice and seasoning. Nisha was so warm and attentive, made our night.",synthetic
+UDR-0234,Upscale Dining Room,2026-07-24,4,Jordan K.,"The butter chicken was rich and full of flavor. Prices are on the high side for what you get. Shout out to Meera, amazing hospitality.",synthetic
+NBB-0171,Neighborhood Bistro B,2026-07-24,3,Lena M.,"Very clean restaurant and restrooms. The tandoori chicken was just okay, nothing special.",synthetic
+NBA-0039,Neighborhood Bistro A,2026-07-25,5,Mike G.,Very clean restaurant and restrooms.,synthetic
+NBA-0249,Neighborhood Bistro A,2026-07-25,5,Maria D.,"Cozy and calm atmosphere, great for a date. Every visit the food is just as good as the last. Catering for our family party was perfect and on time. The palak paneer was just okay, nothing special.",synthetic
+NBB-0009,Neighborhood Bistro B,2026-07-25,3,Leo C.,"Portions were small for the price, barely any chicken in the bowl.",synthetic
+NBB-0127,Neighborhood Bistro B,2026-07-25,3,Maria S.,"It was very loud, hard to have a conversation.",synthetic
+UDR-0205,Upscale Dining Room,2026-07-26,5,Maria P.,"Food came out quickly even on a busy night. Flavors felt diluted and bland for Indian food. Our server Asha gave great recommendations. Loved the palak paneer, easily one of the best I have had.",synthetic
+NBB-0008,Neighborhood Bistro B,2026-07-26,5,Omar N.,"Shout out to Arjun, amazing hospitality. The goat curry was perfectly cooked and tasted fresh.",synthetic
+NBB-0166,Neighborhood Bistro B,2026-07-26,5,Ana E.,"Generous portions, we took leftovers home.",synthetic
+UDR-0086,Upscale Dining Room,2026-07-27,5,Ana P.,"The decor is beautiful, it feels like a special night out. Food came out quickly even on a busy night.",synthetic
+UDR-0233,Upscale Dining Room,2026-07-27,4,Neha S.,"The decor is beautiful, it feels like a special night out. Prices are on the high side for what you get.",synthetic
+NBA-0190,Neighborhood Bistro A,2026-07-27,5,Raj A.,"Loved the train station theme, so unique. The lamb rogan josh was perfectly cooked and tasted fresh.",synthetic
+FHE-0094,Food Hall Express,2026-07-28,5,Chris A.,A bit pricey but worth it for the experience.,synthetic
+FHE-0145,Food Hall Express,2026-07-28,3,Vikas F.,"Very stingy with the meat, mostly rice.",synthetic
+UDR-0116,Upscale Dining Room,2026-07-30,5,Emily E.,"Loved the train station theme, so unique.",synthetic
+NBA-0274,Neighborhood Bistro A,2026-07-30,5,Leo M.,"Cozy and calm atmosphere, great for a date. Nisha was so warm and attentive, made our night.",synthetic
+NBA-0287,Neighborhood Bistro A,2026-07-30,4,Maria D.,"Food was too mild, it needed more spice and seasoning. The tandoori chicken was perfectly cooked and tasted fresh. Takeout was packed well and still hot at home.",synthetic
+FHE-0106,Food Hall Express,2026-07-30,5,Sam R.,The mango lassi was perfectly cooked and tasted fresh. Our server Dev gave great recommendations.,synthetic
+UDR-0003,Upscale Dining Room,2026-07-31,4,Neha J.,"Shout out to Meera, amazing hospitality. The goat curry was rich and full of flavor. Even when we asked for spicy, the garlic naan had barely any heat.",synthetic
+FHE-0089,Food Hall Express,2026-07-31,5,Vikas W.,The lamb rogan josh was rich and full of flavor.,synthetic
+UDR-0197,Upscale Dining Room,2026-08-01,5,Tom G.,"Our server Meera gave great recommendations. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0250,Neighborhood Bistro A,2026-08-02,4,Maria J.,"Food was too mild, it needed more spice and seasoning. The chana masala was perfectly cooked and tasted fresh. Our server Nisha gave great recommendations.",synthetic
+NBB-0029,Neighborhood Bistro B,2026-08-02,3,Sana D.,"Staff felt rushed and not very friendly. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0033,Neighborhood Bistro B,2026-08-02,4,Omar A.,Our server Arjun gave great recommendations. The baingan bharta was dry and a bit disappointing. Very clean restaurant and restrooms.,synthetic
+NBA-0011,Neighborhood Bistro A,2026-08-03,4,Maria R.,"Used them for an office event, food and setup were excellent. The chicken biryani was perfectly cooked and tasted fresh. Even when we asked for spicy, the fish curry had barely any heat.",synthetic
+NBB-0079,Neighborhood Bistro B,2026-08-03,5,Mike D.,"Loved the lamb rogan josh, easily one of the best I have had.",synthetic
+NBA-0224,Neighborhood Bistro A,2026-08-04,4,Jordan J.,"Even when we asked for spicy, the butter chicken had barely any heat. The malai kofta was rich and full of flavor. Every visit the food is just as good as the last.",synthetic
+FHE-0056,Food Hall Express,2026-08-04,4,Priya L.,The tandoori chicken was perfectly cooked and tasted fresh.,synthetic
+UDR-0100,Upscale Dining Room,2026-08-05,3,Jordan T.,Staff felt rushed and not very friendly. The pani puri was perfectly cooked and tasted fresh.,synthetic
+NBB-0172,Neighborhood Bistro B,2026-08-05,5,Lena W.,"Very clean restaurant and restrooms. Tara was so warm and attentive, made our night. Quality has gone down compared to our last few visits.",synthetic
+UDR-0066,Upscale Dining Room,2026-08-06,5,Vikas M.,"Loved the fish curry, easily one of the best I have had. Rohan was so warm and attentive, made our night. Great balance of spices in every dish. Loved the train station theme, so unique.",synthetic
+UDR-0097,Upscale Dining Room,2026-08-06,5,Ben W.,"Shout out to Asha, amazing hospitality. The lamb rogan josh was rich and full of flavor. Cozy and calm atmosphere, great for a date. Service was fast and smooth.",synthetic
+NBA-0016,Neighborhood Bistro A,2026-08-06,3,Vikas C.,Flavors felt diluted and bland for Indian food. Takeout was packed well and still hot at home.,synthetic
+NBB-0179,Neighborhood Bistro B,2026-08-06,3,Chris L.,We have been coming for years but the food is not the same anymore.,synthetic
+NBA-0170,Neighborhood Bistro A,2026-08-07,5,Emily S.,"Consistently great, we come back every month.",synthetic
+NBB-0111,Neighborhood Bistro B,2026-08-07,4,Mike S.,"Shout out to Tara, amazing hospitality.",synthetic
+NBB-0095,Neighborhood Bistro B,2026-08-08,3,Priya B.,"We have been coming for years but the food is not the same anymore. Loved the train station theme, so unique.",synthetic
+NBB-0044,Neighborhood Bistro B,2026-08-09,5,Lena G.,"Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0154,Neighborhood Bistro B,2026-08-09,5,Chris W.,"Very clean restaurant and restrooms. The decor is beautiful, it feels like a special night out. Our server Tara gave great recommendations.",synthetic
+FHE-0121,Food Hall Express,2026-08-09,4,Isha B.,"Loved the pani puri, easily one of the best I have had.",synthetic
+NBA-0223,Neighborhood Bistro A,2026-08-10,3,Jordan H.,"The chana masala was dry and a bit disappointing. Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0007,Neighborhood Bistro B,2026-08-10,4,Isha T.,"The decor is beautiful, it feels like a special night out. Quality has gone down compared to our last few visits.",synthetic
+UDR-0146,Upscale Dining Room,2026-08-11,5,Alex D.,"Loved the train station theme, so unique.",synthetic
+NBA-0079,Neighborhood Bistro A,2026-08-11,2,Isha T.,"Nisha was so warm and attentive, made our night. Flavors felt diluted and bland for Indian food. The malai kofta used to be amazing, this time it tasted different. Takeout order was missing an item.",synthetic
+NBB-0037,Neighborhood Bistro B,2026-08-11,4,Neha R.,We have been coming for years but the food is not the same anymore. Our server Arjun gave great recommendations.,synthetic
+NBB-0066,Neighborhood Bistro B,2026-08-11,5,Omar L.,"Very clean restaurant and restrooms. Our server Arjun gave great recommendations. Loved the dal makhani, easily one of the best I have had. Loved the train station theme, so unique.",synthetic
+UDR-0177,Upscale Dining Room,2026-08-12,5,Vikas T.,"Our server Rohan gave great recommendations. Loved the train station theme, so unique.",synthetic
+NBA-0254,Neighborhood Bistro A,2026-08-12,5,Ana A.,"The decor is beautiful, it feels like a special night out. Used them for an office event, food and setup were excellent. Nisha was so warm and attentive, made our night.",synthetic
+NBB-0170,Neighborhood Bistro B,2026-08-12,5,Vikas H.,"The chana masala was rich and full of flavor. Shout out to Tara, amazing hospitality.",synthetic
+UDR-0206,Upscale Dining Room,2026-08-14,5,Chris E.,"Cozy and calm atmosphere, great for a date. Shout out to Meera, amazing hospitality.",synthetic
+NBA-0245,Neighborhood Bistro A,2026-08-14,4,Alex W.,"Flavors felt diluted and bland for Indian food. The goat curry was perfectly cooked and tasted fresh. Loved the train station theme, so unique.",synthetic
+NBB-0073,Neighborhood Bistro B,2026-08-14,5,Sam K.,Very clean restaurant and restrooms.,synthetic
+UDR-0025,Upscale Dining Room,2026-08-16,5,Chris T.,Our server Meera gave great recommendations. Service was fast and smooth.,synthetic
+UDR-0183,Upscale Dining Room,2026-08-16,5,Vikas H.,The malai kofta was rich and full of flavor.,synthetic
+NBA-0275,Neighborhood Bistro A,2026-08-16,4,Maria D.,"The tandoori chicken was just okay, nothing special.",synthetic
+NBB-0067,Neighborhood Bistro B,2026-08-16,3,Jordan P.,"Quality has gone down compared to our last few visits. Arjun was so warm and attentive, made our night.",synthetic
+NBA-0014,Neighborhood Bistro A,2026-08-17,4,Kate E.,"Loved the train station theme, so unique. The malai kofta was just okay, nothing special.",synthetic
+FHE-0039,Food Hall Express,2026-08-17,5,Chris T.,The mango lassi was perfectly cooked and tasted fresh.,synthetic
+UDR-0123,Upscale Dining Room,2026-08-18,5,Lena C.,"The decor is beautiful, it feels like a special night out. Our server Asha gave great recommendations.",synthetic
+FHE-0053,Food Hall Express,2026-08-18,4,Isha T.,Prices are on the high side for what you get. Great value for the price.,synthetic
+FHE-0104,Food Hall Express,2026-08-18,4,Jordan S.,"The garlic naan was just okay, nothing special. Food came out quickly even on a busy night.",synthetic
+FHE-0111,Food Hall Express,2026-08-18,4,Raj C.,The momos was perfectly cooked and tasted fresh. Prices are on the high side for what you get.,synthetic
+NBA-0276,Neighborhood Bistro A,2026-08-19,2,Sana F.,The fish curry was dry and a bit disappointing. Takeout order was missing an item.,synthetic
+NBA-0272,Neighborhood Bistro A,2026-08-20,3,Raj C.,"Even when we asked for spicy, the pani puri had barely any heat. Kabir was so warm and attentive, made our night. The malai kofta was dry and a bit disappointing.",synthetic
+NBA-0292,Neighborhood Bistro A,2026-08-20,5,Vikas L.,"Cozy and calm atmosphere, great for a date. The garlic naan was rich and full of flavor.",synthetic
+NBB-0016,Neighborhood Bistro B,2026-08-20,4,Sana J.,"Loved the train station theme, so unique. Shout out to Arjun, amazing hospitality. Quality has gone down compared to our last few visits.",synthetic
+FHE-0018,Food Hall Express,2026-08-20,5,Emily P.,"Loved the palak paneer, easily one of the best I have had.",synthetic
+NBA-0104,Neighborhood Bistro A,2026-08-21,5,Emily W.,"Loved the train station theme, so unique. The chana masala was perfectly cooked and tasted fresh. Kabir was so warm and attentive, made our night.",synthetic
+NBA-0267,Neighborhood Bistro A,2026-08-21,5,Sana T.,Catering for our family party was perfect and on time.,synthetic
+FHE-0116,Food Hall Express,2026-08-21,5,Isha R.,The baingan bharta was rich and full of flavor.,synthetic
+UDR-0165,Upscale Dining Room,2026-08-22,3,Ben N.,Service was fast and smooth. Very clean restaurant and restrooms. Even with a reservation we waited 30 minutes to be seated. Staff felt rushed and not very friendly.,synthetic
+NBA-0007,Neighborhood Bistro A,2026-08-22,5,Kate P.,"Used them for an office event, food and setup were excellent.",synthetic
+NBA-0008,Neighborhood Bistro A,2026-08-23,4,Mike G.,"Catering for our family party was perfect and on time. The butter chicken was just okay, nothing special.",synthetic
+NBA-0259,Neighborhood Bistro A,2026-08-23,3,Jordan T.,"The baingan bharta was dry and a bit disappointing. Shout out to Nisha, amazing hospitality.",synthetic
+FHE-0012,Food Hall Express,2026-08-23,5,Mike D.,Service was fast and smooth.,synthetic
+NBA-0157,Neighborhood Bistro A,2026-08-24,4,Sana F.,"Loved the baingan bharta, easily one of the best I have had.",synthetic
+NBB-0094,Neighborhood Bistro B,2026-08-24,5,Tom R.,"The baingan bharta used to be amazing, this time it tasted different. Shout out to Tara, amazing hospitality. Very clean restaurant and restrooms. The tandoori chicken was perfectly cooked and tasted fresh.",synthetic
+FHE-0088,Food Hall Express,2026-08-25,4,Sam A.,"Loved the chicken biryani, easily one of the best I have had. Portions were small for the price, barely any chicken in the bowl.",synthetic
+UDR-0094,Upscale Dining Room,2026-08-27,4,Ben M.,The tandoori chicken was dry and a bit disappointing. Food came out quickly even on a busy night.,synthetic
+NBA-0119,Neighborhood Bistro A,2026-08-27,5,Maria S.,"Shout out to Nisha, amazing hospitality. Takeout was packed well and still hot at home. The lamb rogan josh was perfectly cooked and tasted fresh. Very clean restaurant and restrooms.",synthetic
+NBA-0189,Neighborhood Bistro A,2026-08-27,5,Leo G.,"The decor is beautiful, it feels like a special night out. Our server Nisha gave great recommendations. Great balance of spices in every dish. The momos was perfectly cooked and tasted fresh.",synthetic
+NBB-0128,Neighborhood Bistro B,2026-08-27,4,Ben W.,"Arjun was so warm and attentive, made our night. Takeout was packed well and still hot at home. Very clean restaurant and restrooms. We have been coming for years but the food is not the same anymore.",synthetic
+NBA-0222,Neighborhood Bistro A,2026-08-28,5,Priya D.,"Very clean restaurant and restrooms. Loved the train station theme, so unique. Our server Kabir gave great recommendations. The chicken tikka masala was just okay, nothing special.",synthetic
+NBB-0070,Neighborhood Bistro B,2026-08-28,5,Maria J.,"Loved the butter chicken, easily one of the best I have had. Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0128,Upscale Dining Room,2026-08-29,4,Sam L.,The goat curry was rich and full of flavor.,synthetic
+UDR-0182,Upscale Dining Room,2026-08-29,5,Chris F.,"The tandoori chicken was perfectly cooked and tasted fresh. Loved the train station theme, so unique.",synthetic
+NBB-0185,Neighborhood Bistro B,2026-08-29,4,Ana K.,The fish curry was rich and full of flavor. Tables were sticky and the restroom needed attention.,synthetic
+FHE-0005,Food Hall Express,2026-08-29,3,Raj F.,"The palak paneer was just okay, nothing special. Great value for the price.",synthetic
+UDR-0136,Upscale Dining Room,2026-08-30,5,Tom B.,"Loved the train station theme, so unique.",synthetic
+NBA-0005,Neighborhood Bistro A,2026-08-30,5,Raj C.,"The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0282,Neighborhood Bistro A,2026-08-31,5,Vikas T.,"The tandoori chicken was perfectly cooked and tasted fresh. The decor is beautiful, it feels like a special night out. Our server Nisha gave great recommendations. Flavors felt diluted and bland for Indian food.",synthetic
+NBB-0146,Neighborhood Bistro B,2026-08-31,5,Lena K.,"Loved the fish curry, easily one of the best I have had.",synthetic
+UDR-0112,Upscale Dining Room,2026-09-01,5,Omar D.,"The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0176,Neighborhood Bistro A,2026-09-01,2,Maria P.,"Food was too mild, it needed more spice and seasoning. The garlic naan was just okay, nothing special. Catering order arrived late for our event.",synthetic
+NBA-0188,Neighborhood Bistro A,2026-09-01,5,Ana J.,The chana masala was rich and full of flavor.,synthetic
+NBB-0038,Neighborhood Bistro B,2026-09-01,5,Maria B.,Takeout was packed well and still hot at home.,synthetic
+NBB-0101,Neighborhood Bistro B,2026-09-02,4,Omar E.,Quality has gone down compared to our last few visits. The pani puri was rich and full of flavor.,synthetic
+FHE-0079,Food Hall Express,2026-09-02,2,Sam T.,"Prices are on the high side for what you get. Our server Dev gave great recommendations. The baingan bharta was just okay, nothing special. Very stingy with the meat, mostly rice.",synthetic
+FHE-0095,Food Hall Express,2026-09-03,5,Maria H.,"Loved the momos, easily one of the best I have had.",synthetic
+UDR-0173,Upscale Dining Room,2026-09-04,4,Ana H.,"It took forever to get our order and the check. Meera was so warm and attentive, made our night. The decor is beautiful, it feels like a special night out. Loved the malai kofta, easily one of the best I have had. Even with a reservation we waited 30 minutes to be seated.",synthetic
+NBA-0062,Neighborhood Bistro A,2026-09-04,5,Chris G.,The momos was perfectly cooked and tasted fresh.,synthetic
+NBA-0167,Neighborhood Bistro A,2026-09-04,5,Vikas E.,"Food was too mild, it needed more spice and seasoning. Cozy and calm atmosphere, great for a date. Very clean restaurant and restrooms. Used them for an office event, food and setup were excellent.",synthetic
+UDR-0060,Upscale Dining Room,2026-09-05,5,Sam P.,"The tandoori chicken was rich and full of flavor. Cozy and calm atmosphere, great for a date.",synthetic
+UDR-0226,Upscale Dining Room,2026-09-05,4,Raj P.,"The decor is beautiful, it feels like a special night out. It took forever to get our order and the check. Rohan was so warm and attentive, made our night.",synthetic
+NBA-0230,Neighborhood Bistro A,2026-09-05,4,Ben S.,"Loved the train station theme, so unique. Very clean restaurant and restrooms. The palak paneer was just okay, nothing special.",synthetic
+NBA-0298,Neighborhood Bistro A,2026-09-05,3,Emily L.,"Quality has gone down compared to our last few visits. Kabir was so warm and attentive, made our night. Loved the train station theme, so unique. The chicken biryani was dry and a bit disappointing.",synthetic
+NBB-0206,Neighborhood Bistro B,2026-09-05,5,Ana H.,"Great value for the price. Arjun was so warm and attentive, made our night.",synthetic
+NBA-0229,Neighborhood Bistro A,2026-09-06,4,Vikas S.,"The decor is beautiful, it feels like a special night out. Loved the garlic naan, easily one of the best I have had. Food was too mild, it needed more spice and seasoning.",synthetic
+NBA-0255,Neighborhood Bistro A,2026-09-06,3,Chris S.,The mango lassi was perfectly cooked and tasted fresh. Flavors felt diluted and bland for Indian food.,synthetic
+NBB-0105,Neighborhood Bistro B,2026-09-06,4,Maria P.,"Generous portions, we took leftovers home. Tables were sticky and the restroom needed attention. Our server Tara gave great recommendations.",synthetic
+UDR-0161,Upscale Dining Room,2026-09-07,5,Emily H.,"Loved the chicken biryani, easily one of the best I have had. Spice level was spot on, they asked how hot we wanted it. Cozy and calm atmosphere, great for a date.",synthetic
+NBA-0225,Neighborhood Bistro A,2026-09-08,5,Emily A.,"Our server Kabir gave great recommendations. Cozy and calm atmosphere, great for a date. Very clean restaurant and restrooms.",synthetic
+NBB-0012,Neighborhood Bistro B,2026-09-08,5,Emily J.,Very clean restaurant and restrooms. The garlic naan was perfectly cooked and tasted fresh. Our server Tara gave great recommendations. Takeout was packed well and still hot at home.,synthetic
+FHE-0143,Food Hall Express,2026-09-08,5,Ana L.,The lamb rogan josh was perfectly cooked and tasted fresh.,synthetic
+NBA-0156,Neighborhood Bistro A,2026-09-09,4,Emily G.,"Shout out to Nisha, amazing hospitality. The momos was just okay, nothing special.",synthetic
+NBA-0273,Neighborhood Bistro A,2026-09-09,4,Tom G.,The fish curry was dry and a bit disappointing.,synthetic
+NBB-0061,Neighborhood Bistro B,2026-09-09,5,Kate S.,"Loved the train station theme, so unique. Loved the garlic naan, easily one of the best I have had.",synthetic
+FHE-0114,Food Hall Express,2026-09-09,3,Mike J.,"Very stingy with the meat, mostly rice.",synthetic
+FHE-0015,Food Hall Express,2026-09-10,3,Vikas F.,"The lamb rogan josh was dry and a bit disappointing. Paid over $20 for a bowl and a drink, not worth it. Dev was so warm and attentive, made our night.",synthetic
+NBB-0116,Neighborhood Bistro B,2026-09-11,3,Sana M.,We have been coming for years but the food is not the same anymore. Takeout was packed well and still hot at home.,synthetic
+NBB-0195,Neighborhood Bistro B,2026-09-11,5,Ana L.,"The chicken tikka masala was dry and a bit disappointing. Great value for the price. Very clean restaurant and restrooms. Tara was so warm and attentive, made our night.",synthetic
+NBA-0169,Neighborhood Bistro A,2026-09-15,5,Neha K.,"Consistently great, we come back every month.",synthetic
+NBB-0168,Neighborhood Bistro B,2026-09-15,4,Kate D.,"The chana masala used to be amazing, this time it tasted different.",synthetic
+UDR-0033,Upscale Dining Room,2026-09-16,4,Tom K.,"Meera was so warm and attentive, made our night. Long wait between courses, the kitchen seemed overwhelmed. Loved the train station theme, so unique.",synthetic
+UDR-0119,Upscale Dining Room,2026-09-16,3,Alex A.,"It took forever to get our order and the check. Rohan was so warm and attentive, made our night. Spice level was spot on, they asked how hot we wanted it. The palak paneer was just okay, nothing special.",synthetic
+UDR-0072,Upscale Dining Room,2026-09-17,5,Lena E.,"Loved the train station theme, so unique. Food came out quickly even on a busy night.",synthetic
+UDR-0121,Upscale Dining Room,2026-09-17,3,Neha H.,"Service was really slow, we waited almost an hour for our mains.",synthetic
+NBA-0183,Neighborhood Bistro A,2026-09-17,3,Jordan E.,"Staff felt rushed and not very friendly. Used them for an office event, food and setup were excellent. Even when we asked for spicy, the lamb rogan josh had barely any heat.",synthetic
+NBA-0184,Neighborhood Bistro A,2026-09-17,4,Isha B.,"Used them for an office event, food and setup were excellent. Kabir was so warm and attentive, made our night. The dal makhani was just okay, nothing special. Very clean restaurant and restrooms.",synthetic
+NBB-0021,Neighborhood Bistro B,2026-09-17,5,Vikas C.,Our server Tara gave great recommendations.,synthetic
+NBA-0065,Neighborhood Bistro A,2026-09-18,5,Alex G.,"Loved the baingan bharta, easily one of the best I have had.",synthetic
+UDR-0057,Upscale Dining Room,2026-09-19,3,Ana M.,"Even with a reservation we waited 30 minutes to be seated. The garlic naan was just okay, nothing special. A bit pricey but worth it for the experience. Shout out to Rohan, amazing hospitality.",synthetic
+NBA-0110,Neighborhood Bistro A,2026-09-19,5,Isha R.,The mango lassi was perfectly cooked and tasted fresh.,synthetic
+NBA-0238,Neighborhood Bistro A,2026-09-19,4,Raj D.,"The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0160,Neighborhood Bistro B,2026-09-19,4,Kate N.,"Tara was so warm and attentive, made our night.",synthetic
+FHE-0098,Food Hall Express,2026-09-19,4,Lena S.,The malai kofta was perfectly cooked and tasted fresh.,synthetic
+UDR-0218,Upscale Dining Room,2026-09-20,5,Mike E.,"Great balance of spices in every dish. The goat curry was perfectly cooked and tasted fresh. It took forever to get our order and the check. Meera was so warm and attentive, made our night.",synthetic
+FHE-0059,Food Hall Express,2026-09-20,3,Isha M.,"Paid over $20 for a bowl and a drink, not worth it. Food came out quickly even on a busy night.",synthetic
+FHE-0066,Food Hall Express,2026-09-20,5,Jordan A.,"Loved the baingan bharta, easily one of the best I have had. Dev was so warm and attentive, made our night. Great value for the price.",synthetic
+NBA-0074,Neighborhood Bistro A,2026-09-21,4,Ben C.,"Loved the palak paneer, easily one of the best I have had. Even when we asked for spicy, the fish curry had barely any heat. Catering for our family party was perfect and on time.",synthetic
+NBB-0136,Neighborhood Bistro B,2026-09-21,5,Raj R.,"Generous portions, we took leftovers home. Loved the train station theme, so unique. Tara was so warm and attentive, made our night. The goat curry was rich and full of flavor.",synthetic
+FHE-0085,Food Hall Express,2026-09-21,5,Ana N.,"Generous portions, we took leftovers home.",synthetic
+FHE-0144,Food Hall Express,2026-09-21,4,Leo C.,"Loved the tandoori chicken, easily one of the best I have had. Very stingy with the meat, mostly rice. Dev was so warm and attentive, made our night.",synthetic
+UDR-0029,Upscale Dining Room,2026-09-22,5,Leo D.,"Even with a reservation we waited 30 minutes to be seated. Shout out to Rohan, amazing hospitality. The malai kofta was rich and full of flavor. Great balance of spices in every dish. Service was fast and smooth.",synthetic
+NBB-0106,Neighborhood Bistro B,2026-09-22,4,Raj E.,"Quality has gone down compared to our last few visits. Tara was so warm and attentive, made our night.",synthetic
+FHE-0029,Food Hall Express,2026-09-22,4,Raj P.,"The chicken tikka masala was just okay, nothing special.",synthetic
+UDR-0000,Upscale Dining Room,2026-09-23,5,Sam F.,"The decor is beautiful, it feels like a special night out. A bit pricey but worth it for the experience.",synthetic
+UDR-0070,Upscale Dining Room,2026-09-23,4,Isha E.,Very clean restaurant and restrooms. The dal makhani was rich and full of flavor. It took forever to get our order and the check.,synthetic
+UDR-0111,Upscale Dining Room,2026-09-23,5,Ana L.,"Meera was so warm and attentive, made our night. The chicken biryani was rich and full of flavor. Spice level was spot on, they asked how hot we wanted it.",synthetic
+UDR-0124,Upscale Dining Room,2026-09-23,5,Sam F.,"The lamb rogan josh was perfectly cooked and tasted fresh. Got a table quickly even without a reservation. Our server seemed distracted and hard to flag down. Loved the train station theme, so unique.",synthetic
+UDR-0214,Upscale Dining Room,2026-09-23,5,Alex M.,"Shout out to Meera, amazing hospitality. Loved the train station theme, so unique. The dal makhani was rich and full of flavor.",synthetic
+NBB-0104,Neighborhood Bistro B,2026-09-23,3,Ana M.,We have been coming for years but the food is not the same anymore.,synthetic
+NBB-0107,Neighborhood Bistro B,2026-09-23,5,Omar T.,"Shout out to Arjun, amazing hospitality. Consistently great, we come back every month.",synthetic
+NBB-0197,Neighborhood Bistro B,2026-09-23,4,Omar K.,We have been coming for years but the food is not the same anymore. The lamb rogan josh was rich and full of flavor. Our server Arjun gave great recommendations.,synthetic
+FHE-0014,Food Hall Express,2026-09-23,2,Ana H.,"Prices are on the high side for what you get. Dev was so warm and attentive, made our night. Paid over $20 for a bowl and a drink, not worth it. Loved the fish curry, easily one of the best I have had. Long wait between courses, the kitchen seemed overwhelmed.",synthetic
+UDR-0005,Upscale Dining Room,2026-09-24,4,Ben T.,"Service was really slow, we waited almost an hour for our mains. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0281,Neighborhood Bistro A,2026-09-24,4,Isha J.,"Loved the malai kofta, easily one of the best I have had.",synthetic
+NBB-0138,Neighborhood Bistro B,2026-09-24,2,Sam E.,"Our server Arjun gave great recommendations. Quality has gone down compared to our last few visits. Portions were small for the price, barely any chicken in the bowl.",synthetic
+UDR-0023,Upscale Dining Room,2026-09-25,3,Leo E.,"Service was really slow, we waited almost an hour for our mains. The malai kofta was dry and a bit disappointing. The decor is beautiful, it feels like a special night out. Our server Rohan gave great recommendations.",synthetic
+NBA-0126,Neighborhood Bistro A,2026-09-25,2,Raj D.,"Every visit the food is just as good as the last. The fish curry was dry and a bit disappointing. Spice level was spot on, they asked how hot we wanted it. It was very loud, hard to have a conversation.",synthetic
+NBB-0199,Neighborhood Bistro B,2026-09-25,4,Omar C.,"Our server seemed distracted and hard to flag down. The momos was rich and full of flavor. The decor is beautiful, it feels like a special night out.",synthetic
+FHE-0037,Food Hall Express,2026-09-25,5,Ana E.,The malai kofta was perfectly cooked and tasted fresh.,synthetic
+UDR-0133,Upscale Dining Room,2026-09-26,3,Omar S.,"The pani puri was dry and a bit disappointing. Loved the train station theme, so unique. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBA-0041,Neighborhood Bistro A,2026-09-26,5,Omar M.,The pani puri was perfectly cooked and tasted fresh.,synthetic
+UDR-0108,Upscale Dining Room,2026-09-27,5,Ben H.,The malai kofta was rich and full of flavor.,synthetic
+UDR-0153,Upscale Dining Room,2026-09-27,5,Omar G.,Our server Rohan gave great recommendations.,synthetic
+NBA-0256,Neighborhood Bistro A,2026-09-27,5,Isha M.,"Catering for our family party was perfect and on time. The decor is beautiful, it feels like a special night out. Takeout was packed well and still hot at home.",synthetic
+NBB-0186,Neighborhood Bistro B,2026-09-27,2,Emily N.,"Quality has gone down compared to our last few visits. The lamb rogan josh was dry and a bit disappointing. It was very loud, hard to have a conversation.",synthetic
+FHE-0071,Food Hall Express,2026-09-27,5,Mike D.,"Shout out to Dev, amazing hospitality.",synthetic
+NBA-0179,Neighborhood Bistro A,2026-09-28,3,Ben N.,"The mango lassi was just okay, nothing special.",synthetic
+NBB-0077,Neighborhood Bistro B,2026-09-28,5,Kate M.,"Very clean restaurant and restrooms. Loved the mango lassi, easily one of the best I have had.",synthetic
+UDR-0026,Upscale Dining Room,2026-09-29,4,Emily W.,"Cozy and calm atmosphere, great for a date. Even with a reservation we waited 30 minutes to be seated. Our server Asha gave great recommendations. Service was really slow, we waited almost an hour for our mains.",synthetic
+NBA-0117,Neighborhood Bistro A,2026-09-29,4,Sam D.,"Even when we asked for spicy, the butter chicken had barely any heat. The goat curry was rich and full of flavor.",synthetic
+NBB-0212,Neighborhood Bistro B,2026-09-29,5,Omar N.,Great value for the price. Very clean restaurant and restrooms.,synthetic
+UDR-0089,Upscale Dining Room,2026-09-30,3,Mike W.,Staff felt rushed and not very friendly.,synthetic
+UDR-0065,Upscale Dining Room,2026-10-01,4,Mike F.,"It took forever to get our order and the check. Loved the train station theme, so unique.",synthetic
+UDR-0255,Upscale Dining Room,2026-10-01,5,Lena F.,"The garlic naan was rich and full of flavor. Food came out quickly even on a busy night. A bit pricey but worth it for the experience. Very clean restaurant and restrooms. Meera was so warm and attentive, made our night.",synthetic
+UDR-0224,Upscale Dining Room,2026-10-02,4,Alex F.,"The chicken biryani was rich and full of flavor. Cozy and calm atmosphere, great for a date. Long wait between courses, the kitchen seemed overwhelmed. Our server Rohan gave great recommendations.",synthetic
+NBA-0209,Neighborhood Bistro A,2026-10-02,5,Sam K.,Our server Nisha gave great recommendations. The chicken biryani was perfectly cooked and tasted fresh.,synthetic
+UDR-0045,Upscale Dining Room,2026-10-03,5,Lena T.,"The decor is beautiful, it feels like a special night out. The chana masala was perfectly cooked and tasted fresh.",synthetic
+NBA-0124,Neighborhood Bistro A,2026-10-03,5,Jordan D.,"Very clean restaurant and restrooms. Kabir was so warm and attentive, made our night.",synthetic
+NBA-0212,Neighborhood Bistro A,2026-10-03,4,Lena P.,"Catering for our family party was perfect and on time. Shout out to Nisha, amazing hospitality. Even when we asked for spicy, the momos had barely any heat.",synthetic
+NBB-0003,Neighborhood Bistro B,2026-10-03,4,Neha L.,"Loved the tandoori chicken, easily one of the best I have had. Quality has gone down compared to our last few visits.",synthetic
+NBB-0043,Neighborhood Bistro B,2026-10-03,4,Maria L.,"Tara was so warm and attentive, made our night. The momos used to be amazing, this time it tasted different.",synthetic
+FHE-0093,Food Hall Express,2026-10-03,4,Maria N.,Our server Dev gave great recommendations. The baingan bharta was dry and a bit disappointing.,synthetic
+FHE-0102,Food Hall Express,2026-10-03,4,Isha C.,"Portions were small for the price, barely any chicken in the bowl. Shout out to Dev, amazing hospitality.",synthetic
+UDR-0012,Upscale Dining Room,2026-10-05,5,Emily B.,"The garlic naan was rich and full of flavor. Loved the train station theme, so unique.",synthetic
+UDR-0017,Upscale Dining Room,2026-10-05,5,Chris K.,"Loved the garlic naan, easily one of the best I have had.",synthetic
+UDR-0222,Upscale Dining Room,2026-10-05,3,Jordan F.,"Long wait between courses, the kitchen seemed overwhelmed.",synthetic
+NBB-0036,Neighborhood Bistro B,2026-10-05,3,Maria C.,"Shout out to Tara, amazing hospitality. We have been coming for years but the food is not the same anymore.",synthetic
+UDR-0048,Upscale Dining Room,2026-10-06,5,Ben W.,"Meera was so warm and attentive, made our night. The chicken biryani was perfectly cooked and tasted fresh.",synthetic
+NBA-0122,Neighborhood Bistro A,2026-10-06,3,Sam L.,"Loved the garlic naan, easily one of the best I have had. Flavors felt diluted and bland for Indian food.",synthetic
+NBA-0149,Neighborhood Bistro A,2026-10-07,3,Jordan B.,"We have been coming for years but the food is not the same anymore. Food was too mild, it needed more spice and seasoning.",synthetic
+NBA-0199,Neighborhood Bistro A,2026-10-07,5,Omar L.,"Food was too mild, it needed more spice and seasoning. The decor is beautiful, it feels like a special night out. The malai kofta was rich and full of flavor.",synthetic
+NBB-0020,Neighborhood Bistro B,2026-10-07,3,Isha N.,"The decor is beautiful, it feels like a special night out. Quality has gone down compared to our last few visits.",synthetic
+FHE-0058,Food Hall Express,2026-10-07,3,Chris F.,"The dal makhani was rich and full of flavor. Service was really slow, we waited almost an hour for our mains.",synthetic
+FHE-0062,Food Hall Express,2026-10-07,5,Ana K.,"Food came out quickly even on a busy night. Loved the tandoori chicken, easily one of the best I have had.",synthetic
+UDR-0084,Upscale Dining Room,2026-10-08,3,Vikas H.,"Our server Rohan gave great recommendations. It was very loud, hard to have a conversation. Long wait between courses, the kitchen seemed overwhelmed. The malai kofta was rich and full of flavor.",synthetic
+NBA-0194,Neighborhood Bistro A,2026-10-08,5,Tom B.,"Loved the train station theme, so unique. The mango lassi was perfectly cooked and tasted fresh.",synthetic
+NBA-0265,Neighborhood Bistro A,2026-10-08,5,Jordan L.,"They catered our wedding for 250 guests and everyone loved it. Shout out to Kabir, amazing hospitality.",synthetic
+NBB-0030,Neighborhood Bistro B,2026-10-08,4,Omar L.,We have been coming for years but the food is not the same anymore. Great value for the price.,synthetic
+NBB-0196,Neighborhood Bistro B,2026-10-08,5,Omar M.,"Shout out to Arjun, amazing hospitality. Takeout was packed well and still hot at home. The fish curry was perfectly cooked and tasted fresh.",synthetic
+FHE-0130,Food Hall Express,2026-10-08,4,Leo J.,Our server Dev gave great recommendations.,synthetic
+UDR-0176,Upscale Dining Room,2026-10-09,5,Chris J.,"Meera was so warm and attentive, made our night. Very clean restaurant and restrooms.",synthetic
+FHE-0001,Food Hall Express,2026-10-09,4,Neha C.,Prices are on the high side for what you get.,synthetic
+UDR-0215,Upscale Dining Room,2026-10-11,4,Lena W.,"Shout out to Meera, amazing hospitality. It took forever to get our order and the check. The decor is beautiful, it feels like a special night out.",synthetic
+NBA-0233,Neighborhood Bistro A,2026-10-11,5,Lena L.,Takeout was packed well and still hot at home.,synthetic
+NBB-0057,Neighborhood Bistro B,2026-10-11,5,Isha F.,"Our server Tara gave great recommendations. Loved the lamb rogan josh, easily one of the best I have had.",synthetic
+NBA-0226,Neighborhood Bistro A,2026-10-13,5,Vikas S.,"Nisha was so warm and attentive, made our night. Consistently great, we come back every month. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0141,Neighborhood Bistro B,2026-10-14,5,Emily R.,Great value for the price.,synthetic
+NBB-0150,Neighborhood Bistro B,2026-10-14,4,Ben M.,"The chicken tikka masala was just okay, nothing special. Takeout was packed well and still hot at home.",synthetic
+NBA-0205,Neighborhood Bistro A,2026-10-15,4,Vikas P.,"Food was too mild, it needed more spice and seasoning. Our server Kabir gave great recommendations. Catering for our family party was perfect and on time.",synthetic
+FHE-0078,Food Hall Express,2026-10-15,3,Sam F.,"The chana masala was just okay, nothing special.",synthetic
+NBA-0042,Neighborhood Bistro A,2026-10-16,3,Mike B.,The pani puri was dry and a bit disappointing. Very clean restaurant and restrooms.,synthetic
+NBA-0278,Neighborhood Bistro A,2026-10-16,5,Leo R.,They catered our wedding for 250 guests and everyone loved it. The pani puri was perfectly cooked and tasted fresh.,synthetic
+NBB-0040,Neighborhood Bistro B,2026-10-16,4,Vikas R.,We have been coming for years but the food is not the same anymore. The baingan bharta was rich and full of flavor. Our server Arjun gave great recommendations. Very clean restaurant and restrooms.,synthetic
+FHE-0132,Food Hall Express,2026-10-16,5,Sam K.,Food came out quickly even on a busy night.,synthetic
+NBB-0086,Neighborhood Bistro B,2026-10-17,4,Vikas W.,"The mango lassi was just okay, nothing special. Our server Arjun gave great recommendations. Quality has gone down compared to our last few visits. Takeout was packed well and still hot at home.",synthetic
+UDR-0211,Upscale Dining Room,2026-10-18,4,Sana K.,"Loved the chicken biryani, easily one of the best I have had. Loved the train station theme, so unique. Long wait between courses, the kitchen seemed overwhelmed.",synthetic
+NBA-0193,Neighborhood Bistro A,2026-10-18,5,Mike R.,Our server Kabir gave great recommendations.,synthetic
+UDR-0053,Upscale Dining Room,2026-10-19,5,Raj D.,"Loved the garlic naan, easily one of the best I have had. Meera was so warm and attentive, made our night. Long wait between courses, the kitchen seemed overwhelmed.",synthetic
+NBA-0034,Neighborhood Bistro A,2026-10-19,2,Ana S.,"Even when we asked for spicy, the garlic naan had barely any heat. Our server Kabir gave great recommendations. Tables were sticky and the restroom needed attention.",synthetic
+NBA-0059,Neighborhood Bistro A,2026-10-19,5,Jordan K.,"Every visit the food is just as good as the last. Kabir was so warm and attentive, made our night.",synthetic
+NBA-0285,Neighborhood Bistro A,2026-10-19,5,Maria S.,"Very clean restaurant and restrooms. They catered our wedding for 250 guests and everyone loved it. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0035,Neighborhood Bistro B,2026-10-19,4,Sana E.,The malai kofta was dry and a bit disappointing.,synthetic
+FHE-0038,Food Hall Express,2026-10-19,4,Raj H.,"Shout out to Dev, amazing hospitality. Service was fast and smooth. The palak paneer was dry and a bit disappointing.",synthetic
+UDR-0172,Upscale Dining Room,2026-10-20,3,Vikas W.,The chicken tikka masala was dry and a bit disappointing.,synthetic
+NBA-0081,Neighborhood Bistro A,2026-10-20,4,Jordan W.,The butter chicken was dry and a bit disappointing.,synthetic
+NBB-0022,Neighborhood Bistro B,2026-10-20,3,Ben H.,"The palak paneer was just okay, nothing special.",synthetic
+NBB-0208,Neighborhood Bistro B,2026-10-20,5,Sam J.,"Tara was so warm and attentive, made our night.",synthetic
+FHE-0091,Food Hall Express,2026-10-20,5,Isha P.,"Loved the palak paneer, easily one of the best I have had.",synthetic
+UDR-0068,Upscale Dining Room,2026-10-21,4,Neha H.,"Prices are on the high side for what you get. Asha was so warm and attentive, made our night. Service was fast and smooth.",synthetic
+UDR-0243,Upscale Dining Room,2026-10-21,4,Chris K.,The goat curry was perfectly cooked and tasted fresh. Prices are on the high side for what you get.,synthetic
+FHE-0131,Food Hall Express,2026-10-21,4,Lena L.,"Dev was so warm and attentive, made our night. Very stingy with the meat, mostly rice. Loved the pani puri, easily one of the best I have had.",synthetic
+UDR-0099,Upscale Dining Room,2026-10-22,5,Jordan J.,"Loved the fish curry, easily one of the best I have had. The decor is beautiful, it feels like a special night out. Our server Meera gave great recommendations. Even with a reservation we waited 30 minutes to be seated.",synthetic
+NBA-0177,Neighborhood Bistro A,2026-10-22,4,Mike P.,"Flavors felt diluted and bland for Indian food. The decor is beautiful, it feels like a special night out.",synthetic
+NBB-0188,Neighborhood Bistro B,2026-10-22,5,Ben J.,"Arjun was so warm and attentive, made our night. Loved the train station theme, so unique. Loved the pani puri, easily one of the best I have had. Portions were small for the price, barely any chicken in the bowl.",synthetic
+UDR-0001,Upscale Dining Room,2026-10-23,5,Priya H.,"Our server Asha gave great recommendations. It took forever to get our order and the check. The decor is beautiful, it feels like a special night out.",synthetic
+FHE-0020,Food Hall Express,2026-10-23,4,Priya D.,"Loved the tandoori chicken, easily one of the best I have had.",synthetic
+NBA-0129,Neighborhood Bistro A,2026-10-24,5,Ben N.,The butter chicken was rich and full of flavor.,synthetic
+NBA-0248,Neighborhood Bistro A,2026-10-24,4,Omar J.,"Food was too mild, it needed more spice and seasoning. The baingan bharta was rich and full of flavor.",synthetic
+NBB-0019,Neighborhood Bistro B,2026-10-24,3,Ben E.,"Shout out to Tara, amazing hospitality. Great value for the price. We have been coming for years but the food is not the same anymore. It was very loud, hard to have a conversation.",synthetic
+FHE-0026,Food Hall Express,2026-10-24,4,Kate C.,Great value for the price. Staff felt rushed and not very friendly. A bit pricey but worth it for the experience.,synthetic
+UDR-0117,Upscale Dining Room,2026-10-25,4,Isha A.,"Rohan was so warm and attentive, made our night. Service was really slow, we waited almost an hour for our mains. The fish curry was perfectly cooked and tasted fresh.",synthetic
+NBA-0023,Neighborhood Bistro A,2026-10-25,2,Leo T.,"Food was too mild, it needed more spice and seasoning.",synthetic
+NBA-0168,Neighborhood Bistro A,2026-10-25,4,Omar M.,"Kabir was so warm and attentive, made our night. Used them for an office event, food and setup were excellent. Even when we asked for spicy, the dal makhani had barely any heat.",synthetic
+UDR-0052,Upscale Dining Room,2026-10-26,5,Chris R.,"Our server Rohan gave great recommendations. Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0219,Neighborhood Bistro B,2026-10-26,5,Tom K.,"The chicken tikka masala was perfectly cooked and tasted fresh. Arjun was so warm and attentive, made our night.",synthetic
+UDR-0036,Upscale Dining Room,2026-10-27,1,Tom W.,"Even with a reservation we waited 30 minutes to be seated. Service was really slow, we waited almost an hour for our mains. The dal makhani was dry and a bit disappointing. Our server seemed distracted and hard to flag down.",synthetic
+NBA-0099,Neighborhood Bistro A,2026-10-27,4,Raj H.,"Even when we asked for spicy, the malai kofta had barely any heat. Our server Kabir gave great recommendations.",synthetic
+FHE-0073,Food Hall Express,2026-10-28,3,Lena E.,"Paid over $20 for a bowl and a drink, not worth it.",synthetic
+UDR-0110,Upscale Dining Room,2026-10-29,4,Chris F.,"Cozy and calm atmosphere, great for a date.",synthetic
+NBB-0119,Neighborhood Bistro B,2026-10-29,4,Isha F.,The momos was rich and full of flavor. We have been coming for years but the food is not the same anymore. Our server Tara gave great recommendations.,synthetic
+NBA-0094,Neighborhood Bistro A,2026-10-30,5,Emily E.,"Shout out to Kabir, amazing hospitality. The chicken biryani was rich and full of flavor.",synthetic
+NBB-0025,Neighborhood Bistro B,2026-10-30,4,Chris F.,Great value for the price.,synthetic
+UDR-0145,Upscale Dining Room,2026-10-31,2,Jordan N.,"The chicken biryani was just okay, nothing special. Cozy and calm atmosphere, great for a date. Long wait between courses, the kitchen seemed overwhelmed.",synthetic
+NBA-0141,Neighborhood Bistro A,2026-10-31,4,Jordan K.,"It was very loud, hard to have a conversation. Shout out to Nisha, amazing hospitality. Loved the malai kofta, easily one of the best I have had.",synthetic
+NBB-0100,Neighborhood Bistro B,2026-10-31,4,Isha T.,"The butter chicken used to be amazing, this time it tasted different. Our server Tara gave great recommendations.",synthetic

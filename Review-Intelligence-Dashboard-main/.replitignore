@@ -1,0 +1,25 @@
+# The format of this file is identical to `.dockerignore`.
+# It is used to reduce the size of deployed images to make the process of publishing faster.
+
+# No need to store the pnpm store twice.
+.local
+
+# Private review CSVs are local verification inputs, not public app assets.
+attached_assets/*YELP*.csv
+
+# Local manager decisions must never be included in public deployment assets.
+review_intel_app/data/manager_corrections.sqlite*
+review_intel_app/data/manager_corrections_reply_approvals.sqlite*
+# Selected real website testimonials are private, not deployment or demo assets.
+review_intel_app/data/private_website_reviews/
+review_intel_app/data/manager_accounts.sqlite*
+review_intel_app/data/manager_permissions*.json
+# Human-label adjudication and evaluation packets contain private review text.
+review_intel_app/data/private_evaluation/
+review_intel_app/data/private_source_readiness/
+attached_assets/mumbai_central_reviews_*.csv
+# Original source workbooks contain private reviewer profiles and review text.
+attached_assets/*Outscraper*.xlsx
+attached_assets/*labeling_sheet*.csv
+attached_assets/*manager_decisions*.csv
+attached_assets/*definitions_blank*.csv

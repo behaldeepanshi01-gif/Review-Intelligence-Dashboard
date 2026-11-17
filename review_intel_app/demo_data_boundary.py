@@ -63,6 +63,26 @@ VITE_FORBIDDEN_PATTERNS = [
     (re.compile(r"\.(?:csv|sqlite|sqlite3|db)\b", re.I), "Vite reference to data file"),
 ]
 
+HTML_FORBIDDEN_PATTERNS = [
+    (re.compile(r"<iframe\b", re.I), "embedded iframe in index.html"),
+    (re.compile(r"""['"`][^'"`]*/api/"""), "API endpoint reference in index.html"),
+    (re.compile(r"""['"`][^'"`]*/dashboard(?:/|['"`])"""), "dashboard route reference in index.html"),
+    (re.compile(r"review_intel_app", re.I), "private app reference in index.html"),
+    (re.compile(r":(?:8501|8000|5000)\b"), "local backend port reference in index.html"),
+]
+
+FORBIDDEN_PACKAGE_DEPS = {
+    "@workspace/api-server",
+    "@workspace/db",
+    "@workspace/api-client-react",
+    "@workspace/api-zod",
+    "axios",
+    "drizzle-orm",
+    "pg",
+    "sqlite3",
+    "better-sqlite3",
+}
+
 SCENE_FORBIDDEN_PATTERNS = [
     (re.compile(r"\byelp\b", re.I), "Yelp reference in public walkthrough"),
     (re.compile(r"\bconnected to live\b", re.I), "claim of live restaurant connection"),
@@ -219,13 +239,34 @@ def audit_demo_boundary(
                     violations.append(f"Disallowed external URL in demo code ({rel})")
                     break
 
-    # 3. Vite configuration check
+    # 3. Vite, HTML shell, and package dependency checks
     vite_cfg = demo_dir / "vite.config.ts"
     if vite_cfg.is_file():
         cfg_text = vite_cfg.read_text(encoding="utf-8", errors="ignore")
         for pattern, label in VITE_FORBIDDEN_PATTERNS:
             if pattern.search(cfg_text):
                 violations.append(f"Disallowed {label} in vite.config.ts")
+
+    index_html = demo_dir / "index.html"
+    if index_html.is_file():
+        html_text = index_html.read_text(encoding="utf-8", errors="ignore")
+        for pattern, label in HTML_FORBIDDEN_PATTERNS:
+            if pattern.search(html_text):
+                violations.append(f"Disallowed {label}")
+
+    pkg_json = demo_dir / "package.json"
+    if pkg_json.is_file():
+        try:
+            pkg = json.loads(pkg_json.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            pkg = {}
+        for section in ("dependencies", "devDependencies", "optionalDependencies"):
+            deps = pkg.get(section)
+            if isinstance(deps, dict):
+                for name in sorted(FORBIDDEN_PACKAGE_DEPS.intersection(deps.keys())):
+                    violations.append(
+                        f"Disallowed backend/data dependency '{name}' in package.json"
+                    )
 
     # 4. Rendered walkthrough scene checks (no Yelp mentions or live-data claims)
     rendered_scene_paths = []
@@ -277,6 +318,8 @@ def audit_demo_boundary(
     reviewer_terms, passage_terms = _extract_private_terms(csv_paths)
     if reviewer_terms or passage_terms:
         scan_targets = list(scene_paths)
+        if index_html.is_file():
+            scan_targets.append(index_html)
         if src_dir.is_dir():
             for path in _iter_files(src_dir):
                 if path.suffix.lower() in CODE_SUFFIXES and path not in scan_targets:

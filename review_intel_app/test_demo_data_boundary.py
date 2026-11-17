@@ -117,6 +117,27 @@ class DemoDataBoundaryTests(unittest.TestCase):
                 violations = B.audit_demo_boundary(demo, upload_dirs=[])
                 self.assertTrue(violations, f"Expected violation for: {phrase}")
 
+    def test_catches_index_html_and_package_json_backend_connections(self):
+        demo = self._copy_demo()
+        html_path = demo / "index.html"
+        html_path.write_text(
+            html_path.read_text(encoding="utf-8").replace(
+                "</body>",
+                '<iframe src="/dashboard/"></iframe></body>',
+            ),
+            encoding="utf-8",
+        )
+        html_violations = B.audit_demo_boundary(demo, upload_dirs=[])
+        self.assertTrue(any("index.html" in v for v in html_violations))
+
+        demo_pkg = self._copy_demo()
+        pkg_path = demo_pkg / "package.json"
+        pkg = json.loads(pkg_path.read_text(encoding="utf-8"))
+        pkg.setdefault("dependencies", {})["@workspace/db"] = "workspace:*"
+        pkg_path.write_text(json.dumps(pkg), encoding="utf-8")
+        pkg_violations = B.audit_demo_boundary(demo_pkg, upload_dirs=[])
+        self.assertTrue(any("@workspace/db" in v for v in pkg_violations))
+
     def test_catches_removed_fictional_boundary_disclosures(self):
         demo = self._copy_demo()
         scene1 = demo / "src/components/video/video_scenes/Scene1.tsx"

@@ -50,6 +50,7 @@ class CsvExportTests(test_report_downloads.DownloadTests):
 
     def test_other_formats_and_preparing_replaces_previous_link(self):
         for filename, mime in [("weekly_owner_summary.txt", "text/plain"),
+                               ("weekly_owner_summary.html", "text/html"),
                                ("unsaved-action-draft.json", "application/json"),
                                ("upload_validation_report.csv", "text/csv"),
                                ("early_warnings.csv", "text/csv")]:
@@ -101,6 +102,33 @@ class ExportUiTests(unittest.TestCase):
         self.assertTrue(any("/dashboard/report-download/" in b.url
                             for b in app.get("link_button")))
         self.assertTrue(any("cannot be recalled" in c.value for c in app.caption))
+
+        # Printable Weekly Owner Summary (HTML) sits alongside weekly_owner_summary.txt
+        # and reuses the same acknowledgment gate and /dashboard/report-download/ flow.
+        txt_label = "Prepare secure export: Download weekly owner summary (TXT)"
+        html_label = "Prepare secure export: Download printable weekly owner summary (HTML)"
+        self.assertTrue(any(b.label == txt_label for b in app.button))
+        self.assertTrue(next(b for b in app.button if b.label == html_label).disabled)
+        next(c for c in app.checkbox if c.label.startswith("I checked weekly_owner_summary.html")).check().run()
+        with patch.object(D, "issue", wraps=D.issue) as issued_html:
+            next(b for b in app.button if b.label == html_label).click().run()
+        self.assertFalse(app.exception)
+        html_args = issued_html.call_args
+        self.assertEqual(html_args.args[2], [chosen])
+        self.assertEqual(html_args.kwargs["filename"], "weekly_owner_summary.html")
+        self.assertEqual(html_args.kwargs["media_type"], "text/html")
+        html_text = html_args.args[3].decode("utf-8")
+        self.assertIn("WEEKLY OWNER SUMMARY", html_text)
+        self.assertIn("@media print", html_text)
+        self.assertIn("@page", html_text)
+        self.assertIn(chosen, html_text)
+        self.assertIn("Review trends do not prove an action caused a change.", html_text)
+        self.assertTrue(any(
+            b.label == "Download printable weekly owner summary (HTML)"
+            and "/dashboard/report-download/" in b.url
+            for b in app.get("link_button")
+        ))
+        self.assertFalse(app.get("download_button"))
 
 
 if __name__ == "__main__":

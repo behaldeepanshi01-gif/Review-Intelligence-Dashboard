@@ -1049,19 +1049,40 @@ with tabs[5]:
         require_access(tag, pick)
         # Never mutate the captured review summary on a timer tick.
         current_history = datasets.get(tag)["legacy_tag"]
+        current_actions = access.actions(ACTION_LOG, datasets.get(tag))
+        tagged_records = tagged.to_dict("records")
+        source_records = raw.to_dict("records")
         action_lines = A.weekly_action_summary(
-            access.actions(ACTION_LOG, datasets.get(tag)),
+            current_actions,
             dataset_tag=tag,
             locations=pick,
-            reviews=tagged.to_dict("records"),
+            reviews=tagged_records,
             timezones_by_location=timezones_by_location,
             legacy_tag=current_history,
             provenance_by_location=provenance_by_location,
-            source_reviews=raw.to_dict("records"),
+            source_reviews=source_records,
         )
         st.code("\n".join(lines + action_lines), language=None)
         secure_export("Download weekly owner summary (TXT)", "\n".join(lines + action_lines),
                       file_name="weekly_owner_summary.txt", mime="text/plain",
+                      dataset=tag, locations=pick)
+        summary_html = AR.build_printable_weekly_summary(
+            period_reviews=view,
+            alerts=alerts,
+            staff_leaderboard=lb2,
+            urgent_reply_count=len(high_open),
+            actions=current_actions,
+            dataset_tag=tag,
+            locations=pick,
+            reviews=tagged_records,
+            date_range=dr,
+            legacy_tag=current_history,
+            provenance_by_location=provenance_by_location,
+            source_reviews=source_records,
+            timezones_by_location=timezones_by_location,
+        )
+        secure_export("Download printable weekly owner summary (HTML)", summary_html,
+                      file_name="weekly_owner_summary.html", mime="text/html",
                       dataset=tag, locations=pick)
         show_live_freshness("Owner summary")
 

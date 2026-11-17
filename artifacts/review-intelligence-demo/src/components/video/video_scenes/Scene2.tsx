@@ -3,7 +3,7 @@ import { AppShell, BrowserFrame, EASE, Panel, Stage, StatCard, TinyAvatar, viole
 
 const rows = [
   ['Fictional review', 'Synthetic wording only', 'Demo input'],
-  ['Theme tags', 'Spice + service speed', 'Illustrative'],
+  ['Theme tags', 'Clear → Spice + speed · Unclear → manager check', 'Illustrative'],
   ['Alert example', 'Not venue data', 'Demo only'],
   ['Reply draft', 'Manager approval required', 'Not sent'],
 ];

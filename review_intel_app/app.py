@@ -30,6 +30,7 @@ import manager_identity as identity
 import engine as E
 from trend_coverage import coverage_tables
 from trend_coverage_ui import show_monthly_coverage, show_warning_coverage
+from unclear_wording_ui import show_unclear_wording_example
 import manager_corrections as C
 import reply_approvals as R
 import manager_correction_history as correction_history
@@ -650,6 +651,7 @@ with tabs[1]:
     needs_review = view[view["needs_review"]].sort_values("date", ascending=False)
     with st.expander(f"Reviews needing manager review ({len(needs_review)})"):
         st.caption("Unclear wording is not automatically counted as praise or a complaint.")
+        show_unclear_wording_example(E.THEMES)
         if not needs_review.empty:
             position = st.selectbox(
                 "Review needing a check", list(range(len(needs_review))),

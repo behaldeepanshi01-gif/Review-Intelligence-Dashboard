@@ -2,8 +2,8 @@ import { motion } from 'framer-motion';
 import { BrowserFrame, EASE, Stage, violet } from '../ShowcaseUI';
 
 const sections = [
-  { label: 'EXAMPLE INPUTS', text: 'One fictional Spice + service-speed review; separate fictional staff-praise examples.', delay: 1.3 },
-  { label: 'WHAT THE SYSTEM CAN ORGANIZE', text: 'Themes · rising signals · staff mentions · reply drafts', delay: 3.0 },
+  { label: 'EXAMPLE INPUTS', text: 'One clear Spice + service-speed sample, one unclear Price sample held for a manager, and fictional staff-praise examples.', delay: 1.3 },
+  { label: 'WHAT THE SYSTEM CAN ORGANIZE', text: 'Themes · manager review for unclear wording · rising signals · staff mentions · reply drafts', delay: 3.0 },
   { label: 'A POSSIBLE NEXT STEP', text: 'If a similar pattern appeared in real data, a manager could decide whether to discuss it with the team.', delay: 4.6 },
 ];
 

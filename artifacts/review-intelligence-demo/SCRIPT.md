@@ -19,7 +19,7 @@
 |---|---|---|---|---|
 | 00–10 | A demo for one named location | Target pin settles; fictional review card arrives and is explicitly labeled | Asymmetric headline at left, review card at right | Review's violet marker expands into dashboard |
 | 10–24 | Mumbai Central demo workspace | Location/address resolves; synthetic overview tiles and sample activity form | Browser overview | One review tile grows into theme mapping |
-| 24–39 | One fictional review → two tags | Quote is shown as synthetic; Spice and Service speed highlight within all 12 themes | Full-height theme lanes | Service-speed tag line becomes illustrative alert |
+| 24–39 | Clear tags + unclear wording check | Clear synthetic quote maps to Spice + Service speed; unclear price question/hedge flags Price for manager review instead of guessing | Full-height theme lanes | Service-speed tag line becomes illustrative alert |
 | 39–53 | A demo-only rising alert | Sample bars rise; alert carries a clear “not venue data” qualifier | Tight trend panel | Amber alert marker travels to staff signal |
 | 53–66 | Recognition as an example | Fictional staff names and made-up praise snippets appear | Human-centered name cards | One card folds into reply workspace |
 | 66–80 | Draft, manager decides | The same fictional review receives a synthetic response; manager review stamp lands | Review/reply split | Stamp ring becomes a source-note seal |
@@ -49,10 +49,10 @@ All times are on the unchanged 120-second runtime clock. The existing nine scene
 - **Assets/technique:** Existing reusable browser/app shell and data cards. All numbers are either product facts or explicitly fictional-sample counts.
 - **Sound intent:** Silent.
 
-### Shot 03 / 24.00–39.00 / 15.00s — “One fictional review. Two themes.”
-- **Purpose:** Make the AI workflow concrete: a fictional example is organized under the product's 12 theme taxonomy.
-- **Exact content:** Title “From a fictional review to themes”; quote “The spice balance was lovely, but our first check-in took a while.”; label “SYNTHETIC EXAMPLE · NOT A REAL REVIEW”; highlighted chips “Spice” and “Service speed”; complete product theme set “Food · Spice · Consistency · Service speed · Staff · Portions · Price · Ambiance · Cleanliness · Catering · Seating · Takeout”; footer “These tags are illustrative only—not findings about Mumbai Central.”
-- **Composition / artistic idea:** Existing two-column grid of 12 theme lanes retained. A compact synthetic quote strip sits above the grid; the quote is visually split into its two candidate tags, which light up Spice and Service speed. The other ten tags remain visible, communicating the full taxonomy.
+### Shot 03 / 24.00–39.00 / 15.00s — “Clear wording tags. Unclear wording asks a manager.”
+- **Purpose:** Make the AI workflow concrete and honest: clear fictional wording maps to themes, while unclear wording (a price question/hedge) asks a manager to review the tag instead of guessing praise or a complaint.
+- **Exact content:** Title “Clear wording tags. Unclear wording asks a manager.”; clear sample quote “The spice balance was lovely, but our first check-in took a while.” → “Spice + Service speed”; unclear sample quote “Are the prices fair? Maybe — not sure.” → amber badge “Price · Needs manager review”; label “SYNTHETIC EXAMPLE · NOT A REAL REVIEW”; complete product theme set “Food · Spice · Consistency · Service speed · Staff · Portions · Price · Ambiance · Cleanliness · Catering · Seating · Takeout”; Price lane marked amber “Needs manager review”; footer “All 12 product themes · synthetic examples · not from Mumbai Central”.
+- **Composition / artistic idea:** Existing two-column grid of 12 theme lanes retained. Two compact synthetic quote strips sit above the grid: the clear sample lights up Spice and Service speed in violet, while the unclear question/hedge flags Price in amber for manager review instead of guessing. The remaining nine tags stay visible, communicating the full taxonomy.
 - **Timed choreography:** 00.00 carried sample card lands above lanes. 00.35 example label appears. 00.60–02.00 quote reveals in short groups. 02.20 Spice tag lifts out of the quote; 03.00 Service speed tag follows. 03.30–07.50 lanes stagger in with all 12 names. 08.00 the two matching lanes illuminate and meet the floating tags. 10.30 “one review → two themes” resolves; 12.80 Service speed underline extends and becomes the next scene's chart trace.
 - **Transition contract:** Underline continues into the alert chart as a physical violet line; the review card folds under the same app-frame top edge.
 - **Assets/technique:** Existing theme lane grid, synthetic quote as UI text, motion tags, line drawing. No externally sourced review text.

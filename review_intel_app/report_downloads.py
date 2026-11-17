@@ -42,10 +42,11 @@ def revoke(grant):
 
 
 def issue(grant, dataset, locations, text, *, acknowledged,
-          filename="manager_action_report.txt", media_type="text/plain"):
+          filename="manager_action_report.txt", media_type="text/plain",
+          revoke_existing=True):
     if not acknowledged or not identity.permits(grant, dataset, locations):
         raise PermissionError("Report access or privacy acknowledgment required.")
-    if media_type not in {"text/plain", "text/csv", "application/json"}:
+    if media_type not in {"text/plain", "text/csv", "application/json", "text/html"}:
         raise ValueError("Unsupported export format.")
     # Filenames are display metadata, never authorization or a filesystem path.
     filename = re.sub(r"[^A-Za-z0-9._-]", "_", filename)[:150].strip(".")
@@ -56,7 +57,8 @@ def issue(grant, dataset, locations, text, *, acknowledged,
         raise ValueError("Report is too large. Select fewer restaurants.")
     with _lock:
         _prune()
-        revoke(grant)
+        if revoke_existing:
+            revoke(grant)
         if len(_reports) >= 100:
             raise ValueError("Report service is busy. Try again in two minutes.")
         token = secrets.token_urlsafe(32)

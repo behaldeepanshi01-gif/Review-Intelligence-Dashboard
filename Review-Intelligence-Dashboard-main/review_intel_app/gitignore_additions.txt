@@ -1,2 +1,0 @@
-# Local manager action notes are private and should not be committed.
-data/action_log.json

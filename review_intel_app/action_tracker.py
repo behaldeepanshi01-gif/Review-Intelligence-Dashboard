@@ -6,7 +6,10 @@ from datetime import date, datetime, timezone
 from contextlib import contextmanager, nullcontext
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import copy
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 import hashlib
 import json
 import os
@@ -137,11 +140,13 @@ def _action_lock(path: str):
     path = os.path.realpath(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path + ".lock", "a", encoding="utf-8") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        if fcntl is not None:
+            fcntl.flock(lock, fcntl.LOCK_EX)
         try:
             yield path
         finally:
-            fcntl.flock(lock, fcntl.LOCK_UN)
+            if fcntl is not None:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def _write_actions(path: str, actions: list[dict]) -> None:
@@ -595,6 +600,35 @@ def _follow_up_counts(action: dict, reviews: list[dict]) -> dict:
     }
 
 
+def privacy_filter(reviews: list[dict]):
+    """Filter out known guest names and copied review sentences from manager fields."""
+    import re
+    terms = set()
+    for row in reviews:
+        name = str(row.get("reviewer") or "").strip()
+        text = str(row.get("text") or "").strip()
+        if name and name.lower() not in {"nan", "anonymous", "guest"}:
+            terms.add(name)
+            if len(name.split()[0]) >= 3:
+                terms.add(name.split()[0])
+        if text:
+            terms.add(text)
+            # Also remove complete quoted sentences copied into an action.
+            terms.update(s.strip() for s in re.split(r"(?<=[.!?])\s+", text)
+                         if len(s.split()) >= 4)
+    patterns = [re.compile(r"(?<!\w)" + r"\s+".join(re.escape(w) for w in term.split())
+                           + r"(?!\w)", re.I)
+                for term in sorted(terms, key=len, reverse=True)]
+
+    def clean(value):
+        result = str(value or "")
+        for pattern in patterns:
+            result = pattern.sub("[private content removed]", result)
+        # Keep manager input from introducing report headings or control characters.
+        return " ".join(result.replace("—", "-").split())
+    return clean
+
+
 def weekly_action_summary(
     actions: list[dict],
     dataset_tag: str,
@@ -621,14 +655,15 @@ def weekly_action_summary(
     if not active_actions:
         return ["Manager actions: no active actions for the selected file and locations."]
 
+    clean = privacy_filter(reviews)
     lines = ["Manager actions:"]
     for action in active_actions:
-        location = action.get("location", "Location")
-        theme = action.get("theme", "Theme")
-        action_text = action.get("action_text", "Action not described")
-        owner = action.get("owner") or "Not assigned"
-        status = action.get("status", "Planned")
-        due_date = action.get("due_date") or "Not set"
+        location = clean(action.get("location", "Location"))
+        theme = clean(action.get("theme", "Theme"))
+        action_text = clean(action.get("action_text", "Action not described"))
+        owner = clean(action.get("owner")) or "Not assigned"
+        status = clean(action.get("status", "Planned"))
+        due_date = clean(action.get("due_date")) or "Not set"
         overdue_label = "OVERDUE — " if is_overdue(
             action, today, timezone_name=timezone_name,
             timezones_by_location=timezones_by_location, now=now) else ""
@@ -643,9 +678,9 @@ def weekly_action_summary(
             current_source_reviews=source_reviews,
             current_dataset_tag=dataset_tag,
         )
-        lines.append("  " + result["provenance_message"])
-        lines.append("  " + result["source_message"])
-        lines.append("  " + result["source_details"])
+        lines.append("  " + clean(result["provenance_message"]))
+        lines.append("  " + clean(result["source_message"]))
+        lines.append("  " + clean(result["source_details"]))
         if result["ready"]:
             lines.append(
                 f"  Follow-up: {result['mentions']} of {result['review_count']} "

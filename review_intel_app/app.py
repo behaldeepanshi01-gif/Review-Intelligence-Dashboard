@@ -19,6 +19,7 @@ from action_draft_reset import show_reset
 from live_freshness import show_live_freshness
 from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
+import action_report as AR
 from dashboard_export_ui import secure_export
 from manager_report_access import require_manager, authorized
 from manager_report_access import clear_private_state
@@ -1028,7 +1029,8 @@ with tabs[5]:
     st.markdown("**Weekly owner summary** (copy into an email or WhatsApp)")
     st.caption("Rule changes can change theme counts. Earlier saved action baselines "
                "may use different rules or manager decisions, so check them before comparing. "
-               "Corrections recalculate current reports, not saved action baselines.")
+               "Corrections recalculate current reports, not saved action baselines. "
+               "Review trends do not prove that an action caused a change.")
     lines = [f"Reviews this period: {len(view)}, average {view['rating'].mean():.2f} stars."]
     for loc, g in view.groupby("location"):
         lines.append(f"- {loc}: {g['rating'].mean():.2f} stars from {len(g)} reviews")

@@ -20,6 +20,9 @@ def show_manager_report(actions, tag, pick, tagged, legacy_tag, provenance, time
     report_text = AR.build_report(
         actions, tag, pick, tagged.to_dict("records"), legacy_tag=legacy_tag,
         provenance_by_location=provenance, timezones_by_location=timezones)
+    html_report = AR.build_printable_report(
+        actions, tag, pick, tagged.to_dict("records"), legacy_tag=legacy_tag,
+        provenance_by_location=provenance, timezones_by_location=timezones)
     st.text_area("Manager report preview", value=report_text, height=240, disabled=True)
     identity_key = st.session_state["_manager_report_grant"]["revision"]
     fingerprint = hashlib.sha256((identity_key + tag + report_text).encode()).hexdigest()
@@ -35,11 +38,18 @@ def show_manager_report(actions, tag, pick, tagged, legacy_tag, provenance, time
             disabled=not (checked and has_actions),
             key=f"manager_report_download_{fingerprint}"):
             try:
-                token = report_downloads.issue(
+                token_txt = report_downloads.issue(
                     st.session_state["_manager_report_grant"], tag, pick, report_text,
-                    acknowledged=checked)
+                    acknowledged=checked, filename="manager_action_report.txt",
+                    media_type="text/plain", revoke_existing=True)
+                token_html = report_downloads.issue(
+                    st.session_state["_manager_report_grant"], tag, pick, html_report,
+                    acknowledged=checked, filename="manager_action_report.html",
+                    media_type="text/html", revoke_existing=False)
                 st.link_button("Download manager action report (TXT)",
-                               f"/dashboard/report-download/{token}")
+                               f"/dashboard/report-download/{token_txt}")
+                st.link_button("Download printable manager action report (HTML)",
+                               f"/dashboard/report-download/{token_html}")
                 st.caption("Single-use link expires in two minutes. Confirm your manager ID "
                            "and password to download. Locking the dashboard invalidates the link. "
                            "Files already downloaded cannot be recalled.")

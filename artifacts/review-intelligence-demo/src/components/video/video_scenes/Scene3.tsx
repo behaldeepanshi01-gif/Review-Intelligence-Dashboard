@@ -21,23 +21,29 @@ export function Scene3() {
               initial={{ opacity: 0, scaleY: 0.8 }}
               animate={{ opacity: 1, scaleY: 1 }}
               transition={{ delay: 0.25, duration: 0.45, ease: EASE }}
-              className="mb-[.55vh] flex items-center gap-[.75vw] rounded-[.5vw] border px-[.82vw] py-[.52vh]"
+              className="mb-[.5vh] flex flex-col gap-[.22vh] rounded-[.5vw] border px-[.82vw] py-[.46vh]"
               style={{ borderColor: '#E5DDF1', background: '#FCFAFF', transformOrigin: 'top' }}
             >
-              <span className="whitespace-nowrap uppercase tracking-[.12em]" style={{ color: '#735B92', fontSize: '.49vw', fontWeight: 750 }}>FICTIONAL SAMPLE</span>
-              <span style={{ color: '#344155', fontSize: '.66vw' }}>“The spice balance was lovely, but our first check-in took a while.”</span>
-              <span className="ml-auto whitespace-nowrap rounded-full px-[.55vw] py-[.28vh]" style={{ background: '#F2EAFC', color: '#65478C', fontSize: '.49vw', fontWeight: 700 }}>Spice + Service speed</span>
+              <div className="flex items-center gap-[.75vw]">
+                <span className="whitespace-nowrap uppercase tracking-[.12em]" style={{ color: '#735B92', fontSize: '.48vw', fontWeight: 750 }}>FICTIONAL SAMPLE</span>
+                <span style={{ color: '#344155', fontSize: '.64vw' }}>“The spice balance was lovely, but our first check-in took a while.”</span>
+                <span className="ml-auto whitespace-nowrap rounded-full px-[.55vw] py-[.24vh]" style={{ background: '#F2EAFC', color: '#65478C', fontSize: '.48vw', fontWeight: 700 }}>Spice + Service speed</span>
+              </div>
+              <div style={{ color: '#705A8E', fontSize: '.5vw' }}>Evidence cues: “spice” → Spice · “first check-in took a while” → Service speed</div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, scaleY: 0.8 }}
               animate={{ opacity: 1, scaleY: 1 }}
               transition={{ delay: 0.5, duration: 0.45, ease: EASE }}
-              className="mb-[.75vh] flex items-center gap-[.75vw] rounded-[.5vw] border px-[.82vw] py-[.52vh]"
+              className="mb-[.65vh] flex flex-col gap-[.22vh] rounded-[.5vw] border px-[.82vw] py-[.46vh]"
               style={{ borderColor: '#F0DCC0', background: '#FFFBF5', transformOrigin: 'top' }}
             >
-              <span className="whitespace-nowrap uppercase tracking-[.12em]" style={{ color: '#9A5C11', fontSize: '.49vw', fontWeight: 750 }}>FICTIONAL UNCLEAR EXAMPLE</span>
-              <span style={{ color: '#344155', fontSize: '.66vw' }}>“Are the prices fair? Maybe — not sure.”</span>
-              <span className="ml-auto whitespace-nowrap rounded-full px-[.55vw] py-[.28vh]" style={{ background: '#FFF0D9', color: '#9A5C11', fontSize: '.49vw', fontWeight: 700 }}>Price · Needs manager review</span>
+              <div className="flex items-center gap-[.75vw]">
+                <span className="whitespace-nowrap uppercase tracking-[.12em]" style={{ color: '#9A5C11', fontSize: '.48vw', fontWeight: 750 }}>FICTIONAL UNCLEAR EXAMPLE</span>
+                <span style={{ color: '#344155', fontSize: '.64vw' }}>“Are the prices fair? Maybe — not sure.”</span>
+                <span className="ml-auto whitespace-nowrap rounded-full px-[.55vw] py-[.24vh]" style={{ background: '#FFF0D9', color: '#9A5C11', fontSize: '.48vw', fontWeight: 700 }}>Price · Needs manager review</span>
+              </div>
+              <div style={{ color: '#9A5C11', fontSize: '.5vw' }}>Why manager review: “prices” + question/hedge (“? / Maybe — not sure”) → held instead of guessing</div>
             </motion.div>
             <div className="grid min-h-0 flex-1 grid-cols-2 gap-[.8vw]">
               {[THEMES.slice(0, 6), THEMES.slice(6)].map((column, col) => (

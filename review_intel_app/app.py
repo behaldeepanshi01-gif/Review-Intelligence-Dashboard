@@ -31,6 +31,7 @@ import engine as E
 from trend_coverage import coverage_tables
 from trend_coverage_ui import show_monthly_coverage, show_warning_coverage
 from unclear_wording_ui import show_unclear_wording_example
+from alert_evidence_ui import show_alert_evidence
 import manager_corrections as C
 import reply_approvals as R
 import manager_correction_history as correction_history
@@ -801,6 +802,7 @@ with tabs[2]:
                 f"mention this theme, compared with {alert['baseline_share']}% before. "
                 f"{alert['recent_mentions']} recent reviews."
             )
+            show_alert_evidence(view, alert, window)
             suggestion = A.suggested_step(alert["theme"])
             st.markdown(f"**Possible next check:** {suggestion}")
             st.caption("This is a general prompt, not a confirmed cause.")

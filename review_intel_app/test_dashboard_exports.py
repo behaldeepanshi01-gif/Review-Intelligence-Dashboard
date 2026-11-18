@@ -51,6 +51,7 @@ class CsvExportTests(test_report_downloads.DownloadTests):
     def test_other_formats_and_preparing_replaces_previous_link(self):
         for filename, mime in [("weekly_owner_summary.txt", "text/plain"),
                                ("weekly_owner_summary.html", "text/html"),
+                               ("preshift_huddle_sheet.html", "text/html"),
                                ("unsaved-action-draft.json", "application/json"),
                                ("upload_validation_report.csv", "text/csv"),
                                ("early_warnings.csv", "text/csv")]:
@@ -125,6 +126,28 @@ class ExportUiTests(unittest.TestCase):
         self.assertIn("Review trends do not prove an action caused a change.", html_text)
         self.assertTrue(any(
             b.label == "Download printable weekly owner summary (HTML)"
+            and "/dashboard/report-download/" in b.url
+            for b in app.get("link_button")
+        ))
+
+        # Pre-Shift Huddle Sheet (HTML) reuses the same acknowledgment gate & secure flow.
+        preshift_label = "Prepare secure export: Download pre-shift huddle sheet (HTML)"
+        self.assertTrue(next(b for b in app.button if b.label == preshift_label).disabled)
+        next(c for c in app.checkbox if c.label.startswith("I checked preshift_huddle_sheet.html")).check().run()
+        with patch.object(D, "issue", wraps=D.issue) as issued_preshift:
+            next(b for b in app.button if b.label == preshift_label).click().run()
+        self.assertFalse(app.exception)
+        ps_args = issued_preshift.call_args
+        self.assertEqual(ps_args.args[2], [chosen])
+        self.assertEqual(ps_args.kwargs["filename"], "preshift_huddle_sheet.html")
+        self.assertEqual(ps_args.kwargs["media_type"], "text/html")
+        ps_text = ps_args.args[3].decode("utf-8")
+        self.assertIn("PRE-SHIFT HUDDLE SHEET", ps_text)
+        self.assertIn("@media print", ps_text)
+        self.assertIn(chosen, ps_text)
+        self.assertIn("Review trends do not prove an action caused a change.", ps_text)
+        self.assertTrue(any(
+            b.label == "Download pre-shift huddle sheet (HTML)"
             and "/dashboard/report-download/" in b.url
             for b in app.get("link_button")
         ))

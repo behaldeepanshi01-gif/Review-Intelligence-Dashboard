@@ -818,3 +818,384 @@ def build_printable_weekly_summary(
 
 build_html_report = build_printable_report
 build_weekly_summary_html = build_printable_weekly_summary
+
+
+def _preshift_compact_css():
+    return """    @page {
+      margin: 1.2cm;
+    }
+    body.huddle-sheet {
+      margin: 1.25rem;
+      line-height: 1.38;
+      font-size: 0.9rem;
+    }
+    body.huddle-sheet .report-header {
+      padding-bottom: 0.65rem;
+      margin-bottom: 0.9rem;
+    }
+    body.huddle-sheet .report-title {
+      font-size: 1.35rem;
+      margin-bottom: 0.25rem;
+    }
+    body.huddle-sheet .report-meta {
+      font-size: 0.8rem;
+      margin: 0.1rem 0;
+    }
+    body.huddle-sheet .kpi-grid {
+      gap: 0.55rem;
+      margin-bottom: 0.95rem;
+    }
+    body.huddle-sheet .kpi-card {
+      padding: 0.5rem 0.65rem;
+    }
+    body.huddle-sheet .kpi-card.alert-accent {
+      border-top-color: #b00020;
+    }
+    body.huddle-sheet .kpi-value {
+      font-size: 1.15rem;
+    }
+    body.huddle-sheet .report-section {
+      margin-bottom: 1rem;
+    }
+    body.huddle-sheet .section-title {
+      font-size: 1rem;
+      padding-bottom: 0.25rem;
+      margin-bottom: 0.55rem;
+    }
+    .huddle-columns {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 0.9rem;
+      align-items: start;
+      margin-bottom: 0.9rem;
+    }
+    .huddle-item {
+      border: 1px solid #d5dbe1;
+      border-left: 4px solid #2c3e50;
+      border-radius: 4px;
+      padding: 0.5rem 0.7rem;
+      margin-bottom: 0.5rem;
+      background-color: #fafafa;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .huddle-item.is-overdue {
+      border-left-color: #b00020;
+      background-color: #fff8f8;
+    }
+    .huddle-item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      margin-bottom: 0.2rem;
+    }
+    .huddle-badge {
+      display: inline-block;
+      padding: 0.08rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background: #eef2f6;
+      color: #2c3e50;
+    }
+    .huddle-badge.overdue-badge {
+      background: #fde8e8;
+      color: #b00020;
+    }
+    .huddle-action-text {
+      font-size: 0.88rem;
+      color: #111;
+      margin: 0.15rem 0;
+    }
+    .huddle-sub {
+      font-size: 0.78rem;
+      color: #555;
+      margin-top: 0.15rem;
+    }
+    body.huddle-sheet .data-table {
+      font-size: 0.82rem;
+      margin-bottom: 0.5rem;
+    }
+    body.huddle-sheet .data-table th,
+    body.huddle-sheet .data-table td {
+      padding: 0.34rem 0.5rem;
+    }
+    body.huddle-sheet .disclaimer {
+      margin-top: 0.9rem;
+      padding-top: 0.55rem;
+      font-size: 0.78rem;
+    }
+    @media print {
+      body.huddle-sheet {
+        margin: 0;
+        padding: 0;
+      }
+      .huddle-item {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        background-color: #fff;
+        border: 1px solid #999;
+        border-left: 4px solid #000;
+      }
+      .huddle-item.is-overdue {
+        background-color: #fff;
+        border-left-color: #b00020;
+      }
+      .huddle-columns {
+        gap: 0.6rem;
+      }
+    }"""
+
+
+def build_printable_preshift_sheet(
+    *,
+    alerts=None,
+    staff_leaderboard=None,
+    urgent_reply_count=0,
+    actions=None,
+    dataset_tag="",
+    locations=(),
+    reviews=(),
+    period_reviews=None,
+    date_range=None,
+    legacy_tag=None,
+    provenance_by_location=None,
+    source_reviews=None,
+    timezones_by_location=None,
+    today=None,
+    now=None,
+):
+    """Compact 1-page printable Pre-Shift Huddle Sheet for managers & shift leads.
+
+    Excludes guest names, raw review passages, and reply drafts. Reuses dataset/location
+    scoping, 5-newer-review threshold gating, comparability checks, and privacy filters.
+    """
+    selected_locations = set(locations)
+    sorted_locs = sorted(selected_locations)
+
+    review_rows_all = _to_records(reviews)
+    period_rows_all = _to_records(period_reviews)
+    source_rows_all = _to_records(source_reviews) if source_reviews is not None else None
+
+    privacy_corpus = list(review_rows_all) + list(period_rows_all)
+    if source_rows_all:
+        privacy_corpus.extend(source_rows_all)
+    clean = _privacy_filter(privacy_corpus)
+
+    alert_rows = [
+        row for row in _to_records(alerts)
+        if row.get("location") in selected_locations
+    ]
+    staff_rows = [
+        row for row in _to_records(staff_leaderboard)
+        if row.get("location") in selected_locations
+    ]
+
+    effective_source = source_rows_all if source_rows_all is not None else review_rows_all
+    active_entries = []
+    for row in (actions or []):
+        if (
+            not A.matches_dataset(row, dataset_tag, legacy_tag)
+            or row.get("location") not in selected_locations
+            or row.get("status") == "Done"
+        ):
+            continue
+        raw_location = row.get("location", "")
+        overdue = A.is_overdue(
+            row, today,
+            timezones_by_location=timezones_by_location, now=now,
+        )
+        result = A.follow_up(
+            row, review_rows_all,
+            current_provenance=(provenance_by_location or {}).get(raw_location),
+            current_source_reviews=effective_source,
+            current_dataset_tag=dataset_tag,
+        )
+        active_entries.append({
+            "action": row,
+            "location": raw_location,
+            "overdue": overdue,
+            "result": result,
+        })
+
+    # Prioritize overdue checks first, then earliest due date, then location.
+    active_entries.sort(key=lambda entry: (
+        0 if entry["overdue"] else 1,
+        entry["action"].get("due_date") or "9999-99-99",
+        entry["location"],
+        entry["action"].get("action_id", ""),
+    ))
+
+    overdue_count = sum(1 for entry in active_entries if entry["overdue"])
+    urgent_count = max(0, int(urgent_reply_count or 0))
+
+    period_meta_html = ""
+    if date_range and len(date_range) == 2:
+        period_meta_html = (
+            f'\n    <div class="report-meta">Review window: '
+            f'{html.escape(str(date_range[0]))} to {html.escape(str(date_range[1]))}</div>'
+        )
+    elif isinstance(date_range, str) and date_range.strip():
+        period_meta_html = f'\n    <div class="report-meta">Review window: {html.escape(clean(date_range))}</div>'
+
+    locs_html = html.escape(", ".join(clean(loc) for loc in sorted_locs)) if sorted_locs else "None selected"
+    overdue_card_cls = "kpi-card alert-accent" if overdue_count else "kpi-card"
+
+    kpi_html = f"""  <div class="kpi-grid">
+    <div class="{overdue_card_cls}">
+      <div class="kpi-label">Overdue Actions</div>
+      <div class="kpi-value">{overdue_count}</div>
+      <div class="kpi-sub">{"Needs immediate check" if overdue_count else "All on schedule"}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Shift Checks</div>
+      <div class="kpi-value">{len(active_entries)}</div>
+      <div class="kpi-sub">Open manager action plans</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Watch-List Themes</div>
+      <div class="kpi-value">{len(alert_rows)}</div>
+      <div class="kpi-sub">Rising complaint signals</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Urgent Reply Backlog</div>
+      <div class="kpi-value">{urgent_count}</div>
+      <div class="kpi-sub">High-urgency reviews needing reply</div>
+    </div>
+  </div>"""
+
+    # Section 1: Priority Shift Checks (compact huddle cards with heading containment)
+    huddle_cards = []
+    for entry in active_entries:
+        act = entry["action"]
+        loc_s = html.escape(clean(entry["location"]) or "Location")
+        theme_s = html.escape(clean(act.get("theme")) or "General")
+        text_s = html.escape(clean(act.get("action_text")) or "Not described")
+        owner_s = html.escape(clean(act.get("owner")) or "Not assigned")
+        status_s = html.escape(clean(act.get("status")) or "Planned")
+        due_s = html.escape(clean(act.get("due_date")) or "Not set")
+        follow_s = html.escape(_format_follow_up_text(entry["result"]))
+        cls = "huddle-item is-overdue" if entry["overdue"] else "huddle-item"
+        badge = (
+            '<span class="huddle-badge overdue-badge">OVERDUE</span>'
+            if entry["overdue"]
+            else f'<span class="huddle-badge">{status_s}</span>'
+        )
+        huddle_cards.append(
+            f'      <div class="{cls}">\n'
+            f'        <div class="huddle-item-top"><strong>{loc_s} &middot; {theme_s}</strong>{badge}</div>\n'
+            f'        <div class="huddle-action-text">{text_s}</div>\n'
+            f'        <div class="huddle-sub"><strong>Owner:</strong> {owner_s} &nbsp;|&nbsp; '
+            f'<strong>Due:</strong> {due_s} &nbsp;|&nbsp; {follow_s}</div>\n'
+            '      </div>'
+        )
+    priority_section_html = _render_card_section(
+        "huddle-actions",
+        f"PRIORITY SHIFT CHECKS ({len(active_entries)})",
+        huddle_cards,
+        empty_text="No active manager actions for the selected dataset and locations.",
+    )
+
+    # Section 2 (Left): Rising Watch List with safe operational prompts
+    if alert_rows:
+        watch_trs = []
+        for row in alert_rows[:8]:
+            loc_s = html.escape(clean(row.get("location")) or "Location")
+            raw_theme = str(row.get("theme") or "Theme")
+            theme_s = html.escape(clean(raw_theme))
+            change_s = html.escape(clean(row.get("change")) or "rising")
+            sev_raw = clean(row.get("severity")) or "Watch"
+            sev_cls = "severity-high" if sev_raw.lower() == "high" else (
+                "severity-medium" if sev_raw.lower() == "medium" else ""
+            )
+            prompt_s = html.escape(clean(A.suggested_step(raw_theme)))
+            watch_trs.append(
+                "            <tr>"
+                f"<td><strong>{loc_s}</strong><br>{theme_s}</td>"
+                f"<td class=\"num\"><span class=\"{sev_cls}\">{html.escape(sev_raw)}</span><br>{change_s}</td>"
+                f"<td>{prompt_s}</td>"
+                "</tr>"
+            )
+        watch_html = (
+            '      <section class="report-section huddle-watch">\n'
+            f'        <h2 class="section-title">WATCH LIST FOR THIS SHIFT ({len(alert_rows)})</h2>\n'
+            '        <table class="data-table">\n'
+            '          <thead><tr><th>Location &amp; Theme</th><th class="num">Signal</th><th>Possible Shift Check</th></tr></thead>\n'
+            '          <tbody>\n'
+            + "\n".join(watch_trs) + "\n"
+            '          </tbody>\n'
+            '        </table>\n'
+            '      </section>'
+        )
+    else:
+        watch_html = _render_card_section(
+            "huddle-watch",
+            "WATCH LIST FOR THIS SHIFT (0)",
+            [],
+            empty_text="No rising complaint alerts for the selected period.",
+        )
+
+    # Section 3 (Right): Team Shout-Outs to Recognize
+    if staff_rows:
+        staff_trs = []
+        for row in staff_rows[:8]:
+            staff_s = html.escape(clean(row.get("staff")) or "Staff")
+            loc_s = html.escape(clean(row.get("location")) or "Location")
+            mentions_s = int(row.get("mentions", 0))
+            staff_trs.append(
+                "            <tr>"
+                f"<td><strong>{staff_s}</strong></td>"
+                f"<td>{loc_s}</td>"
+                f"<td class=\"num\">{mentions_s}</td>"
+                "</tr>"
+            )
+        shoutouts_html = (
+            '      <section class="report-section huddle-staff">\n'
+            f'        <h2 class="section-title">TEAM SHOUT-OUTS ({len(staff_rows)})</h2>\n'
+            '        <table class="data-table">\n'
+            '          <thead><tr><th>Team Member</th><th>Location</th><th class="num">Mentions</th></tr></thead>\n'
+            '          <tbody>\n'
+            + "\n".join(staff_trs) + "\n"
+            '          </tbody>\n'
+            '        </table>\n'
+            '      </section>'
+        )
+    else:
+        shoutouts_html = _render_card_section(
+            "huddle-staff",
+            "TEAM SHOUT-OUTS (0)",
+            [],
+            empty_text="No staff praise mentions recorded in this period.",
+        )
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pre-Shift Huddle Sheet</title>
+  <style>
+{_shared_print_css()}
+{_preshift_compact_css()}
+  </style>
+</head>
+<body class="huddle-sheet">
+  <div class="report-header">
+    <h1 class="report-title">PRE-SHIFT HUDDLE SHEET</h1>{period_meta_html}
+    <div class="report-meta">Locations: {locs_html}</div>
+    <div class="report-meta">Internal team huddle use only. Guest names, raw review passages, and reply drafts are excluded.</div>
+  </div>
+{kpi_html}
+{priority_section_html}
+  <div class="huddle-columns">
+{watch_html}
+{shoutouts_html}
+  </div>
+  <p class="disclaimer">Suggested shift checks are general prompts, not confirmed causes. Review trends do not prove an action caused a change.</p>
+</body>
+</html>"""
+
+
+build_preshift_html = build_printable_preshift_sheet

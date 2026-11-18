@@ -1111,6 +1111,27 @@ with tabs[5]:
         secure_export("Download printable weekly owner summary (HTML)", summary_html,
                       file_name="weekly_owner_summary.html", mime="text/html",
                       dataset=tag, locations=pick)
+        st.markdown("**Pre-shift huddle sheet** (compact 1-page printable briefing for managers & shift leads)")
+        st.caption("Includes overdue/active shift checks, rising watch-list prompts, team shout-outs, and urgent reply count. "
+                   "Guest names, raw review passages, and reply drafts are excluded.")
+        preshift_html = AR.build_printable_preshift_sheet(
+            alerts=alerts,
+            staff_leaderboard=lb2,
+            urgent_reply_count=len(high_open),
+            actions=current_actions,
+            dataset_tag=tag,
+            locations=pick,
+            reviews=tagged_records,
+            period_reviews=view,
+            date_range=dr,
+            legacy_tag=current_history,
+            provenance_by_location=provenance_by_location,
+            source_reviews=source_records,
+            timezones_by_location=timezones_by_location,
+        )
+        secure_export("Download pre-shift huddle sheet (HTML)", preshift_html,
+                      file_name="preshift_huddle_sheet.html", mime="text/html",
+                      dataset=tag, locations=pick)
         show_live_freshness("Owner summary")
 
     show_live_owner_summary()

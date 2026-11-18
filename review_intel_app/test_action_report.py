@@ -682,6 +682,148 @@ class HighVolumePrintPaginationStressTests(unittest.TestCase):
         self.assertLess(len(html_out.encode("utf-8")), D.MAX_REPORT_BYTES)
 
 
+class PreShiftHuddleSheetTests(unittest.TestCase):
+    def test_layout_overdue_priority_watch_list_shoutouts_and_scoping(self):
+        actions = [
+            action(action_id="a-ontime", location="Cafe", due_date="2026-01-20",
+                   action_text="Regular dining room check"),
+            action(action_id="a-overdue", location="Cafe", due_date="2026-01-02",
+                   action_text="Urgent expo handoff check"),
+            action(action_id="a-done", location="Cafe", status="Done",
+                   action_text="Completed action excluded"),
+            action(action_id="a-other-ds", dataset_tag="dataset-b",
+                   action_text="Other dataset excluded"),
+            action(action_id="a-other-loc", location="Elsewhere",
+                   action_text="Other location excluded"),
+        ]
+        alerts = [
+            dict(location="Cafe", theme="Service speed", change="2.2x", severity="High"),
+            dict(location="Elsewhere", theme="Cleanliness", change="3.0x", severity="High"),
+        ]
+        staff = [
+            dict(location="Cafe", staff="Maya", mentions=5),
+            dict(location="Elsewhere", staff="HiddenStaff", mentions=9),
+        ]
+        orig_actions = copy.deepcopy(actions)
+
+        html_out = R.build_printable_preshift_sheet(
+            alerts=alerts,
+            staff_leaderboard=staff,
+            urgent_reply_count=3,
+            actions=actions,
+            dataset_tag="dataset-a",
+            locations=["Cafe"],
+            reviews=reviews(5),
+            date_range=("2026-01-01", "2026-01-07"),
+            provenance_by_location={"Cafe": PROVENANCE},
+            today=date(2026, 1, 4),
+        )
+
+        # Print structure & compact 1-page styling
+        self.assertIn("<!doctype html>", html_out)
+        self.assertIn("PRE-SHIFT HUDDLE SHEET", html_out)
+        self.assertIn('class="huddle-sheet"', html_out)
+        self.assertIn("@page", html_out)
+        self.assertIn("@media print", html_out)
+        self.assertIn("break-inside: avoid", html_out)
+        self.assertIn("orphans: 3", html_out)
+        self.assertIn("widows: 3", html_out)
+
+        # Overdue action appears BEFORE on-time active action
+        self.assertIn("PRIORITY SHIFT CHECKS (2)", html_out)
+        self.assertIn("OVERDUE", html_out)
+        self.assertLess(
+            html_out.index("Urgent expo handoff check"),
+            html_out.index("Regular dining room check"),
+        )
+
+        # Watch list + suggested prompt + shout-outs + urgent reply backlog
+        self.assertIn("WATCH LIST FOR THIS SHIFT (1)", html_out)
+        self.assertIn("Service speed", html_out)
+        self.assertIn("Review staffing and handoffs during the busiest service periods.", html_out)
+        self.assertIn("TEAM SHOUT-OUTS (1)", html_out)
+        self.assertIn("Maya", html_out)
+        self.assertIn("Urgent Reply Backlog", html_out)
+        self.assertIn("Review trends do not prove an action caused a change.", html_out)
+
+        # Completed and out-of-scope excluded; input untouched
+        self.assertNotIn("Completed action excluded", html_out)
+        self.assertNotIn("Other dataset excluded", html_out)
+        self.assertNotIn("Other location excluded", html_out)
+        self.assertNotIn("Elsewhere", html_out)
+        self.assertNotIn("HiddenStaff", html_out)
+        self.assertEqual(actions, orig_actions)
+
+    def test_preshift_threshold_comparability_privacy_and_xss_safety(self):
+        guest_name = "Guestperson Private"
+        raw_passage = "This confidential guest passage should not appear."
+        rows_4 = reviews(4) + [dict(reviews(1)[0], date="2026-01-01")]
+        injected = action(
+            action_text=f"Check with {guest_name}: {raw_passage} <script>alert(1)</script>",
+            owner="Guestperson",
+        )
+
+        html_4 = R.build_printable_preshift_sheet(
+            actions=[injected],
+            dataset_tag="dataset-a",
+            locations=["Cafe"],
+            reviews=rows_4,
+            provenance_by_location={"Cafe": PROVENANCE},
+            today=date(2026, 1, 4),
+        )
+        self.assertIn("4 newer reviews; at least 5 are required.", html_4)
+        self.assertNotIn("Saved baseline:", html_4)
+        self.assertNotIn(guest_name, html_4)
+        self.assertNotIn("Guestperson", html_4)
+        self.assertNotIn(raw_passage, html_4)
+        self.assertIn("[private content removed]", html_4)
+        self.assertNotIn("<script>alert(1)</script>", html_4)
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", html_4)
+
+        # Empty locations fails closed
+        html_empty = R.build_printable_preshift_sheet(
+            alerts=[dict(location="Cafe", theme="Price", change="2x", severity="High")],
+            staff_leaderboard=[dict(location="Cafe", staff="Maya", mentions=4)],
+            actions=[action()],
+            dataset_tag="dataset-a",
+            locations=[],
+            reviews=reviews(5),
+            today=date(2026, 1, 4),
+        )
+        self.assertIn("PRIORITY SHIFT CHECKS (0)", html_empty)
+        self.assertNotIn("Maya", html_empty)
+        self.assertNotIn("Check kitchen handoffs", html_empty)
+
+    def test_preshift_high_volume_pagination_and_zero_leakage(self):
+        import report_downloads as D
+        fx = HighVolumePrintPaginationStressTests()._build_stress_fixture()
+        html_out = R.build_printable_preshift_sheet(
+            alerts=fx["alerts"],
+            staff_leaderboard=fx["staff"],
+            urgent_reply_count=9,
+            actions=fx["actions"],
+            dataset_tag="dataset-a",
+            locations=fx["locations"],
+            reviews=fx["reviews"],
+            period_reviews=fx["reviews"],
+            date_range=("2026-01-01", "2026-01-17"),
+            provenance_by_location=fx["provenance"],
+            today=date(2026, 1, 4),
+        )
+        self.assertIn("PRIORITY SHIFT CHECKS (35)", html_out)
+        self.assertEqual(
+            html_out.count('<div class="huddle-item">')
+            + html_out.count('<div class="huddle-item is-overdue">'),
+            35,
+        )
+        self.assertIn('<div class="section-lead">', html_out)
+        self.assertIn("display: table-header-group", html_out)
+        self.assertNotIn("Completed task 00", html_out)
+        for secret in fx["guest_names"] + fx["raw_passages"] + fx["reply_drafts"]:
+            self.assertNotIn(secret, html_out)
+        self.assertLess(len(html_out.encode("utf-8")), D.MAX_REPORT_BYTES)
+
+
 class ActionReportAppTests(unittest.TestCase):
     def test_private_preview_download_and_empty_state(self):
         from streamlit.testing.v1 import AppTest

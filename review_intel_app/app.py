@@ -32,6 +32,11 @@ from trend_coverage import coverage_tables
 from trend_coverage_ui import show_monthly_coverage, show_warning_coverage
 from unclear_wording_ui import show_unclear_wording_example
 from alert_evidence_ui import show_alert_evidence
+from review_triage_ui import (
+    show_needs_review_triage,
+    reply_theme_options,
+    filter_reply_inbox,
+)
 import manager_corrections as C
 import reply_approvals as R
 import manager_correction_history as correction_history
@@ -654,23 +659,27 @@ with tabs[1]:
         st.caption("Unclear wording is not automatically counted as praise or a complaint.")
         show_unclear_wording_example(E.THEMES)
         if not needs_review.empty:
-            position = st.selectbox(
-                "Review needing a check", list(range(len(needs_review))),
-                format_func=lambda index: (
-                    f"{needs_review.iloc[index]['review_id']} | "
-                    f"{needs_review.iloc[index]['location']} | "
-                    f"{needs_review.iloc[index]['date'].date()}"
-                ),
-            )
-            r = next(needs_review.iloc[[position]].itertuples())
-            st.write(f"{r.location} | {r.date.date()} | {r.rating} stars")
-            st.text(r.text)
-            # Avoid nesting expanders on older Streamlit versions.
-            st.warning(" ".join(r.review_reasons))
-            for item in r.tag_evidence:
-                st.write(f"{E.THEME_LABELS[item['theme']]}: {item['polarity']}")
-                st.caption("Matched terms: " + ", ".join(item["matched_terms"]))
-                st.text(item["excerpt"])
+            triaged = show_needs_review_triage(needs_review)
+            if not triaged.empty:
+                position = st.selectbox(
+                    "Review needing a check", list(range(len(triaged))),
+                    format_func=lambda index: (
+                        f"{triaged.iloc[index]['review_id']} | "
+                        f"{triaged.iloc[index]['location']} | "
+                        f"{triaged.iloc[index]['date'].date()}"
+                    ),
+                )
+                r = next(triaged.iloc[[position]].itertuples())
+                st.write(f"{r.location} | {r.date.date()} | {r.rating} stars")
+                st.text(r.text)
+                # Avoid nesting expanders on older Streamlit versions.
+                st.warning(" ".join(r.review_reasons))
+                for item in r.tag_evidence:
+                    st.write(f"{E.THEME_LABELS[item['theme']]}: {item['polarity']}")
+                    st.caption("Matched terms: " + ", ".join(item["matched_terms"]))
+                    st.text(item["excerpt"])
+            else:
+                st.caption("No flagged reviews match the selected triage filter.")
 
     if is_local:
         pending = view[view["correction_key"].isin(renewals)].drop_duplicates(
@@ -926,20 +935,34 @@ with tabs[4]:
     n_show = f3.number_input("Show", min_value=5, max_value=100, value=10, step=5)
 
     recheck_count = int(view["reply_key"].isin(reply_rechecks).sum())
+    t1, t2 = st.columns([2, 1])
+    reply_theme = t1.selectbox(
+        "Filter replies by theme",
+        reply_theme_options(view),
+        key="reply_inbox_theme_filter",
+    )
+    recheck_only = t2.toggle(
+        "Needs recheck only",
+        value=False,
+        disabled=(recheck_count == 0),
+        key="reply_inbox_recheck_only",
+    )
     if recheck_count:
         st.warning(
             f"{recheck_count} approved replies need a wording recheck. Their effective "
             "tags differ from the tags at reply approval (or no approval snapshot exists). "
             "Approved text has not been changed. These replies stay in the queue "
-            "regardless of urgency and Show approved filters."
+            "regardless of urgency, theme, and Show approved filters."
         )
-    inbox = view[view["urgency"].isin(urg)
-                 | view["reply_key"].isin(reply_rechecks)].sort_values(
-        ["urgency", "date"], key=lambda c: c.map({"High": 0, "Medium": 1, "Low": 2})
-        if c.name == "urgency" else c, ascending=[True, False])
-    if not show_done:
-        inbox = inbox[~inbox["reply_key"].isin(st.session_state["approved"].keys())
-                      | inbox["reply_key"].isin(reply_rechecks)]
+    inbox = filter_reply_inbox(
+        view,
+        urgencies=urg,
+        show_approved=show_done,
+        approved_keys=st.session_state["approved"].keys(),
+        reply_rechecks=reply_rechecks,
+        theme_filter=reply_theme,
+        recheck_only=recheck_only,
+    )
     approved_count = int(view["reply_key"].isin(st.session_state["approved"]).sum())
     st.caption(f"{len(inbox)} reviews in queue · {approved_count} approved")
 

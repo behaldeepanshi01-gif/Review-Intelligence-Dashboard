@@ -43,7 +43,7 @@ def show_decision_changes(action, dataset_id, result, *, current_reviews=None,
                  "Removed mentions": row["removed_mentions"],
                  "Net mention change": row["net_mentions"]}
                 for row in result["tag_effect_cohorts"]
-            ], hide_index=True, use_container_width=True)
+            ], hide_index=True, width="stretch")
         if result["decision_changes"]:
             st.dataframe([
                 {"Decision reference": row["decision_ref"],
@@ -52,7 +52,7 @@ def show_decision_changes(action, dataset_id, result, *, current_reviews=None,
                  "Now": _tags(row["after"]),
                  "Action-theme evidence": row["theme_evidence"]}
                 for row in result["decision_changes"]
-            ], hide_index=True, use_container_width=True)
+            ], hide_index=True, width="stretch")
             reference = st.selectbox(
                 "Open current review for decision reference",
                 [row["decision_ref"] for row in result["decision_changes"]],

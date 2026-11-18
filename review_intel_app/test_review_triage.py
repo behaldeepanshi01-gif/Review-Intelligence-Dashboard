@@ -177,5 +177,18 @@ filtered = T.show_needs_review_triage(df)
         self.assertTrue(any("Showing 1 of 2" in c.value for c in app.caption))
 
 
+    def test_no_deprecated_use_container_width_in_app_modules(self):
+        from pathlib import Path
+        app_dir = Path(__file__).resolve().parent
+        for path in sorted(app_dir.glob("*.py")):
+            if path.name.startswith("test_"):
+                continue
+            self.assertNotIn(
+                "use_container_width",
+                path.read_text(encoding="utf-8"),
+                f"Deprecated use_container_width found in {path.name}",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

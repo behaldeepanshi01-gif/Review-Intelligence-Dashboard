@@ -1141,6 +1141,18 @@ def show_live_action_tracker():
     ]
     saved_actions.sort(key=lambda action: action.get("created_on", ""), reverse=True)
 
+    active_count = sum(1 for action in saved_actions if action.get("status") != "Done")
+    overdue_count = sum(
+        1 for action in saved_actions
+        if A.is_overdue(action, timezones_by_location=timezones_by_location)
+    )
+    completed_count = sum(1 for action in saved_actions if action.get("status") == "Done")
+    a1, a2, a3, a4 = st.columns(4)
+    a1.metric("Active plans", active_count)
+    a2.metric("Overdue", overdue_count)
+    a3.metric("Completed", completed_count)
+    a4.metric("Total plans", len(saved_actions))
+
     status_filter = st.radio(
         "Show action plans",
         ("All active actions", "Overdue only", "Completed plans"),
@@ -1387,7 +1399,7 @@ with tabs[6]:
                      "Latest saved": action.get(field, ""),
                      "Different": draft[field] != action.get(field, "")}
                     for field in A.EDITABLE_FIELDS
-                ], hide_index=True, use_container_width=True)
+                ], hide_index=True, width="stretch")
                 st.caption("Only editable fields are compared. Saved alert evidence and "
                            "baseline fields remain read-only. Reload discards the draft "
                            "in the editor. Keep it for reference first if you need it; "
@@ -1405,7 +1417,7 @@ with tabs[6]:
                     {"Field": field_labels[field],
                      "Kept draft": st.session_state[reference_key][field]}
                     for field in A.EDITABLE_FIELDS
-                ], hide_index=True, use_container_width=True)
+                ], hide_index=True, width="stretch")
                 st.caption("Download this unsaved reference before leaving the session. "
                            "The file contains only this action's kept editable fields "
                            "and context, not saved evidence or baselines. It cannot be "

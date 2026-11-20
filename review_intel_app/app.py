@@ -5,6 +5,7 @@ Run:  streamlit run app.py
 """
 
 import io
+import importlib
 import hashlib
 import json
 import os
@@ -20,6 +21,8 @@ from live_freshness import show_live_freshness
 from action_decisions_ui import show_decision_changes
 from manager_report_ui import show_manager_report
 import action_report as AR
+if not hasattr(AR, "build_printable_preshift_sheet") or not hasattr(AR, "build_printable_weekly_summary"):
+    AR = importlib.reload(AR)
 from dashboard_export_ui import secure_export
 from manager_report_access import require_manager, authorized
 from manager_report_access import clear_private_state
